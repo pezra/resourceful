@@ -214,7 +214,7 @@ module AdvancedHttp
       a_uri = self.class.send(:http_uri, a_uri)
       
       raise ServiceUriMismatchError, "This service does not provide the resource indicated by #{a_uri}" unless
-        a_uri.host == @http_conn.host and a_uri.port == @http_conn.port and 
+        a_uri.host == @http_conn.address and a_uri.port == @http_conn.port and 
         @http_conn.use_ssl? == (a_uri.scheme == 'https')
       
       a_uri

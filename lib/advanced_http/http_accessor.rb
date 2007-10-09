@@ -35,8 +35,9 @@ module AdvancedHttp
     # Initializes a new HttpAccessor.  If
     # +authentication_info_provider+ is provided it will be use to get
     # authentication information for requests that require it.
-    def initialize(authentication_info_provider = nil)
+    def initialize(authentication_info_provider = nil, logger = nil)
       self.authentication_info_provider = authentication_info_provider
+      self.logger = logger
     end
     
     # Makes a GET request to the resource indicated by +a_uri+ and

@@ -1,7 +1,9 @@
 
+require 'advanced_http/http_accessor'
+
 # AdvancedHttp is a facade that allows convenient access to the
 # functionality provided by the AdvancedHttp library.
-class AdvancedHttp
+module AdvancedHttp
   REV = %r{\d+}.match("$Revision: 6761$")[0]
   VERSION = %r{rel/([^/]+)}.match("$HeadURL: svn+ssh://devutil-p.boulder.api.local/svn/rortal-plugins/trunk/active_rest/lib/active_rest/http_service_pro.rb$")[1] rescue "devel"
 

@@ -12,6 +12,18 @@ describe AdvancedHttp::HttpAccessor do
     AdvancedHttp::HttpAccessor.new().should be_instance_of(AdvancedHttp::HttpAccessor)
   end 
   
+  it 'should accept logger to new' do
+    ha = AdvancedHttp::HttpAccessor.new(nil, l = mock('logger'))
+    
+    ha.logger.should == l
+  end 
+
+  it 'should accept auth info provider in new()' do
+    ha = AdvancedHttp::HttpAccessor.new(aip = mock('auth_info_provider'))
+    
+    ha.authentication_info_provider.should == aip
+  end 
+  
   it 'should allow authentication information provider to be registered' do 
     @accessor.authentication_info_provider = mock('auth_info_provider')
   end 

@@ -31,7 +31,7 @@ describe AdvancedHttp::HttpServiceProxy, '#get() (http)' do
     Net::HTTP::Get.stubs(:new).returns(@http_req)
     @http_resp = Net::HTTPOK.new('1.1', '200', 'OK')
 
-    @http_conn = stub('Net::HTTP', :host => 'www.example', :port => 80, :use_ssl? => false, :request => @http_resp)
+    @http_conn = stub('Net::HTTP', :address => 'www.example', :port => 80, :use_ssl? => false, :request => @http_resp)
     Net::HTTP.stubs(:new).returns(@http_conn)
 
     @proxy = AdvancedHttp::HttpServiceProxy.for('http://www.example/foo')
@@ -187,7 +187,7 @@ describe AdvancedHttp::HttpServiceProxy, '#get() (https)' do
     @http_req = stub()
     @http_resp = Net::HTTPOK.new('1.1', '200', 'OK')
 
-    @http_conn = stub('Net::HTTP', :host => 'www.example', :port => 443, :use_ssl? => true)
+    @http_conn = stub('Net::HTTP', :address => 'www.example', :port => 443, :use_ssl? => true)
     Net::HTTP.stubs(:new).returns(@http_conn)
 
     @proxy = AdvancedHttp::HttpServiceProxy.for('https://www.example/foo')
@@ -221,7 +221,7 @@ describe AdvancedHttp::HttpServiceProxy, '#post() (http)' do
     Net::HTTP::Post.stubs(:new).returns(@http_req)
     @http_resp = Net::HTTPOK.new('1.1', '200', 'OK')
 
-    @http_conn = stub('Net::HTTP', :host => 'www.example', :port => 80, :use_ssl? => false, :request => @http_resp)
+    @http_conn = stub('Net::HTTP', :address => 'www.example', :port => 80, :use_ssl? => false, :request => @http_resp)
     Net::HTTP.stubs(:new).returns(@http_conn)
 
     @proxy = AdvancedHttp::HttpServiceProxy.for('http://www.example/foo')
@@ -392,7 +392,7 @@ describe AdvancedHttp::HttpServiceProxy, '#post() (https)' do
     
     @http_resp = Net::HTTPOK.new('1.1', '200', 'OK')
 
-    @http_conn = stub('Net::HTTP', :host => 'www.example', :port => 443, :use_ssl? => true)
+    @http_conn = stub('Net::HTTP', :address => 'www.example', :port => 443, :use_ssl? => true)
     Net::HTTP.stubs(:new).returns(@http_conn, "this=that", 'application/x-form-urlencoded')
 
     @proxy = AdvancedHttp::HttpServiceProxy.for('https://www.example/foo')
