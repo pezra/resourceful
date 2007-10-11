@@ -112,6 +112,40 @@ module AdvancedHttp
       
       do_request(request, body)
     end 
+
+    # Makes a Put request to the resource indicated by +a_uri+ on the
+    # HTTP service this class represents.  The body of the request
+    # will be +body+ and Content-Type will be +mime_type+.
+    #
+    # Options
+    #
+    #  +:accept+::
+    #    List of acceptable representations, specified as mime-types.
+    #  +:account+::
+    #    The name of the account on the server if using auth (only valid 
+    #    in combination with password)
+    #  +:password+::
+    #    The password for the account if using auth  (only valid in 
+    #    combination with account)
+    #  +:digest_challenge+::
+    #    The digest auth challenge to use when generated the Digest 
+    #    authorization credentials  (only valid in combination with 
+    #    account and password).
+    #
+    def put(a_uri, body, mime_type, options = {})
+      options = options.clone
+      a_uri = http_uri(a_uri)
+      
+      request = Net::HTTP::Put.new(a_uri.request_uri)
+      request['content-type'] = mime_type.to_str
+      handle_accept_opt(request, options)
+      handle_auth_opts(request, options)
+
+      raise ArgumentError, "Unrecognized option(s) #{options.keys.join(', ')}" unless options.empty?
+      
+      do_request(request, body)
+    end 
+
     
     protected
     

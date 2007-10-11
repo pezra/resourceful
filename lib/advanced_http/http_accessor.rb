@@ -14,6 +14,11 @@ module AdvancedHttp
       raise NotImplementedError
     end
   end
+
+  # Indicates that the maximum number of allowed HTTP redirections
+  # were follows without actually resolving to a requestable resources
+  class TooManyRedirectsError < Exception
+  end
   
   # This class provides a simple interface to the functionality
   # provided by the AdvancedHttp library.
@@ -48,7 +53,12 @@ module AdvancedHttp
     #    A MIME type, or set of MIME types, that are acceptable for 
     #    the server use as the representation of the resource
     #    indicated by +a_uri+.  If not specified '*/*' is used.
+    #  +:max_redirects+::
+    #    A number that indicates how many redirect should be followed 
+    #    before giving up.  Default is 5.
     def get(a_uri, options = {})
+      redirects_left = options.delete(:max_redirects) || 5
+      
       proxy = HttpServiceProxy.for(a_uri)
       begin
         log(:info, "GET #{a_uri} (#{[options[:accept] || '*/*'].flatten.compact.join(',')})")
@@ -65,6 +75,10 @@ module AdvancedHttp
         end
         # retry with authorization...
       end
+      
+    rescue RequestRedirected => e
+      raise TooManyRedirectsError if redirects_left < 1
+      get(e.response['location'], options.merge(:max_redirects => redirects_left - 1))
     end
     
     # Makes a POST request to the specified resources with the
@@ -76,6 +90,8 @@ module AdvancedHttp
     #    the server use as the representation of the resource
     #    indicated by +a_uri+.  If not specified '*/*' is used.
     def post(a_uri, body, mime_type, options={})
+      redirects_left = options.delete(:max_redirects) || 5
+      
       proxy = HttpServiceProxy.for(a_uri)
       begin
         log(:info, "POST #{a_uri} (content-type: #{mime_type})")
@@ -92,12 +108,43 @@ module AdvancedHttp
           raise e
         end
       end
+
+    rescue RequestRedirected => e
+      raise TooManyRedirectsError if redirects_left < 1
+      post(e.response['location'], body, mime_type, options.merge(:max_redirects => redirects_left - 1))
+
     end
     
     # Makes a PUT request to the specified resources with the
     # specified body and returns the resulting Net::HTTPResponse.
-    def put(a_uri, body)
-      raise NotImplementedError
+    #
+    # Options
+    #  +:accept+::
+    #    A MIME type, or set of MIME types, that are acceptable for 
+    #    the server use as the representation of the resource
+    #    indicated by +a_uri+.  If not specified '*/*' is used.
+    def put(a_uri, body, mime_type, options={})
+      redirects_left = options.delete(:max_redirects) || 5
+      
+      proxy = HttpServiceProxy.for(a_uri)
+      begin
+        log(:info, "PUT #{a_uri} (content-type: #{mime_type})")
+        proxy.put(a_uri, body, mime_type, options)
+        
+      rescue AuthenticationRequiredError => e
+        if auth_opts = figure_auth_opts(e.response)
+          # retry with authorization...
+          log(:info, "PUT #{a_uri} (content-type: #{mime_type}) (Auth: type=#{auth_opts[:digest_challenge] ? 'digest':'basic'}, realm='#{e.response.realm}', account='#{auth_opts[:account]}')") 
+          proxy.put(a_uri, body, mime_type, options.merge(auth_opts))
+                       
+        else
+          # not enough info to authenticate
+          raise e
+        end
+      end
+    rescue RequestRedirected => e
+      raise TooManyRedirectsError if redirects_left < 1
+      put(e.response['location'], body, mime_type, options.merge(:max_redirects => redirects_left - 1))
     end
     
     # Makes a DELETE request to the resource indicated by +a_uri+ and
