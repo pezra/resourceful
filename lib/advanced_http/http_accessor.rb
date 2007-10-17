@@ -1,24 +1,6 @@
-require 'advanced_http/http_service_proxy'
-require 'net_http_auth_ext'
+require 'advanced_http/resource'
 
 module AdvancedHttp
-  
-  # Interface for an object that can provide user names and passwords
-  # for HTTP authentication.
-  class AbstraceAuthenicationInfoProvider
-    # Returns an array containing the account name and password
-    # (+[account, password]+) to be used to authenticate at the
-    # specified realm.  If no authentication information is known for
-    # the specified realm +nil+ should be returned.
-    def authentication_info(realm)
-      raise NotImplementedError
-    end
-  end
-
-  # Indicates that the maximum number of allowed HTTP redirections
-  # were follows without actually resolving to a requestable resources
-  class TooManyRedirectsError < Exception
-  end
   
   # This class provides a simple interface to the functionality
   # provided by the AdvancedHttp library.
@@ -37,147 +19,27 @@ module AdvancedHttp
     # and the application code should log it if appropriate.
     attr_accessor :logger
     
-    # Initializes a new HttpAccessor.  If
-    # +authentication_info_provider+ is provided it will be use to get
-    # authentication information for requests that require it.
-    def initialize(authentication_info_provider = nil, logger = nil)
-      self.authentication_info_provider = authentication_info_provider
-      self.logger = logger
-    end
-    
-    # Makes a GET request to the resource indicated by +a_uri+ and
-    # returns the resulting Net::HTTPResponse.
+    # Initializes a new HttpAccessor.  Valid options:
     #
-    # Options
-    #  +:accept+::
-    #    A MIME type, or set of MIME types, that are acceptable for 
-    #    the server use as the representation of the resource
-    #    indicated by +a_uri+.  If not specified '*/*' is used.
-    #  +:max_redirects+::
-    #    A number that indicates how many redirect should be followed 
-    #    before giving up.  Default is 5.
-    def get(a_uri, options = {})
-      redirects_left = options.delete(:max_redirects) || 5
-      
-      proxy = HttpServiceProxy.for(a_uri)
-      begin
-        log(:info, "GET #{a_uri} (#{[options[:accept] || '*/*'].flatten.compact.join(',')})")
-        proxy.get(a_uri, options)
-        
-      rescue AuthenticationRequiredError => e
-        if auth_opts = figure_auth_opts(e.response)
-          # retry with authorization...
-          log(:info, "GET #{a_uri} (#{[options[:accept] || '*/*'].flatten.compact.join(',')}) (Auth: type=#{auth_opts[:digest_challenge] ? 'digest':'basic'}, realm='#{e.response.realm}', account='#{auth_opts[:account]}')")
-          proxy.get(a_uri, options.merge(auth_opts))
-        else
-          # not enough info to authenticate
-          raise e
-        end
-        # retry with authorization...
-      end
-      
-    rescue RequestRedirected => e
-      raise TooManyRedirectsError if redirects_left < 1
-      get(e.response['location'], options.merge(:max_redirects => redirects_left - 1))
-    end
-    
-    # Makes a POST request to the specified resources with the
-    # specified body and returns the resulting Net::HTTPResponse.
+    #  +:authentication_info_provider+:: An objects that responds to
+    #    +authentication_info(realm)+ and returns the account and
+    #    password, as an array +[account, password]+, to use for that
+    #    realm, or nil if it does not have authentication information
+    #    for that realm.
     #
-    # Options
-    #  +:accept+::
-    #    A MIME type, or set of MIME types, that are acceptable for 
-    #    the server use as the representation of the resource
-    #    indicated by +a_uri+.  If not specified '*/*' is used.
-    def post(a_uri, body, mime_type, options={})
-      redirects_left = options.delete(:max_redirects) || 5
-      
-      proxy = HttpServiceProxy.for(a_uri)
-      begin
-        log(:info, "POST #{a_uri} (content-type: #{mime_type})")
-        proxy.post(a_uri, body, mime_type, options)
-        
-      rescue AuthenticationRequiredError => e
-        if auth_opts = figure_auth_opts(e.response)
-          # retry with authorization...
-          log(:info, "POST #{a_uri} (content-type: #{mime_type}) (Auth: type=#{auth_opts[:digest_challenge] ? 'digest':'basic'}, realm='#{e.response.realm}', account='#{auth_opts[:account]}')") 
-          proxy.post(a_uri, body, mime_type, options.merge(auth_opts))
-                       
-        else
-          # not enough info to authenticate
-          raise e
-        end
-      end
-
-    rescue RequestRedirected => e
-      raise TooManyRedirectsError if redirects_left < 1
-      post(e.response['location'], body, mime_type, options.merge(:max_redirects => redirects_left - 1))
-
+    #  +:logger+:: A Logger object that the new HTTP accessor should
+    #    send log messages
+    def initialize(options = {})
+      self.authentication_info_provider = options[:authentication_info_provider]
+      self.logger = options[:logger]
     end
+
+    # Returns a resource object representing the resource indicated
+    # +uri+.  A resource object will be created if necessary.
+    def resource(uri)
+      Resource.new(uri, :auth_info => authentication_info_provider, :logger => logger)
+    end
+    alias [] resource
     
-    # Makes a PUT request to the specified resources with the
-    # specified body and returns the resulting Net::HTTPResponse.
-    #
-    # Options
-    #  +:accept+::
-    #    A MIME type, or set of MIME types, that are acceptable for 
-    #    the server use as the representation of the resource
-    #    indicated by +a_uri+.  If not specified '*/*' is used.
-    def put(a_uri, body, mime_type, options={})
-      redirects_left = options.delete(:max_redirects) || 5
-      
-      proxy = HttpServiceProxy.for(a_uri)
-      begin
-        log(:info, "PUT #{a_uri} (content-type: #{mime_type})")
-        proxy.put(a_uri, body, mime_type, options)
-        
-      rescue AuthenticationRequiredError => e
-        if auth_opts = figure_auth_opts(e.response)
-          # retry with authorization...
-          log(:info, "PUT #{a_uri} (content-type: #{mime_type}) (Auth: type=#{auth_opts[:digest_challenge] ? 'digest':'basic'}, realm='#{e.response.realm}', account='#{auth_opts[:account]}')") 
-          proxy.put(a_uri, body, mime_type, options.merge(auth_opts))
-                       
-        else
-          # not enough info to authenticate
-          raise e
-        end
-      end
-    rescue RequestRedirected => e
-      raise TooManyRedirectsError if redirects_left < 1
-      put(e.response['location'], body, mime_type, options.merge(:max_redirects => redirects_left - 1))
-    end
-    
-    # Makes a DELETE request to the resource indicated by +a_uri+ and
-    # returns the resulting Net::HTTPResponse.
-    def delete(a_uri)
-      raise NotImplementedError
-    end
-
-    protected
-    def auth_info_for(realm)
-      authentication_info_provider.authentication_info(realm) unless authentication_info_provider.nil?
-    end
-
-    def figure_auth_opts(resp)
-      account, password = auth_info_for(resp.realm)
-      return nil unless account and password
-      
-      opts = { :account => account, :password => password}
-      opts[:digest_challenge] = resp.digest_challenge if resp.digest_challenge      
-      
-      opts
-    end
-
-    # Log +message+ 
-    def log(level, message)
-      return unless logger
-      
-      case level
-      when :info
-        logger.info(message)
-      when :debug
-        logger.debug(message)
-      end
-    end
   end
 end
