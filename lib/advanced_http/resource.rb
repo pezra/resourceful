@@ -60,11 +60,42 @@ module AdvancedHttp
     # Gets a representation of the resource this object represents.
     # This method will follow redirect when appropriate.  If the final
     # response is not a 200 OK this method will raise an exception.
+    # If successful an HTTPResponse will be returned. 
     #
-    def get()
-      get_response.body
+    # Options 
+    #
+    #  +:accept+:: A MIME type, or array of MIME types, that are
+    #    acceptable as the formats for the response.  Anything object
+    #    that responds to +#to_str+ will work as a mime type.
+    def get(options = {})
+      options = options.clone
+      
+      request = Net::HTTP::Get.new(effective_uri.request_uri)
+      if options[:accept]
+        request['accept'] = [options.delete(:accept)].flatten.map{|m| m.to_str}
+      end
+      
+      raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless options.empty?
+      
+      resp = do_request(Net::HTTP::Get.new(effective_uri.request_uri))
+      
+      return resp if resp.code == '200' # we are done
+      
+      # additional action is required
+      if '301' == resp.code
+        # response was a permanent redirect; follow it
+        reset_uri(resp['location'])
+        get
+      elsif ['302','307'].include? resp.code
+        # temporary redirect
+        self.effective_uri = resp['location']
+        get
+      else
+        # the response was unacceptable
+        raise response_to_execption(resp)
+      end 
     end
-    
+        
     # Posts +data+ to this resource.  +mime_type+ is the MIME type of
     # +data+.  This method does *not* follow redirects, execpt for 303
     # See Other redirect.  In the case of a See Other response from
@@ -130,28 +161,6 @@ module AdvancedHttp
         logger.debug(message)
       end
         
-    end
-    
-    # Executes a get request for this resource and returns the final
-    # the HTTP response if the request is successful.
-    def get_response()
-      resp = do_request(Net::HTTP::Get.new(effective_uri.request_uri))
-      
-      return resp if resp.code == '200' # we are done
-      
-      # additional action is required
-      if '301' == resp.code
-        # response was a permanent redirect; follow it
-        reset_uri(resp['location'])
-        get_response
-      elsif ['302','307'].include? resp.code
-        # temporary redirect
-        self.effective_uri = resp['location']
-        get_response
-      else
-        # the response was unacceptable
-        raise response_to_execption(resp)
-      end 
     end
     
     # Sets the effective URI for this resource.

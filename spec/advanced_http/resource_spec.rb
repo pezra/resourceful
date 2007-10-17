@@ -180,7 +180,7 @@ describe AdvancedHttp::Resource, '#get' do
   end 
   
   it 'should return the representation as a string' do
-    @resource.get.should == "I am foo"
+    @resource.get.should == @response
   end 
 
   it 'should raise error for all 2xx response codes except 200' do
@@ -207,6 +207,35 @@ describe AdvancedHttp::Resource, '#get' do
   it "should make get request to server" do
     @resource.stubs(:do_request).with{|req| req.path == '/foo'}.returns(@response)
     @resource.get
+  end 
+  
+  it 'should accept header in request should be equivalent to :accept option if specified as string' do
+    @resource.stubs(:do_request).with{|req| req['accept'] == 'application/prs.api.test'}.returns(@response)
+    @resource.get(:accept => 'application/prs.api.test')
+  end 
+
+  it 'should accept header in request should be equivalent to :accept option if specified as array of strings' do
+    @resource.stubs(:do_request).with{|req| req['accept'] == ['application/xml', 'application/prs.api.test']}.returns(@response)
+    @resource.get(:accept => ['application/xml', 'application/prs.api.test'])
+  end 
+
+  it 'should accept header in request should be equivalent to :accept option if specified as array of to_str-ables' do
+    mt1 = stub('mt1', :to_str => 'application/xml')
+    mt2 = stub('mt2', :to_str => 'application/prs.api.test')
+    
+    @resource.stubs(:do_request).with{|req| req['accept'] == [mt1, mt2]}.returns(@response)
+    @resource.get(:accept => ['application/xml', 'application/prs.api.test'])
+  end 
+
+  it 'should accept header in request should be */* if :accept option is not specified' do
+    @resource.stubs(:do_request).with{|req| req['accept'] == '*/*'}.returns(@response)
+    @resource.get
+  end 
+  
+  it 'should not accept unknown options' do
+    lambda{
+      @resource.get(:my_option => 'cool', :foo => :bar)
+    }.should raise_error(ArgumentError, /Unrecognized option\(s\): (?:my_option, foo)|(?:foo, my_option)/)
   end 
 end 
 
@@ -263,7 +292,7 @@ end
     end 
 
     it 'should return body of second response' do
-      @resource.get.should == 'I am foo (bar)'
+      @resource.get.should == @ok_response
     end 
 
   end 
@@ -292,11 +321,10 @@ describe AdvancedHttp::Resource, '#get (Permanent redirection)' do
   end 
   
   it 'should return body of second response' do
-    @resource.get.should == 'I am foo (bar)'
+    @resource.get.should == @ok_response
   end 
 
 end 
-
 
 describe AdvancedHttp::Resource, '#post' do
   before do
