@@ -103,10 +103,16 @@ describe AdvancedHttp::HttpAccessor, 'request stubbing' do
     @accessor.resource('http://www.example/temptation-waits').should be_kind_of(AdvancedHttp::StubbedResourceProxy)
   end 
 
-  it 'should returned request stubbing resource proxy should respond with canned response' do
+  it 'response to stubbed request should have canned body' do
     @accessor.stub_request(:get, 'http://www.example/temptation-waits', 'text/plain', "This is a stubbed response")
     
     @accessor.resource('http://www.example/temptation-waits').get.body.should == "This is a stubbed response"
+  end
+  
+  it 'response to stubbed request should have canned content_type' do
+    @accessor.stub_request(:get, 'http://www.example/temptation-waits', 'text/plain', "This is a stubbed response")
+    
+    @accessor.resource('http://www.example/temptation-waits').get['content-type'].should == "text/plain"
   end
 
   it 'should not allow stubbing of not get requests' do
