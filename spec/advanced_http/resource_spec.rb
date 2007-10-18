@@ -3,16 +3,18 @@ require Pathname(__FILE__).dirname + '../spec_helper'
 
 require 'advanced_http/resource'
 
+describe AdvancedHttp::Resource, 'init' do
+  it 'should be creatable with a URI' do
+    AdvancedHttp::Resource.new('http://www.example/foo')
+  end   
+end
+
 describe AdvancedHttp::Resource do
   before do
     @resource = AdvancedHttp::Resource.new('http://www.example/foo')
   end
-  
-  it 'should be creatable with a URI' do
-    AdvancedHttp::Resource.new('http://www.example/foo')
-  end 
 
-  it "should know it's URI" do
+    it "should know it's URI" do
     @resource.uri.should == URI.parse('http://www.example/foo')
   end 
   
@@ -33,7 +35,7 @@ describe AdvancedHttp::Resource do
   it 'should send body to remote server if provided' do
     req = mock("http_req", :method => 'POST')
     http_conn = mock('http_conn')
-    Net::HTTP.expects(:start).with('www.example', 80).yields(http_conn).returns(response = mock('response', :code => '201'))
+    Net::HTTP.expects(:start).with('www.example', 80).yields(http_conn).returns(response = stub('response', :code => '201'))
     http_conn.expects(:request).with(req, "body").returns(response)
     
     @resource.send(:do_request, req, "body").should == response
@@ -51,11 +53,11 @@ describe AdvancedHttp::Resource do
   end 
   
   it 'should accept logger at initialize time' do
-    AdvancedHttp::Resource.new('http://www.example/foo', :logger => mock('logger'))
+    AdvancedHttp::Resource.new('http://www.example/foo', :logger => stub('logger', :debug))
   end 
   
   it 'should #log should pass :info messages through to logger object' do
-    resource = AdvancedHttp::Resource.new('http://www.example/foo', :logger => logger = mock('logger'))
+    resource = AdvancedHttp::Resource.new('http://www.example/foo', :logger => logger = stub('logger', :debug))
     
     logger.expects(:info).with('hello')
     
@@ -63,7 +65,7 @@ describe AdvancedHttp::Resource do
   end 
 
   it 'should #log should pass :debug messages through to logger object' do
-    resource = AdvancedHttp::Resource.new('http://www.example/foo', :logger => logger = mock('logger'))
+    resource = AdvancedHttp::Resource.new('http://www.example/foo', :logger => logger = stub('logger', :debug))
     
     logger.expects(:debug).with('hello')
     
@@ -81,6 +83,32 @@ describe AdvancedHttp::Resource do
   end 
 end 
 
+describe AdvancedHttp::Resource, '#do_request (non-auth)' do
+  before do
+    @resource = AdvancedHttp::Resource.new('http://www.example/foo')
+    @ok_response = stub('ok_response', :code => '200')
+    
+    @http_conn = mock('http_conn')
+    Net::HTTP.expects(:start).with('www.example', 80).yields(@http_conn)
+    @http_conn.stubs(:request).returns(@ok_response)
+
+    @request = stub("http_req", :method => 'GET', :basic_auth => nil)
+  end
+  
+  it 'should include response code in log message' do
+    @resource.expects(:log).with(:info, regexp_matches(/\(200\)/))
+    
+    @resource.send(:do_request, @request)    
+  end 
+  
+  it 'should include timing information in log message' do
+    @resource.expects(:log).with(:info, regexp_matches(/\(0.000 sec\)/))
+    
+    @resource.send(:do_request, @request)        
+  end 
+  
+end
+
 describe AdvancedHttp::Resource, '#do_request (basic auth)' do
   before do
     @auth_provider = stub('auth_provider', :authentication_info => ['me', 'mine'])
@@ -94,7 +122,7 @@ describe AdvancedHttp::Resource, '#do_request (basic auth)' do
     Net::HTTP.expects(:start).with('www.example', 80).yields(@http_conn)
     @http_conn.stubs(:request).returns(@unauth_response, @ok_response)
 
-    @request = stub("http_req", :method => 'GET', :basic_auth => nil)
+    @request = stub("http_req", :method => 'GET', :basic_auth => nil, :authentication_scheme => 'basic', :authentication_realm => 'test_realm')
   end
   
   it 'should retry unauthorized requests with auth if possible' do
@@ -121,9 +149,18 @@ describe AdvancedHttp::Resource, '#do_request (basic auth)' do
     @resource.expects(:log).with(:info, anything)
     @resource.send(:do_request, @request)    
   end   
+  
+  it 'should warn log if credentials are missing' do
+    @auth_provider.expects(:authentication_info).returns(nil)
+
+    @resource.expects(:log).with(:info, anything)
+    @resource.expects(:log).with(:warn, "    No credentials known for test_realm")
+    @resource.send(:do_request, @request)    
+
+  end 
 end 
 
-describe AdvancedHttp::Resource, '#do_request (basic auth)' do
+describe AdvancedHttp::Resource, '#do_request (digest auth)' do
   before do
     @auth_provider = stub('auth_provider', :authentication_info => ['me', 'mine'])
     @resource = AdvancedHttp::Resource.new('http://www.example/foo', :auth_info => @auth_provider)
@@ -138,7 +175,7 @@ describe AdvancedHttp::Resource, '#do_request (basic auth)' do
     Net::HTTP.expects(:start).with('www.example', 80).yields(@http_conn)
     @http_conn.stubs(:request).returns(@unauth_response, @ok_response)
 
-    @request = stub("http_req", :method => 'GET', :digest_auth => nil)
+    @request = stub("http_req", :method => 'GET', :digest_auth => nil, :authentication_scheme => 'digest', :authentication_realm => 'test_realm')
   end
   
   it 'should retry unauthorized requests with auth if possible' do
@@ -161,7 +198,7 @@ describe AdvancedHttp::Resource, '#do_request (basic auth)' do
   end 
   
   it 'should log the retry' do
-    @resource.expects(:log).with(:info, regexp_matches(/(digest_auth: realm='test_realm', account='me')/))
+    @resource.expects(:log).with(:info, regexp_matches(/(digest_auth: realm='test_realm', account='me')/i))
     @resource.expects(:log).with(:info, anything)
     @resource.send(:do_request, @request)    
   end 

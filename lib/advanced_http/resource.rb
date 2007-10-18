@@ -1,6 +1,7 @@
 require 'net/http'
 require 'uri'
 require 'net_http_auth_ext'
+require 'benchmark'
 
 module AdvancedHttp
   class HttpRequestError < Exception
@@ -175,27 +176,38 @@ module AdvancedHttp
     
     # makes an HTTP request against the server that hosts this resource and returns the HTTPResponse.
     def do_request(an_http_request, body = nil)
-      log(:info, "  #{an_http_request.method} #{effective_uri}")
       Net::HTTP.start(effective_uri.host, effective_uri.port) do |c|
-        resp = c.request(an_http_request, body)
         
-        if '401' == resp.code and creds = auth_info(resp.realm)
+        resp = nil
+        bm = Benchmark.measure do 
+          resp = c.request(an_http_request, body)
+        end
+        log(:info, "  #{an_http_request.method} #{effective_uri} (#{resp.code}) (#{format('%0.3f', bm.real)} sec)")
+        
+        if '401' == resp.code
+          unless creds = auth_info(resp.realm)
+            log(:warn, "    No credentials known for #{resp.realm}")
+            return resp
+          end
           # Retry with authorization 
           account, password = creds
           if resp.digest_auth_allowed?
+            auth_type = 'digest'
             an_http_request.digest_auth(account, password, resp.digest_challenge)
           elsif resp.basic_auth_allowed?
+            auth_type = 'basic'
             an_http_request.basic_auth(account, password)
           else
             return resp  # don't know what to do...
           end
           
-          log(:info, "  #{an_http_request.method} #{effective_uri} (#{resp.digest_auth_allowed? ? 'digest' : 'basic'}_auth: realm='#{resp.realm}', account='#{creds.first}')")
-          
-          c.request(an_http_request, body)
-        else
-          resp
-        end
+          bm = Benchmark.measure do 
+            resp = c.request(an_http_request, body)
+          end
+          log(:info, "  #{an_http_request.method} #{effective_uri} (#{an_http_request.authentication_scheme.downcase}_auth: realm='#{an_http_request.authentication_realm}', account='#{creds.first}') (#{resp.code}) (#{format('%0.3f', bm.real)} sec)")
+        end 
+         
+        resp
       end
     end
 
