@@ -34,6 +34,8 @@ module AdvancedHttp
     def initialize(options = {})
       self.authentication_info_provider = options[:authentication_info_provider]
       self.logger = options[:logger]
+      
+      self.logger.debug("No authentication information provided.") if logger and not authentication_info_provider
     end
 
     # Returns a resource object representing the resource indicated

@@ -3,20 +3,14 @@ require Pathname(__FILE__).dirname + '../spec_helper'
 
 require 'advanced_http/http_accessor'
 
-describe AdvancedHttp::HttpAccessor do 
-  before do
-    @logger = stub('logger')
-    @authentication_info_provider = stub('authentication_info_provider')
-    @accessor = AdvancedHttp::HttpAccessor.new(:authentication_info_provider => @authentication_info_provider,
-                                               :logger => @logger)
-  end
-  
+describe AdvancedHttp::HttpAccessor, 'init' do
+    
   it 'should be instantiatable' do
     AdvancedHttp::HttpAccessor.new().should be_instance_of(AdvancedHttp::HttpAccessor)
   end 
   
   it 'should accept logger to new' do
-    ha = AdvancedHttp::HttpAccessor.new(:logger => (l = mock('logger')))
+    ha = AdvancedHttp::HttpAccessor.new(:logger => (l = stub('logger', :debug)))
     
     ha.logger.should == l
   end 
@@ -28,6 +22,22 @@ describe AdvancedHttp::HttpAccessor do
     ha.authentication_info_provider.should == aip
   end 
   
+  it 'should debug log the lack of an auth info provider' do
+    logger = stub('logger')
+    logger.expects(:debug).with("No authentication information provided.")
+    
+    ha = AdvancedHttp::HttpAccessor.new(:logger => logger)
+  end 
+end 
+
+describe AdvancedHttp::HttpAccessor do 
+  before do
+    @logger = stub('logger')
+    @authentication_info_provider = stub('authentication_info_provider')
+    @accessor = AdvancedHttp::HttpAccessor.new(:authentication_info_provider => @authentication_info_provider,
+                                               :logger => @logger)
+  end
+
   it 'should allow authentication information provider to be registered' do 
     @accessor.authentication_info_provider = mock('auth_info_provider')
   end 
