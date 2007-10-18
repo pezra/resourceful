@@ -41,7 +41,19 @@ Net::HTTPRequest.module_eval do
   end
 
   def authenticating?
-    (self['Authorization'] || @partial_credentials) ? true : false
+    (self['Authorization']) ? true : false
+  end
+  
+  def authentication_scheme
+    return nil unless authenticating?
+    
+    self['authorization'][/\w*/]
+  end
+  
+  def authentication_realm
+    return nil unless authenticating?
+    
+    /realm="([^"]+)"/.match(self['authorization'])[1]
   end
 end
 
