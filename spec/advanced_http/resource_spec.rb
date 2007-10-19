@@ -14,7 +14,7 @@ describe AdvancedHttp::Resource do
     @resource = AdvancedHttp::Resource.new('http://www.example/foo')
   end
 
-    it "should know it's URI" do
+  it "should know it's URI" do
     @resource.uri.should == URI.parse('http://www.example/foo')
   end 
   
@@ -119,7 +119,7 @@ describe AdvancedHttp::Resource, '#do_request (basic auth)' do
     @ok_response = stub('ok_response', :code => '200')
     
     @http_conn = mock('http_conn')
-    Net::HTTP.expects(:start).with('www.example', 80).yields(@http_conn)
+    Net::HTTP.stubs(:start).with('www.example', 80).yields(@http_conn)
     @http_conn.stubs(:request).returns(@unauth_response, @ok_response)
 
     @request = stub("http_req", :method => 'GET', :basic_auth => nil, :authentication_scheme => 'basic', :authentication_realm => 'test_realm')
@@ -156,7 +156,10 @@ describe AdvancedHttp::Resource, '#do_request (basic auth)' do
     @resource.expects(:log).with(:info, anything)
     @resource.expects(:log).with(:warn, "    No credentials known for test_realm")
     @resource.send(:do_request, @request)    
-
+  end 
+  
+  it 'should set Accept request header if :accept options is passed' do
+  
   end 
 end 
 
@@ -247,12 +250,13 @@ describe AdvancedHttp::Resource, '#get' do
   end 
   
   it 'should accept header in request should be equivalent to :accept option if specified as string' do
-    @resource.stubs(:do_request).with{|req| req['accept'] == 'application/prs.api.test'}.returns(@response)
+    @resource.expects(:do_request).with{|req| req['accept'] == 'application/prs.api.test'}.returns(@response)
     @resource.get(:accept => 'application/prs.api.test')
   end 
 
   it 'should accept header in request should be equivalent to :accept option if specified as array of strings' do
-    @resource.stubs(:do_request).with{|req| req['accept'] == ['application/xml', 'application/prs.api.test']}.returns(@response)
+    @resource.expects(:do_request).with{|req| req['accept'] == 'application/xml, application/prs.api.test'}.returns(@response)
+    
     @resource.get(:accept => ['application/xml', 'application/prs.api.test'])
   end 
 
@@ -260,12 +264,12 @@ describe AdvancedHttp::Resource, '#get' do
     mt1 = stub('mt1', :to_str => 'application/xml')
     mt2 = stub('mt2', :to_str => 'application/prs.api.test')
     
-    @resource.stubs(:do_request).with{|req| req['accept'] == [mt1, mt2]}.returns(@response)
+    @resource.expects(:do_request).with{|req| req['accept'] == 'application/xml, application/prs.api.test'}.returns(@response)
     @resource.get(:accept => ['application/xml', 'application/prs.api.test'])
   end 
 
   it 'should accept header in request should be */* if :accept option is not specified' do
-    @resource.stubs(:do_request).with{|req| req['accept'] == '*/*'}.returns(@response)
+    @resource.expects(:do_request).with{|req| req['accept'] == '*/*'}.returns(@response)
     @resource.get
   end 
   

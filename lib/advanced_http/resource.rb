@@ -78,7 +78,7 @@ module AdvancedHttp
       
       raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless options.empty?
       
-      resp = do_request(Net::HTTP::Get.new(effective_uri.request_uri))
+      resp = do_request(request)
       
       return resp if resp.code == '200' # we are done
       
