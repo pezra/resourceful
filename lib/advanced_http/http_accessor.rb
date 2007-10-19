@@ -32,8 +32,12 @@ module AdvancedHttp
     #  +:logger+:: A Logger object that the new HTTP accessor should
     #    send log messages
     def initialize(options = {})
-      self.authentication_info_provider = options[:authentication_info_provider]
-      self.logger = options[:logger]
+      options = options.clone
+      
+      self.authentication_info_provider = options.delete(:authentication_info_provider)
+      self.logger = options.delete(:logger)
+      
+      raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless options.empty?
       
       self.logger.debug("No authentication information provided.") if logger and not authentication_info_provider
     end

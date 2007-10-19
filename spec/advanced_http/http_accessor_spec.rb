@@ -28,6 +28,12 @@ describe AdvancedHttp::HttpAccessor, 'init' do
     
     ha = AdvancedHttp::HttpAccessor.new(:logger => logger)
   end 
+  
+  it 'should raise arg error if unrecognized options are passed' do
+    lambda {
+      ha = AdvancedHttp::HttpAccessor.new(:foo => 'foo', :bar => 'bar')
+    }.should raise_error(ArgumentError, "Unrecognized option(s): foo, bar")
+  end 
 end 
 
 describe AdvancedHttp::HttpAccessor do 
