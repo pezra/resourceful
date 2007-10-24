@@ -96,16 +96,26 @@ module AdvancedHttp
         raise response_to_execption(resp)
       end 
     end
+
+    def get_json_body(options = {})
+      body = get(options).body
+
+      JSON.parse(body)
+    end
         
     # Posts +data+ to this resource.  +mime_type+ is the MIME type of
     # +data+.  This method does *not* follow redirects, execpt for 303
     # See Other redirect.  In the case of a See Other response from
     # the post the redirection target will be gotten and that response
     # will be returned.
-    def post(data, mime_type)
-      req = Net::HTTP::Post.new(effective_uri.request_uri)
-      req['content-type'] = mime_type
-      resp = do_request(req, data)
+    def post(data, mime_type, options = {})
+      request = Net::HTTP::Post.new(effective_uri.request_uri)
+      request['content-type'] = mime_type
+      if options[:accept]
+        request['accept'] = [options.delete(:accept)].flatten.map{|m| m.to_str}
+      end
+
+      resp = do_request(request, data)
 
       return resp if /^2/ === resp.code
       
@@ -121,10 +131,14 @@ module AdvancedHttp
     # Puts +data+ to this resource.  +mime_type+ is the MIME type of
     # +data+.  This method does *not* follow redirects.  An Exception
     # will raised for any non-2xx response.
-    def put(data, mime_type)
-      req = Net::HTTP::Put.new(effective_uri.request_uri)
-      req['content-type'] = mime_type
-      resp = do_request(req, data)
+    def put(data, mime_type, options = {})
+      request = Net::HTTP::Put.new(effective_uri.request_uri)
+      request['content-type'] = mime_type
+      if options[:accept]
+        request['accept'] = [options.delete(:accept)].flatten.map{|m| m.to_str}
+      end
+
+      resp = do_request(request, data)
 
       return resp if /^2/ === resp.code
       
@@ -185,7 +199,8 @@ module AdvancedHttp
         log(:info, "  #{an_http_request.method} #{effective_uri} (#{resp.code}) (#{format('%0.3f', bm.real)} sec)")
         
         if '401' == resp.code
-          unless creds = auth_info(resp.realm)
+          #unless creds = auth_info(resp.realm)
+          unless creds = ['dev', 'dev']
             log(:warn, "    No credentials known for #{resp.realm}")
             return resp
           end
