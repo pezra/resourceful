@@ -2,6 +2,7 @@ require 'net/http'
 require 'uri'
 require 'net_http_auth_ext'
 require 'benchmark'
+require 'json'
 
 module AdvancedHttp
   class HttpRequestError < Exception
@@ -58,10 +59,12 @@ module AdvancedHttp
       reset_uri(uri)
     end
     
-    # Gets a representation of the resource this object represents.
-    # This method will follow redirect when appropriate.  If the final
-    # response is not a 200 OK this method will raise an exception.
-    # If successful an HTTPResponse will be returned. 
+    # Gets a representation of the resource this object represents and
+    # returns the representation and associated meta-data (HTTP
+    # headers, etc).  This method will follow redirect when
+    # appropriate.  If the final response is not a 200 OK this method
+    # will raise an exception.  If successful an HTTPResponse will be
+    # returned.
     #
     # Options 
     #
@@ -97,10 +100,37 @@ module AdvancedHttp
       end 
     end
 
-    def get_json_body(options = {})
+    # Gets a representation of the resource this object represents.
+    # This method will follow redirect when appropriate.  If the final
+    # response is not a 200 OK this method will raise an exception.
+    # If successful an HTTPResponse will be returned. 
+    #
+    # Options 
+    #
+    #  +:accept+:: A MIME type, or array of MIME types, that are
+    #    acceptable as the formats for the response.  Anything object
+    #    that responds to +#to_str+ will work as a mime type.
+    #
+    #  +:parse_as+:: Indicates that the return value should be the
+    #    results of parsing the string representation.  The value of
+    #    this option indicates what sort of parser should be used.
+    #    Valid values are: +:json+.
+    def get_body(options = {})
+      options = options.dup
+      parser = options.delete(:parse_as)
+      
+      raise ArgumentError, "Unrecognized parser type #{parser}" unless parser.nil? or parser == :json
+      
       body = get(options).body
-
-      JSON.parse(body)
+      
+      parser ? JSON.parse(body) : body
+    end
+    
+    # Deprecated.  Use `#get_body(:parse_as => :json)` instead.
+    #
+    # Returns the representation parses as a JSON document. 
+    def get_json_body(options = {})
+      get_body(options.merge(:parse_as => :json))
     end
         
     # Posts +data+ to this resource.  +mime_type+ is the MIME type of
@@ -108,14 +138,10 @@ module AdvancedHttp
     # See Other redirect.  In the case of a See Other response from
     # the post the redirection target will be gotten and that response
     # will be returned.
-    def post(data, mime_type, options = {})
-      request = Net::HTTP::Post.new(effective_uri.request_uri)
-      request['content-type'] = mime_type
-      if options[:accept]
-        request['accept'] = [options.delete(:accept)].flatten.map{|m| m.to_str}
-      end
-
-      resp = do_request(request, data)
+    def post(data, mime_type)
+      req = Net::HTTP::Post.new(effective_uri.request_uri)
+      req['content-type'] = mime_type
+      resp = do_request(req, data)
 
       return resp if /^2/ === resp.code
       
@@ -131,14 +157,10 @@ module AdvancedHttp
     # Puts +data+ to this resource.  +mime_type+ is the MIME type of
     # +data+.  This method does *not* follow redirects.  An Exception
     # will raised for any non-2xx response.
-    def put(data, mime_type, options = {})
-      request = Net::HTTP::Put.new(effective_uri.request_uri)
-      request['content-type'] = mime_type
-      if options[:accept]
-        request['accept'] = [options.delete(:accept)].flatten.map{|m| m.to_str}
-      end
-
-      resp = do_request(request, data)
+    def put(data, mime_type)
+      req = Net::HTTP::Put.new(effective_uri.request_uri)
+      req['content-type'] = mime_type
+      resp = do_request(req, data)
 
       return resp if /^2/ === resp.code
       
@@ -198,9 +220,8 @@ module AdvancedHttp
         end
         log(:info, "  #{an_http_request.method} #{effective_uri} (#{resp.code}) (#{format('%0.3f', bm.real)} sec)")
         
-        if '401' == resp.code
-          #unless creds = auth_info(resp.realm)
-          unless creds = ['dev', 'dev']
+        if '401' == resp.code          
+          unless creds = auth_info(resp.realm)
             log(:warn, "    No credentials known for #{resp.realm}")
             return resp
           end
@@ -215,9 +236,8 @@ module AdvancedHttp
           else
             return resp  # don't know what to do...
           end
-          
           bm = Benchmark.measure do 
-            resp = c.request(an_http_request)
+            resp = c.request(an_http_request, body)
           end
           log(:info, "  #{an_http_request.method} #{effective_uri} (#{an_http_request.authentication_scheme.downcase}_auth: realm='#{an_http_request.authentication_realm}', account='#{creds.first}') (#{resp.code}) (#{format('%0.3f', bm.real)} sec)")
         end 

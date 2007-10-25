@@ -81,6 +81,7 @@ describe AdvancedHttp::Resource do
       AdvancedHttp::Resource.new('http://www.example/foo', :foo => 'oof')
     }.should raise_error(ArgumentError)
   end 
+
 end 
 
 describe AdvancedHttp::Resource, '#do_request (non-auth)' do
@@ -125,14 +126,20 @@ describe AdvancedHttp::Resource, '#do_request (basic auth)' do
     @request = stub("http_req", :method => 'GET', :basic_auth => nil, :authentication_scheme => 'basic', :authentication_realm => 'test_realm')
   end
   
+  it 'should include body in authenticated retry' do
+    @http_conn.expects(:request).with(anything, 'testing').times(2).returns(@unauth_response, @ok_response)
+
+    @resource.send(:do_request, @request, 'testing')    
+  end 
+  
   it 'should retry unauthorized requests with auth if possible' do
-    @http_conn.expects(:request).with(@request, nil).times(2).returns(@unauth_response, @ok_response)
+    @http_conn.expects(:request).with(@request, anything).times(2).returns(@unauth_response, @ok_response)
  
     @resource.send(:do_request, @request)    
   end 
 
   it 'should set basic auth on request before retry' do
-    @http_conn.expects(:request).with(@request, nil).times(2).returns(@unauth_response, @ok_response)
+    @http_conn.expects(:request).with(@request, anything).times(2).returns(@unauth_response, @ok_response)
     @request.expects(:basic_auth).with('me', 'mine')
  
     @resource.send(:do_request, @request)    
@@ -207,6 +214,68 @@ describe AdvancedHttp::Resource, '#do_request (digest auth)' do
   end 
 end 
 
+describe AdvancedHttp::Resource, '#get_body' do
+  before do
+    @resource = AdvancedHttp::Resource.new('http://www.example/foo')
+    @response = stub('http_response', :body => 'I am foo', :code => '200')
+    @resource.stubs(:do_request).with(instance_of(Net::HTTP::Get)).returns(@response)
+  end
+
+  it 'should return the response body as a string' do
+    @resource.get_body.should == 'I am foo'
+  end 
+  
+  it 'should get body from response' do
+    @response.expects(:body).returns('hello')
+    @resource.get_body
+  end 
+  
+  it 'should call get with passed options' do
+    @resource.expects(:get).with(:accept => 'nonsense/foo').returns(@response)
+    
+    @resource.get_body(:accept => 'nonsense/foo')
+  end 
+
+  it 'should raise arg error for unrecognized options' do
+    lambda {
+      @resource.get_body(:foo => 'nonsense/foo', :bar => 'yer')
+    }.should raise_error(ArgumentError, "Unrecognized option(s): foo, bar")
+  end 
+  
+  it 'should recognize parse_as option' do
+    lambda{
+      @resource.get_body(:parse_as => :json)
+    }.should_not raise_error(ArgumentError)
+  end 
+
+  it 'should raise arg error for unrecognized parser' do
+    lambda{
+      @resource.get_body(:parse_as => :nonsense)
+    }.should raise_error(ArgumentError, "Unrecognized parser type nonsense")    
+  end 
+  
+  it 'should parser JSON response body if parser is :json' do
+    @response.stubs(:body).returns('{"this": ["a", null, 3]}')
+    @resource.get_body(:parse_as => :json).should == {'this' => ['a', nil, 3]}
+  end 
+end 
+
+describe AdvancedHttp::Resource, '#get_json_body' do
+  before do
+    @resource = AdvancedHttp::Resource.new('http://www.example/foo')
+  end
+  
+  it 'should call get body with parse_as option set to :json' do   
+    @resource.expects(:get_body).with(has_entry(:parse_as, :json)).returns({})
+    @resource.get_json_body
+  end
+
+  it 'should pass options through to get_body' do
+    @resource.expects(:get_body).with(has_entry(:accept, 'text/nonsense')).returns({})
+    @resource.get_json_body(:accept => 'text/nonsense')
+  end
+end 
+
 describe AdvancedHttp::Resource, '#get' do
   before do
     @resource = AdvancedHttp::Resource.new('http://www.example/foo')
@@ -214,15 +283,15 @@ describe AdvancedHttp::Resource, '#get' do
     @resource.stubs(:do_request).with(instance_of(Net::HTTP::Get)).returns(@response)
   end
 
+  it 'should return the HTTPResponse' do
+    @resource.get.should == @response
+  end 
+
   it 'should use http connection associated with resource' do
     @resource.expects(:do_request).with(instance_of(Net::HTTP::Get)).returns(@response)
     @resource.get
   end 
   
-  it 'should return the representation as a string' do
-    @resource.get.should == @response
-  end 
-
   it 'should raise error for all 2xx response codes except 200' do
     @response.expects(:code).at_least_once.returns('202')
     lambda{
@@ -278,6 +347,7 @@ describe AdvancedHttp::Resource, '#get' do
       @resource.get(:my_option => 'cool', :foo => :bar)
     }.should raise_error(ArgumentError, /Unrecognized option\(s\): (?:my_option, foo)|(?:foo, my_option)/)
   end 
+
 end 
 
 describe AdvancedHttp::Resource, '#get (unacceptable redirection)' do
