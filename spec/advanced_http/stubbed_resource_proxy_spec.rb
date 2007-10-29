@@ -10,32 +10,34 @@ describe AdvancedHttp::StubbedResourceProxy, "init" do
     }.should raise_error(ArgumentError)
   end 
   
-  it 'should be creatable with a Resource' do
-    AdvancedHttp::StubbedResourceProxy.new(stub('resource'))
+  it 'should require canned responses hash' do
+    lambda{
+      AdvancedHttp::StubbedResourceProxy.new(stub('resource'))
+    }.should raise_error(ArgumentError)    
+  end 
+  
+  it 'should be creatable with a Resource and canned responses' do
+    AdvancedHttp::StubbedResourceProxy.new(stub('resource'), {})
   end 
 end 
 
 describe AdvancedHttp::StubbedResourceProxy do
   before do
-    @resource = stub('resource')
-    @stubbed_resource = AdvancedHttp::StubbedResourceProxy.new(@resource)
+    @resource = stub('resource', :effective_uri => "http://test.invalid/foo")
+    @stubbed_resource = AdvancedHttp::StubbedResourceProxy.
+      new(@resource, [{:mime_type => 'application/xml', 
+                        :body => '<thing>1</thing>'}])
   end
   
-  it 'should get stubs to be defined' do
-    @stubbed_resource.stub_get('application/xml', '<thing>1</thing>')
-  end 
-  
-  it 'should return canned response for matching requests' do
-    @stubbed_resource.stub_get('application/xml', '<thing>1</thing>')
-
+  it 'should return canned response body for matching requests' do
     resp = @stubbed_resource.get
     resp.body.should == '<thing>1</thing>'
     resp['content-type'].should == 'application/xml'
   end 
   
-  it 'should pass #get() through to base resource if no canned response is defined' do
+  it 'should pass #get() through to base resource if no matching canned response is defined' do
     @resource.expects(:get)
-    @stubbed_resource.get
+    @stubbed_resource.get(:accept => 'application/unknown')
   end 
 
   it 'should pass #post() through to base resource if no canned response is defined' do

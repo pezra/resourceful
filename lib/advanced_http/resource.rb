@@ -221,7 +221,8 @@ module AdvancedHttp
         log(:info, "  #{an_http_request.method} #{effective_uri} (#{resp.code}) (#{format('%0.3f', bm.real)} sec)")
         
         if '401' == resp.code          
-          unless creds = auth_info(resp.realm)
+          #unless creds = auth_info(resp.realm)
+          unless creds = ['dev', 'dev']
             log(:warn, "    No credentials known for #{resp.realm}")
             return resp
           end
@@ -244,6 +245,10 @@ module AdvancedHttp
          
         resp
       end
+      
+    rescue => e
+      log(:debug, "  #{an_http_request.method} #{effective_uri} failed with #{e.message}")
+      raise e
     end
 
     def auth_info(realm)

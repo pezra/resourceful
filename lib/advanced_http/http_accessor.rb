@@ -49,8 +49,7 @@ module AdvancedHttp
       return resource unless canned_responses[uri]
       
       # we have some stubbing todo 
-      s_resource = StubbedResourceProxy.new(resource)
-      s_resource.stub_get(canned_responses[uri][:mime_type], canned_responses[uri][:body])
+      s_resource = StubbedResourceProxy.new(resource, canned_responses[uri])
       return s_resource
     end
     alias [] resource
@@ -62,7 +61,7 @@ module AdvancedHttp
     def stub_request(method, uri, response_mime_type, response_body)
       raise ArgumentError, "Only GETs can be stubbed" unless method == :get
       
-      canned_responses[uri] = {:mime_type => response_mime_type, :body => response_body}
+      (canned_responses[uri] ||= []) << {:mime_type => response_mime_type, :body => response_body}
     end
     
     protected
