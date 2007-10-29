@@ -222,7 +222,7 @@ module AdvancedHttp
         
         if '401' == resp.code          
           #unless creds = auth_info(resp.realm)
-          unless creds = ['dev', 'dev']
+          unless creds = auth_info(resp.realm)
             log(:warn, "    No credentials known for #{resp.realm}")
             return resp
           end
@@ -238,7 +238,7 @@ module AdvancedHttp
             return resp  # don't know what to do...
           end
           bm = Benchmark.measure do 
-            resp = c.request(an_http_request, body)
+            resp = c.request(an_http_request)
           end
           log(:info, "  #{an_http_request.method} #{effective_uri} (#{an_http_request.authentication_scheme.downcase}_auth: realm='#{an_http_request.authentication_realm}', account='#{creds.first}') (#{resp.code}) (#{format('%0.3f', bm.real)} sec)")
         end 

@@ -126,20 +126,21 @@ describe AdvancedHttp::Resource, '#do_request (basic auth)' do
     @request = stub("http_req", :method => 'GET', :basic_auth => nil, :authentication_scheme => 'basic', :authentication_realm => 'test_realm')
   end
   
-  it 'should include body in authenticated retry' do
-    @http_conn.expects(:request).with(anything, 'testing').times(2).returns(@unauth_response, @ok_response)
+  it 'should not include body in authenticated retry' do
+    @http_conn.expects(:request).with(anything, 'testing').once.returns(@unauth_response)
+    @http_conn.expects(:request).with(anything).once.returns(@ok_response)
 
     @resource.send(:do_request, @request, 'testing')    
   end 
   
   it 'should retry unauthorized requests with auth if possible' do
-    @http_conn.expects(:request).with(@request, anything).times(2).returns(@unauth_response, @ok_response)
+    @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
  
     @resource.send(:do_request, @request)    
   end 
 
   it 'should set basic auth on request before retry' do
-    @http_conn.expects(:request).with(@request, anything).times(2).returns(@unauth_response, @ok_response)
+    @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
     @request.expects(:basic_auth).with('me', 'mine')
  
     @resource.send(:do_request, @request)    
@@ -189,13 +190,13 @@ describe AdvancedHttp::Resource, '#do_request (digest auth)' do
   end
   
   it 'should retry unauthorized requests with auth if possible' do
-    @http_conn.expects(:request).with(@request, nil).times(2).returns(@unauth_response, @ok_response)
+    @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
  
     @resource.send(:do_request, @request)    
   end 
 
   it 'should set basic auth on request before retry' do
-    @http_conn.expects(:request).with(@request, nil).times(2).returns(@unauth_response, @ok_response)
+    @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
     @request.expects(:digest_auth).with('me', 'mine', @digest_challenge)
  
     @resource.send(:do_request, @request)    
@@ -239,7 +240,7 @@ describe AdvancedHttp::Resource, '#get_body' do
   it 'should raise arg error for unrecognized options' do
     lambda {
       @resource.get_body(:foo => 'nonsense/foo', :bar => 'yer')
-    }.should raise_error(ArgumentError, "Unrecognized option(s): foo, bar")
+    }.should raise_error(ArgumentError, /Unrecognized option\(s\): (?:foo|bar), (?:foo|bar)/)
   end 
   
   it 'should recognize parse_as option' do
@@ -515,7 +516,7 @@ describe AdvancedHttp::Resource, '#put' do
     @resource.stubs(:do_request).returns(@response)
   end
 
-  it 'should make request correct path' do
+  it 'should make request to correct path' do
     @resource.expects(:do_request).with{|r,_| r.path == '/foo'}.returns(@response)
     @resource.put("this=that", 'application/x-form-urlencoded')
   end 
