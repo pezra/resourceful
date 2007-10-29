@@ -72,14 +72,10 @@ module AdvancedHttp
     #    acceptable as the formats for the response.  Anything object
     #    that responds to +#to_str+ will work as a mime type.
     def get(options = {})
-      options = options.clone
-      
       request = Net::HTTP::Get.new(effective_uri.request_uri)
-      if options[:accept]
-        request['accept'] = [options.delete(:accept)].flatten.map{|m| m.to_str}
-      end
+      left_over_opts = configure_request_from_options(request, options)
       
-      raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless options.empty?
+      raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless left_over_opts.empty?
       
       resp = do_request(request)
       
@@ -138,9 +134,17 @@ module AdvancedHttp
     # See Other redirect.  In the case of a See Other response from
     # the post the redirection target will be gotten and that response
     # will be returned.
-    def post(data, mime_type)
+    #
+    # Options 
+    #
+    #  +:accept+:: A MIME type, or array of MIME types, that are
+    #    acceptable as the formats for the response.  Anything object
+    #    that responds to +#to_str+ will work as a mime type.
+    def post(data, mime_type, options = {})
       req = Net::HTTP::Post.new(effective_uri.request_uri)
       req['content-type'] = mime_type
+      left_over_opts = configure_request_from_options(req, options)
+      raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless left_over_opts.empty?
       resp = do_request(req, data)
 
       return resp if /^2/ === resp.code
@@ -157,9 +161,18 @@ module AdvancedHttp
     # Puts +data+ to this resource.  +mime_type+ is the MIME type of
     # +data+.  This method does *not* follow redirects.  An Exception
     # will raised for any non-2xx response.
-    def put(data, mime_type)
+    #
+    # Options 
+    #
+    #  +:accept+:: A MIME type, or array of MIME types, that are
+    #    acceptable as the formats for the response.  Anything object
+    #    that responds to +#to_str+ will work as a mime type.
+    def put(data, mime_type, options = {})
       req = Net::HTTP::Put.new(effective_uri.request_uri)
       req['content-type'] = mime_type
+      left_over_opts = configure_request_from_options(req, options)
+      raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless left_over_opts.empty?
+      
       resp = do_request(req, data)
 
       return resp if /^2/ === resp.code
@@ -269,6 +282,16 @@ module AdvancedHttp
       else
         HttpRequestError
       end.new("Response code: #{resp.code}")
+    end
+    
+    def configure_request_from_options(request, options)
+      options = options.clone
+      
+      if accept = options.delete(:accept)
+        request['accept'] = [accept].flatten.map{|m| m.to_str}
+      end
+      
+      return options
     end
   end
 end

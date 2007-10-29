@@ -454,6 +454,19 @@ describe AdvancedHttp::Resource, '#post' do
     @resource.post("this=that", 'application/x-form-urlencoded')
   end 
 
+    it 'should raise argument error for unsupported options' do
+    lambda{
+      @resource.post("this=that", 'application/x-form-urlencoded', :bar => 'foo')
+    }.should raise_error(ArgumentError, "Unrecognized option(s): bar")
+  end 
+  
+  it 'should support :accept option' do
+    req = stub('request', :[]= => nil)
+    Net::HTTP::Post.expects(:new).returns(req)
+    req.expects(:[]=).with('accept', ['text/special'])
+    @resource.post("this=that", 'application/x-form-urlencoded', :accept => 'text/special')
+  end 
+  
   it 'should request obj should have content-type set' do
     @resource.expects(:do_request).with{|r,_| r['content-type'] =='application/prs.foo.bar'}.returns(@response)
     
@@ -521,6 +534,19 @@ describe AdvancedHttp::Resource, '#put' do
     @resource.put("this=that", 'application/x-form-urlencoded')
   end 
 
+  it 'should raise argument error for unsupported options' do
+    lambda{
+      @resource.put("this=that", 'application/x-form-urlencoded', :bar => 'foo')
+    }.should raise_error(ArgumentError, "Unrecognized option(s): bar")
+  end 
+  
+  it 'should support :accept option' do
+    req = stub('request', :[]= => nil)
+    Net::HTTP::Put.expects(:new).returns(req)
+    req.expects(:[]=).with('accept', ['text/special'])
+    @resource.put("this=that", 'application/x-form-urlencoded', :accept => 'text/special')
+  end 
+  
   it 'should make request with body' do
     @resource.expects(:do_request).with(instance_of(Net::HTTP::Put), 'this=that').returns(@response)
     @resource.put("this=that", 'application/x-form-urlencoded')
