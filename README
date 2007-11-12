@@ -10,7 +10,7 @@ Get html page
 
     require 'advanced_http'
     http = AdvancedHttp::HttpAccessor.new
-    resp = http.get('http://rubyforge.org', :accept => 'text/html')
+    resp = http.resource('http://rubyforge.org').get(:accept => 'text/html')
     puts resp.body
 
 Get page requiring HTTP Authentication
@@ -23,7 +23,7 @@ Get page requiring HTTP Authentication
     end
 
     http = AdvancedHttp::HttpAccessor.new(AuthInfoProvider.new)
-    resp = http.get('http://internal-app/', :accept => 'text/html')
+    resp = http.resource('http://internal-app/').get(:accept => 'text/html')
     puts resp.body
 
 
