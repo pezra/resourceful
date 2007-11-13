@@ -22,7 +22,7 @@ Get page requiring HTTP Authentication
       end
     end
 
-    http = AdvancedHttp::HttpAccessor.new(AuthInfoProvider.new)
+    http = AdvancedHttp::HttpAccessor.new(:authentication_info_provider => AuthInfoProvider.new)
     resp = http.resource('http://internal-app/').get(:accept => 'text/html')
     puts resp.body
 
