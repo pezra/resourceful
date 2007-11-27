@@ -6,6 +6,29 @@ require 'json'
 
 module AdvancedHttp
   class HttpRequestError < Exception
+    attr_reader :response, :request
+    
+    def initialize(messge, request, response)
+      @response = response
+      @request = request
+      
+      super(message)
+    end
+
+    def self.new_from(request, response)
+      case response.code
+      when /^2/
+        NonOkResponseError
+      when /^3/
+        HttpRequestRedirected
+      when /^4/
+        HttpClientError
+      when /^5/
+        HttpServerError
+      else
+        HttpRequestError
+      end.new("Response code: #{response.code}", request, response)
+    end
   end
   
   class NonOkResponseError < HttpRequestError
@@ -92,7 +115,7 @@ module AdvancedHttp
         get
       else
         # the response was unacceptable
-        raise response_to_execption(resp)
+        raise HttpRequestError.new_from(request, resp)
       end 
     end
 
@@ -154,7 +177,7 @@ module AdvancedHttp
         alt_resource.get_response
       else
         # something went wrong...
-        raise response_to_execption(resp)
+        raise HttpRequestError.new_from(req, resp)
       end
     end
 
@@ -178,7 +201,7 @@ module AdvancedHttp
       return resp if /^2/ === resp.code
       
       # something went wrong...
-      raise response_to_execption(resp)
+      raise HttpRequestError.new_from(req, resp)
     end
 
     # Returns the current effective URI for this resource.  The
@@ -266,22 +289,6 @@ module AdvancedHttp
 
     def auth_info(realm)
       auth_info_provider ? auth_info_provider.authentication_info(realm) : nil
-    end
-    
-    # Converts an HTTPResponse object into the appropriate exception
-    def response_to_execption(resp)
-      case resp.code
-      when /^2/
-        NonOkResponseError
-      when /^3/
-        HttpRequestRedirected
-      when /^4/
-        HttpClientError
-      when /^5/
-        HttpServerError
-      else
-        HttpRequestError
-      end.new("Response code: #{resp.code}")
     end
     
     def configure_request_from_options(request, options)
