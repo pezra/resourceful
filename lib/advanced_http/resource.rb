@@ -4,6 +4,8 @@ require 'net_http_auth_ext'
 require 'benchmark'
 require 'json'
 
+require 'addressable'
+
 module AdvancedHttp
   class HttpRequestError < Exception
     attr_reader :response, :request
@@ -88,14 +90,14 @@ module AdvancedHttp
     # appropriate.  If the final response is not a 200 OK this method
     # will raise an exception.  If successful an HTTPResponse will be
     # returned.
-    #
+    
     # Options 
     #
     #  +:accept+:: A MIME type, or array of MIME types, that are
     #    acceptable as the formats for the response.  Anything object
     #    that responds to +#to_str+ will work as a mime type.
     def get(options = {})
-      request = Net::HTTP::Get.new(effective_uri.request_uri)
+      request = Net::HTTP::Get.new(effective_uri.to_s)
       left_over_opts = configure_request_from_options(request, options)
       
       raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless left_over_opts.empty?
@@ -164,7 +166,7 @@ module AdvancedHttp
     #    acceptable as the formats for the response.  Anything object
     #    that responds to +#to_str+ will work as a mime type.
     def post(data, mime_type, options = {})
-      req = Net::HTTP::Post.new(effective_uri.request_uri)
+      req = Net::HTTP::Post.new(effective_uri.to_s)
       req['content-type'] = mime_type
       left_over_opts = configure_request_from_options(req, options)
       raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless left_over_opts.empty?
@@ -191,7 +193,7 @@ module AdvancedHttp
     #    acceptable as the formats for the response.  Anything object
     #    that responds to +#to_str+ will work as a mime type.
     def put(data, mime_type, options = {})
-      req = Net::HTTP::Put.new(effective_uri.request_uri)
+      req = Net::HTTP::Put.new(effective_uri.to_s)
       req['content-type'] = mime_type
       left_over_opts = configure_request_from_options(req, options)
       raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless left_over_opts.empty?
@@ -238,12 +240,12 @@ module AdvancedHttp
     
     # Sets the effective URI for this resource.
     def effective_uri=(new_effective_uri)
-      @effective_uri = new_effective_uri.nil? ? new_effective_uri : URI.parse(new_effective_uri)
+      @effective_uri = new_effective_uri.nil? ? new_effective_uri : Addressable::URI.parse(new_effective_uri)
     end
       
     def reset_uri(new_uri)
       @effective_uri = nil
-      @uri = URI.parse(new_uri)
+      @uri = Addressable::URI.parse(new_uri)
     end
     
     # makes an HTTP request against the server that hosts this resource and returns the HTTPResponse.
