@@ -4,7 +4,7 @@ require 'net_http_auth_ext'
 require 'benchmark'
 require 'json'
 
-require 'addressable'
+require 'addressable/uri'
 
 module AdvancedHttp
   class HttpRequestError < Exception
