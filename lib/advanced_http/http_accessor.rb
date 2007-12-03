@@ -43,8 +43,14 @@ module AdvancedHttp
     end
 
     # Returns a resource object representing the resource indicated
-    # +uri+.  A resource object will be created if necessary.
-    def resource(uri)
+    # by the specified URI.  A resource object will be created if necessary.
+    def resource(uri_or_name)
+      uri = if uri_or_name.kind_of?(Symbol)
+              named_uris[uri_or_name] 
+            else
+              uri_or_name
+            end
+      
       resource = Resource.new(uri, :auth_info => authentication_info_provider, :logger => logger)
       return resource unless canned_responses[uri]
       
@@ -53,6 +59,20 @@ module AdvancedHttp
       return s_resource
     end
     alias [] resource
+    
+    def named_uris
+      @@named_uris
+    end
+    
+    class << self
+      @@named_uris = Hash.new
+      # A Hash of named URIs.  Many methods in AdvancedHTTP that need a URI
+      # also take a name which they then resolve into a real URI using
+      # this Hash.
+      def named_uris
+        @@named_uris
+      end
+    end
     
     # Sets up a canned response for a particular HTTP request.  Once
     # this stub is configured all matching HTTP requests will return
@@ -69,5 +89,6 @@ module AdvancedHttp
     def canned_responses
       @canned_responses ||= {}
     end
+    
   end
 end

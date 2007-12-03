@@ -44,6 +44,20 @@ describe AdvancedHttp::HttpAccessor do
                                                :logger => @logger)
   end
 
+  it 'should provide access to name URIs registry from class' do
+    AdvancedHttp::HttpAccessor.named_uris.should be_instance_of(Hash)
+  end 
+  
+  it 'should provide access to named URIs registry from instance' do
+    @accessor.named_uris.should be_instance_of(Hash)
+  end 
+
+  it 'should URIs named in class level registry should be available in instance level registry' do
+    AdvancedHttp::HttpAccessor.named_uris[:test_foo] = 'http://test/foo'
+    
+    @accessor.named_uris[:test_foo].should == 'http://test/foo'
+  end 
+
   it 'should allow authentication information provider to be registered' do 
     @accessor.authentication_info_provider = mock('auth_info_provider')
   end 
@@ -67,6 +81,12 @@ describe AdvancedHttp::HttpAccessor do
     @accessor['http://www.example/'].effective_uri.should == URI.parse('http://www.example/')
   end 
 
+  it 'should be able to return a particular resource based on a URI name (#[])' do
+    @accessor.named_uris[:return_particular_resource_based_on_name] = 'http://www.example/'
+    
+    @accessor[:return_particular_resource_based_on_name].effective_uri.should == URI.parse('http://www.example/')
+  end 
+
   it 'should create resource if it does not already exist (#[])' do
     AdvancedHttp::Resource.expects(:new).returns(stub('resource'))
     @accessor['http://www.example/previously-unused-uri']
@@ -87,6 +107,13 @@ describe AdvancedHttp::HttpAccessor do
     @accessor.resource('http://www.example/').effective_uri.should == URI.parse('http://www.example/')
   end 
 
+  it 'should be able to return a particular resource based on a URI name (#[])' do
+    @accessor.named_uris[:return_particular_resource_based_on_name_non_square_bracket] = 'http://www.example/'
+    
+    @accessor[:return_particular_resource_based_on_name_non_square_bracket].effective_uri.should == URI.parse('http://www.example/')
+  end 
+
+  
   it 'should create resource if it does not already exist (#resource)' do
     AdvancedHttp::Resource.expects(:new).returns(stub('resource'))
     @accessor.resource('http://www.example/previously-unused-uri')
