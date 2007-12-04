@@ -15,7 +15,7 @@ describe AdvancedHttp::Resource do
   end
 
   it "should know it's URI" do
-    @resource.uri.should == URI.parse('http://www.example/foo')
+    @resource.uri.should == Addressable::URI.parse('http://www.example/foo')
   end 
   
   it 'should be creatable with a URI' do
@@ -42,14 +42,14 @@ describe AdvancedHttp::Resource do
   end 
   
   it 'should provide effective URI attribute' do
-    @resource.effective_uri.should == URI.parse('http://www.example/foo')
+    @resource.effective_uri.should == Addressable::URI.parse('http://www.example/foo')
   end 
   
   it 'should forget current effective URI upon reset' do
     @resource.send(:effective_uri=, 'http://www.example/bar')
-    @resource.effective_uri.should == URI.parse('http://www.example/bar')
+    @resource.effective_uri.should == Addressable::URI.parse('http://www.example/bar')
     @resource.reset
-    @resource.effective_uri.should == URI.parse('http://www.example/foo')
+    @resource.effective_uri.should == Addressable::URI.parse('http://www.example/foo')
   end 
   
   it 'should accept logger at initialize time' do
@@ -394,13 +394,13 @@ end
     it 'should not reset URI' do
       @resource.get
       
-      @resource.uri.should == URI.parse('http://www.example/foo')
+      @resource.uri.should == Addressable::URI.parse('http://www.example/foo')
     end 
 
     it 'should set effective URI' do
       @resource.get
       
-      @resource.effective_uri.should == URI.parse('http://www.example/bar')
+      @resource.effective_uri.should == Addressable::URI.parse('http://www.example/bar')
     end 
 
     it 'should return body of second response' do
@@ -429,7 +429,7 @@ describe AdvancedHttp::Resource, '#get (Permanent redirection)' do
 
   it 'should reset URI' do
     @resource.get
-    @resource.uri.should == URI.parse('http://www.example/bar')
+    @resource.uri.should == Addressable::URI.parse('http://www.example/bar')
   end 
   
   it 'should return body of second response' do

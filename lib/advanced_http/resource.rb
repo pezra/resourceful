@@ -97,7 +97,7 @@ module AdvancedHttp
     #    acceptable as the formats for the response.  Anything object
     #    that responds to +#to_str+ will work as a mime type.
     def get(options = {})
-      request = Net::HTTP::Get.new(effective_uri.to_s)
+      request = Net::HTTP::Get.new(effective_uri.path)
       left_over_opts = configure_request_from_options(request, options)
       
       raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless left_over_opts.empty?
@@ -166,7 +166,7 @@ module AdvancedHttp
     #    acceptable as the formats for the response.  Anything object
     #    that responds to +#to_str+ will work as a mime type.
     def post(data, mime_type, options = {})
-      req = Net::HTTP::Post.new(effective_uri.to_s)
+      req = Net::HTTP::Post.new(effective_uri.path)
       req['content-type'] = mime_type
       left_over_opts = configure_request_from_options(req, options)
       raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless left_over_opts.empty?
@@ -193,7 +193,7 @@ module AdvancedHttp
     #    acceptable as the formats for the response.  Anything object
     #    that responds to +#to_str+ will work as a mime type.
     def put(data, mime_type, options = {})
-      req = Net::HTTP::Put.new(effective_uri.to_s)
+      req = Net::HTTP::Put.new(effective_uri.path)
       req['content-type'] = mime_type
       left_over_opts = configure_request_from_options(req, options)
       raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless left_over_opts.empty?
@@ -240,7 +240,7 @@ module AdvancedHttp
     
     # Sets the effective URI for this resource.
     def effective_uri=(new_effective_uri)
-      @effective_uri = new_effective_uri.nil? ? new_effective_uri : Addressable::URI.parse(new_effective_uri)
+      @effective_uri = new_effective_uri.nil? ? nil : Addressable::URI.parse(new_effective_uri)
     end
       
     def reset_uri(new_uri)
