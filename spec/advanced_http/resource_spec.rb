@@ -350,6 +350,18 @@ describe AdvancedHttp::Resource, '#get' do
   end 
 
 end 
+describe AdvancedHttp::Resource, '#get (URI with query string' do
+  before do
+    @resource = AdvancedHttp::Resource.new('http://www.example/foo?q=test')
+    @response = stub('http_response', :body => 'I am foo', :code => '200')
+    @resource.stubs(:do_request).with(instance_of(Net::HTTP::Get)).returns(@response)
+  end
+  
+  it "should make get request to server" do
+    @resource.expects(:do_request).with{|req| req.path == 'http://www.example/foo?q=test'}.returns(@response)
+    @resource.get
+  end 
+end
 
 describe AdvancedHttp::Resource, '#get (unacceptable redirection)' do
   before do
@@ -385,8 +397,8 @@ end
     end
     
     it 'should follow redirect' do
-      @resource.expects(:do_request).with{|r| r.path == '/foo'}.returns(@redir_response)
-      @resource.expects(:do_request).with{|r| r.path == '/bar'}.returns(@ok_response)
+      @resource.expects(:do_request).with{|r| r.path == 'http://www.example/foo'}.returns(@redir_response)
+      @resource.expects(:do_request).with{|r| r.path == 'http://www.example/bar'}.returns(@ok_response)
       
       @resource.get
     end 
@@ -421,8 +433,8 @@ describe AdvancedHttp::Resource, '#get (Permanent redirection)' do
   end
   
   it 'should follow redirect' do
-    @resource.expects(:do_request).with{|r| r.path == '/foo'}.returns(@redir_response)
-    @resource.expects(:do_request).with{|r| r.path == '/bar'}.returns(@ok_response)
+    @resource.expects(:do_request).with{|r| r.path == 'http://www.example/foo'}.returns(@redir_response)
+    @resource.expects(:do_request).with{|r| r.path == 'http://www.example/bar'}.returns(@ok_response)
     
     @resource.get
   end 
@@ -449,12 +461,21 @@ describe AdvancedHttp::Resource, '#post' do
 
   it 'should make request to the effective_uri' do
     @resource.send(:effective_uri=, 'http://www.example/bar')
-    @resource.expects(:do_request).with{|r,_| r.path =='/bar'}.returns(@response)
+    @resource.expects(:do_request).with{|r,_| r.path =='http://www.example/bar'}.returns(@response)
 
     @resource.post("this=that", 'application/x-form-urlencoded')
   end 
 
-    it 'should raise argument error for unsupported options' do
+  it 'should include query string in request uri if there is one' do
+    @resource = AdvancedHttp::Resource.new('http://www.example/foo?q=test')
+    
+    @resource.expects(:do_request).with{|r,_| r.path =='http://www.example/foo?q=test'}.returns(@response)
+
+    @resource.post("this=that", 'application/x-form-urlencoded')
+  end 
+
+  
+  it 'should raise argument error for unsupported options' do
     lambda{
       @resource.post("this=that", 'application/x-form-urlencoded', :bar => 'foo')
     }.should raise_error(ArgumentError, "Unrecognized option(s): bar")
@@ -508,7 +529,7 @@ describe AdvancedHttp::Resource, '#post' do
     see_other_response = stub('http_see_other_response',  :body => 'ok_response', :code => '303')
     see_other_response.expects(:[]).with('location').returns('http://alt.example/bar')
     
-    @resource.expects(:do_request).with{|r,_| r.method == 'POST' and r.path == '/foo'}.returns(see_other_response)
+    @resource.expects(:do_request).with{|r,_| r.method == 'POST' and r.path == 'http://www.example/foo'}.returns(see_other_response)
 
     AdvancedHttp::Resource.expects(:new).with('http://alt.example/bar').
       returns(secondary_resource = mock('resource2'))
@@ -530,7 +551,13 @@ describe AdvancedHttp::Resource, '#put' do
   end
 
   it 'should make request to correct path' do
-    @resource.expects(:do_request).with{|r,_| r.path == '/foo'}.returns(@response)
+    @resource.expects(:do_request).with{|r,_| r.path == 'http://www.example/foo'}.returns(@response)
+    @resource.put("this=that", 'application/x-form-urlencoded')
+  end 
+
+  it 'should make request to correct path' do
+    @resource = AdvancedHttp::Resource.new('http://www.example/foo?q=test')
+    @resource.expects(:do_request).with{|r,_| r.path == 'http://www.example/foo?q=test'}.returns(@response)
     @resource.put("this=that", 'application/x-form-urlencoded')
   end 
 
@@ -559,7 +586,7 @@ describe AdvancedHttp::Resource, '#put' do
 
   it 'should make put request effective_uri' do
     @resource.send(:effective_uri=, 'http://www.example.com/bar')
-    @resource.expects(:do_request).with{|r,_| r.path == '/bar'}.returns(@response)
+    @resource.expects(:do_request).with{|r,_| r.path == 'http://www.example.com/bar'}.returns(@response)
     @resource.put("this=that", 'application/x-form-urlencoded')
   end 
   
