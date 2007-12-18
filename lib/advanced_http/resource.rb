@@ -2,7 +2,6 @@ require 'net/http'
 require 'uri'
 require 'net_http_auth_ext'
 require 'benchmark'
-require 'json'
 
 require 'addressable/uri'
 
@@ -139,12 +138,18 @@ module AdvancedHttp
     def get_body(options = {})
       options = options.dup
       parser = options.delete(:parse_as)
-      
-      raise ArgumentError, "Unrecognized parser type #{parser}" unless parser.nil? or parser == :json
-      
+            
       body = get(options).body
       
-      parser ? JSON.parse(body) : body
+      case parser
+      when nil
+        body
+      when :json
+        require 'json'
+        JSON.parse(body)
+      else        
+        raise ArgumentError, "Unrecognized parser type #{parser}" unless parser.nil? or parser == :json
+      end
     end
     
     # Deprecated.  Use `#get_body(:parse_as => :json)` instead.
