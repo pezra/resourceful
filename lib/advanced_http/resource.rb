@@ -9,17 +9,21 @@ module AdvancedHttp
   class HttpRequestError < Exception
     attr_reader :response, :request
     
-    def initialize(messge, request, response)
+    def initialize(message, request, response)
       @response = response
       @request = request
-      
+
       super(message)
     end
 
-    def self.new_from(request, response)
+    def self.new_from(request, response, resource)
+      msg = if request.method == 'GET'
+              "#{resource.effective_uri} #{response.message} (#{response.code})"
+            else
+              "Received #{response.message} in response to #{request.method} #{resource.effective_uri} (#{response.code})"
+            end
+      
       case response.code
-      when /^2/
-        NonOkResponseError
       when /^3/
         HttpRequestRedirected
       when /^4/
@@ -28,11 +32,8 @@ module AdvancedHttp
         HttpServerError
       else
         HttpRequestError
-      end.new("Response code: #{response.code}", request, response)
+      end.new(msg, request, response)
     end
-  end
-  
-  class NonOkResponseError < HttpRequestError
   end
   
   class HttpClientError < HttpRequestError
@@ -103,7 +104,7 @@ module AdvancedHttp
       
       resp = do_request(request)
       
-      return resp if resp.code == '200' # we are done
+      return resp if /^2/ =~ resp.code # we are done
       
       # additional action is required
       if '301' == resp.code
@@ -116,7 +117,7 @@ module AdvancedHttp
         get
       else
         # the response was unacceptable
-        raise HttpRequestError.new_from(request, resp)
+        raise HttpRequestError.new_from(request, resp, self)
       end 
     end
 
@@ -184,7 +185,7 @@ module AdvancedHttp
         alt_resource.get_response
       else
         # something went wrong...
-        raise HttpRequestError.new_from(req, resp)
+        raise HttpRequestError.new_from(req, resp, self)
       end
     end
 
@@ -208,7 +209,7 @@ module AdvancedHttp
       return resp if /^2/ === resp.code
       
       # something went wrong...
-      raise HttpRequestError.new_from(req, resp)
+      raise HttpRequestError.new_from(req, resp, self)
     end
 
     # Returns the current effective URI for this resource.  The
@@ -287,11 +288,12 @@ module AdvancedHttp
         end 
          
         resp
+        
       end
       
     rescue => e
       log(:debug, "  #{an_http_request.method} #{effective_uri} failed with #{e.message}")
-      raise e
+      raise e.class, e.message + " (while #{an_http_request.method} #{effective_uri})"
     end
 
     def auth_info(realm)

@@ -3,6 +3,39 @@ require Pathname(__FILE__).dirname + '../spec_helper'
 
 require 'advanced_http/resource'
 
+describe AdvancedHttp::HttpRequestError do 
+  before do
+    @request = stub('http-req', :method => 'GET')
+    @response = stub('http-resp', :code => '404', :message => 'Not Found')
+    @resource = stub('http_resource', :effective_uri => 'http://foo.example/bar')
+  end
+  
+  it 'should provide way to create exception from a request, response and resource ' do
+    AdvancedHttp::HttpRequestError.new_from(@request, @response, @resource).should be_instance_of(AdvancedHttp::HttpClientError)
+  end 
+  
+  it 'should construct a helpful message for GET failures' do
+    AdvancedHttp::HttpRequestError.new_from(@request, @response, @resource).message.should ==
+      'http://foo.example/bar Not Found (404)'
+  end 
+
+  it 'should construct a helpful message for POST failures' do
+    @request.stubs(:method).returns('POST')
+    @response.stubs(:message).returns('Hello There')
+                   
+    AdvancedHttp::HttpRequestError.new_from(@request, @response, @resource).message.should ==
+      'Received Hello There in response to POST http://foo.example/bar (404)'
+  end 
+
+  it 'should construct a helpful message for PUT failures' do
+    @request.stubs(:method).returns('PUT')
+    @response.stubs(:message).returns('Hello There')
+                   
+    AdvancedHttp::HttpRequestError.new_from(@request, @response, @resource).message.should ==
+      'Received Hello There in response to PUT http://foo.example/bar (404)'
+  end 
+end
+
 describe AdvancedHttp::Resource, 'init' do
   it 'should be creatable with a URI' do
     AdvancedHttp::Resource.new('http://www.example/foo')
@@ -16,7 +49,7 @@ describe AdvancedHttp::Resource do
 
   it "should know it's URI" do
     @resource.uri.should == Addressable::URI.parse('http://www.example/foo')
-  end 
+  end
   
   it 'should be creatable with a URI' do
     AdvancedHttp::Resource.new('http://www.example/foo')
@@ -108,6 +141,13 @@ describe AdvancedHttp::Resource, '#do_request (non-auth)' do
     @resource.send(:do_request, @request)        
   end 
   
+  it 'should attach request information to exceptions raised' do
+    @http_conn.stubs(:request).raises(SocketError.new('getaddreinfo: Name or service not known'))
+    
+    lambda {
+      @resource.send(:do_request, @request)        
+    }.should raise_error(SocketError, 'getaddreinfo: Name or service not known (while GET http://www.example/foo)')
+  end 
 end
 
 describe AdvancedHttp::Resource, '#do_request (basic auth)' do
@@ -280,7 +320,7 @@ end
 describe AdvancedHttp::Resource, '#get' do
   before do
     @resource = AdvancedHttp::Resource.new('http://www.example/foo')
-    @response = stub('http_response', :body => 'I am foo', :code => '200')
+    @response = stub('http_response', :body => 'I am foo', :code => '200', :message => 'OK')
     @resource.stubs(:do_request).with(instance_of(Net::HTTP::Get)).returns(@response)
   end
 
@@ -293,11 +333,11 @@ describe AdvancedHttp::Resource, '#get' do
     @resource.get
   end 
   
-  it 'should raise error for all 2xx response codes except 200' do
+  it 'should not raise error for any 2xx response code' do
     @response.expects(:code).at_least_once.returns('202')
     lambda{
       @resource.get
-    }.should raise_error(AdvancedHttp::NonOkResponseError)
+    }.should_not raise_error
   end 
   
   it 'should raise client error for 4xx response codes' do
@@ -349,8 +389,12 @@ describe AdvancedHttp::Resource, '#get' do
     }.should raise_error(ArgumentError, /Unrecognized option\(s\): (?:my_option, foo)|(?:foo, my_option)/)
   end 
 
+  it 'should raise reasonable exception when hostname lookup fails' do
+    
+  end 
+  
 end 
-describe AdvancedHttp::Resource, '#get (URI with query string' do
+describe AdvancedHttp::Resource, '#get (URI with query string)' do
   before do
     @resource = AdvancedHttp::Resource.new('http://www.example/foo?q=test')
     @response = stub('http_response', :body => 'I am foo', :code => '200')
@@ -366,7 +410,7 @@ end
 describe AdvancedHttp::Resource, '#get (unacceptable redirection)' do
   before do
     @resource = AdvancedHttp::Resource.new('http://www.example/foo')
-    @redir_response = stub('http_response', :code => '300')
+    @redir_response = stub('http_response', :code => '300', :message => 'Multiple Choices')
     @redir_response.stubs(:[]).with('location').returns('http://www.example/bar')
     
     @resource.stubs(:do_request).returns(@redir_response)
@@ -453,7 +497,7 @@ end
 describe AdvancedHttp::Resource, '#post' do
   before do
     @resource = AdvancedHttp::Resource.new('http://www.example/foo')
-    @response = stub('http_response', :is_a? => false, :body => 'Created', :code => '201')
+    @response = stub('http_response', :is_a? => false, :body => 'Created', :code => '201', :message => 'Created')
     @response.stubs(:[]).with('location').returns('http://www.example/foo/42')
     
     @resource.stubs(:do_request).returns(@response)
@@ -544,7 +588,7 @@ end
 describe AdvancedHttp::Resource, '#put' do
   before do
     @resource = AdvancedHttp::Resource.new('http://www.example/foo')
-    @response = stub('http_response', :is_a? => false, :body => 'Created', :code => '201')
+    @response = stub('http_response', :is_a? => false, :body => 'Created', :code => '201', :message => 'Created')
     @response.stubs(:[]).with('location').returns('http://www.example/foo/42')
     
     @resource.stubs(:do_request).returns(@response)
