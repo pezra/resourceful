@@ -2,48 +2,10 @@ require 'net/http'
 require 'uri'
 require 'net_http_auth_ext'
 require 'benchmark'
-
 require 'addressable/uri'
+require 'advanced_http/exceptions'
 
 module AdvancedHttp
-  class HttpRequestError < Exception
-    attr_reader :response, :request
-    
-    def initialize(message, request, response)
-      @response = response
-      @request = request
-
-      super(message)
-    end
-
-    def self.new_from(request, response, resource)
-      msg = if request.method == 'GET'
-              "#{resource.effective_uri} #{response.message} (#{response.code})"
-            else
-              "Received #{response.message} in response to #{request.method} #{resource.effective_uri} (#{response.code})"
-            end
-      
-      case response.code
-      when /^3/
-        HttpRequestRedirected
-      when /^4/
-        HttpClientError
-      when /^5/
-        HttpServerError
-      else
-        HttpRequestError
-      end.new(msg, request, response)
-    end
-  end
-  
-  class HttpClientError < HttpRequestError
-  end
-  
-  class HttpServerError < HttpRequestError
-  end
-
-  class HttpRequestRedirected < HttpRequestError
-  end
 
   # Interface for an object that can provide user names and passwords
   # for HTTP authentication.
@@ -87,8 +49,7 @@ module AdvancedHttp
     # Gets a representation of the resource this object represents and
     # returns the representation and associated meta-data (HTTP
     # headers, etc).  This method will follow redirect when
-    # appropriate.  If the final response is not a 200 OK this method
-    # will raise an exception.  If successful an HTTPResponse will be
+    # appropriate. If successful an HTTPResponse will be
     # returned.
     
     # Options 

@@ -3,38 +3,6 @@ require Pathname(__FILE__).dirname + '../spec_helper'
 
 require 'advanced_http/resource'
 
-describe AdvancedHttp::HttpRequestError do 
-  before do
-    @request = stub('http-req', :method => 'GET')
-    @response = stub('http-resp', :code => '404', :message => 'Not Found')
-    @resource = stub('http_resource', :effective_uri => 'http://foo.example/bar')
-  end
-  
-  it 'should provide way to create exception from a request, response and resource ' do
-    AdvancedHttp::HttpRequestError.new_from(@request, @response, @resource).should be_instance_of(AdvancedHttp::HttpClientError)
-  end 
-  
-  it 'should construct a helpful message for GET failures' do
-    AdvancedHttp::HttpRequestError.new_from(@request, @response, @resource).message.should ==
-      'http://foo.example/bar Not Found (404)'
-  end 
-
-  it 'should construct a helpful message for POST failures' do
-    @request.stubs(:method).returns('POST')
-    @response.stubs(:message).returns('Hello There')
-                   
-    AdvancedHttp::HttpRequestError.new_from(@request, @response, @resource).message.should ==
-      'Received Hello There in response to POST http://foo.example/bar (404)'
-  end 
-
-  it 'should construct a helpful message for PUT failures' do
-    @request.stubs(:method).returns('PUT')
-    @response.stubs(:message).returns('Hello There')
-                   
-    AdvancedHttp::HttpRequestError.new_from(@request, @response, @resource).message.should ==
-      'Received Hello There in response to PUT http://foo.example/bar (404)'
-  end 
-end
 
 describe AdvancedHttp::Resource, 'init' do
   it 'should be creatable with a URI' do
@@ -422,7 +390,7 @@ describe AdvancedHttp::Resource, '#get (unacceptable redirection)' do
       
       lambda{
         @resource.get
-      }.should raise_error(AdvancedHttp::HttpRequestRedirected)
+      }.should raise_error(AdvancedHttp::HttpRedirectionError)
       
     end 
   end
@@ -566,7 +534,7 @@ describe AdvancedHttp::Resource, '#post' do
     @response.expects(:code).at_least_once.returns('301')
     lambda{
       @resource.post("this=that", 'application/x-form-urlencoded')
-    }.should raise_error(AdvancedHttp::HttpRequestRedirected)    
+    }.should raise_error(AdvancedHttp::HttpRedirectionError)    
   end 
 
   it 'should return response to get against redirect target for 303 response' do
@@ -656,7 +624,7 @@ describe AdvancedHttp::Resource, '#put' do
     @response.expects(:code).at_least_once.returns('301')
     lambda{
       @resource.put("this=that", 'application/x-form-urlencoded')
-    }.should raise_error(AdvancedHttp::HttpRequestRedirected)    
+    }.should raise_error(AdvancedHttp::HttpRedirectionError)    
   end 
 
 end
