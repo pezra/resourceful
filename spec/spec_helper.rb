@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'pathname'
 require 'spec'
+require 'pp'
 
 $LOAD_PATH << Pathname(__FILE__).dirname + "../lib"
 
