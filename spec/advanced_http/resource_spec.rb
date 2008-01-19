@@ -5,14 +5,19 @@ require 'advanced_http/resource'
 
 
 describe AdvancedHttp::Resource, 'init' do
-  it 'should be creatable with a URI' do
-    AdvancedHttp::Resource.new('http://www.example/foo')
+  it 'should require an owner and a URI' do
+    accessor = stub('http_accessor')
+    AdvancedHttp::Resource.new(accessor, 'http://www.example/foo')
   end   
+  
 end
 
 describe AdvancedHttp::Resource do
   before do
-    @resource = AdvancedHttp::Resource.new('http://www.example/foo')
+    @logger = stub('logger', :info => false, :debug => false)
+    @auth_manager = stub('auth_manager', :auth_info_available_for? => false)
+    @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager)
+    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
   end
 
   it "should know it's URI" do
@@ -20,12 +25,12 @@ describe AdvancedHttp::Resource do
   end
   
   it 'should be creatable with a URI' do
-    AdvancedHttp::Resource.new('http://www.example/foo')
+    AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
   end 
 
   it 'should execute request against remote server' do
-    req = mock("http_req", :method => 'GET')
-    http_conn = mock('http_conn')
+    req = stub("http_req", :method => 'GET')
+    http_conn = stub('http_conn')
     response = stub('response', :code => '200')
     Net::HTTP.expects(:start).with('www.example', 80).yields(http_conn).returns(response)
     http_conn.expects(:request).with(req, nil).returns(response)
@@ -34,7 +39,7 @@ describe AdvancedHttp::Resource do
   end 
 
   it 'should send body to remote server if provided' do
-    req = mock("http_req", :method => 'POST')
+    req = stub("http_req", :method => 'POST')
     http_conn = mock('http_conn')
     Net::HTTP.expects(:start).with('www.example', 80).yields(http_conn).returns(response = stub('response', :code => '201'))
     http_conn.expects(:request).with(req, "body").returns(response)
@@ -53,61 +58,23 @@ describe AdvancedHttp::Resource do
     @resource.effective_uri.should == Addressable::URI.parse('http://www.example/foo')
   end 
   
-  it 'should accept logger at initialize time' do
-    AdvancedHttp::Resource.new('http://www.example/foo', :logger => stub('logger', :debug))
-  end 
-  
-  it 'should #log should pass :info messages through to logger object' do
-    resource = AdvancedHttp::Resource.new('http://www.example/foo', :logger => logger = stub('logger', :debug))
-    
-    logger.expects(:info).with('hello')
-    
-    resource.send(:log, :info, 'hello')
-  end 
-
-  it 'should #log should pass :debug messages through to logger object' do
-    resource = AdvancedHttp::Resource.new('http://www.example/foo', :logger => logger = stub('logger', :debug))
-    
-    logger.expects(:debug).with('hello')
-    
-    resource.send(:log, :debug, 'hello')
-  end 
-  
-  it 'should accept auth_info init option' do
-    AdvancedHttp::Resource.new('http://www.example/foo', :auth_info => mock('auth_info_provider'))
-  end 
-  
-  it 'should raise argument error if unrecognized options are passed to init' do
-    lambda {
-      AdvancedHttp::Resource.new('http://www.example/foo', :foo => 'oof')
-    }.should raise_error(ArgumentError)
-  end 
-
 end 
 
 describe AdvancedHttp::Resource, '#do_request (non-auth)' do
   before do
-    @resource = AdvancedHttp::Resource.new('http://www.example/foo')
+    @logger = stub('logger', :info => false, :debug => false)
+    @auth_manager = stub('auth_manager', :auth_info_available_for? => false)
+    @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager)
+
+    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
     @ok_response = stub('ok_response', :code => '200')
     
-    @http_conn = mock('http_conn')
+    @http_conn = stub('http_conn')
     Net::HTTP.expects(:start).with('www.example', 80).yields(@http_conn)
     @http_conn.stubs(:request).returns(@ok_response)
 
     @request = stub("http_req", :method => 'GET', :basic_auth => nil)
   end
-  
-  it 'should include response code in log message' do
-    @resource.expects(:log).with(:info, regexp_matches(/\(200\)/))
-    
-    @resource.send(:do_request, @request)    
-  end 
-  
-  it 'should include timing information in log message' do
-    @resource.expects(:log).with(:info, regexp_matches(/\(0.000 sec\)/))
-    
-    @resource.send(:do_request, @request)        
-  end 
   
   it 'should attach request information to exceptions raised' do
     @http_conn.stubs(:request).raises(SocketError.new('getaddreinfo: Name or service not known'))
@@ -118,10 +85,13 @@ describe AdvancedHttp::Resource, '#do_request (non-auth)' do
   end 
 end
 
-describe AdvancedHttp::Resource, '#do_request (basic auth)' do
+describe AdvancedHttp::Resource, '#do_request (auth)' do
   before do
-    @auth_provider = stub('auth_provider', :authentication_info => ['me', 'mine'])
-    @resource = AdvancedHttp::Resource.new('http://www.example/foo', :auth_info => @auth_provider)
+    @logger = stub('logger', :info => false, :debug => false)
+    @auth_manager = stub('auth_manager', :auth_info_available_for? => false, :register_challenge => nil, :set_auth_info => nil)
+    @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager)
+
+    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
     
     @unauth_response = stub('unauth_response', :code => '401', :digest_auth_allowed? => false, 
                             :basic_auth_allowed? => true, :realm => 'test_realm')
@@ -134,7 +104,7 @@ describe AdvancedHttp::Resource, '#do_request (basic auth)' do
     @request = stub("http_req", :method => 'GET', :basic_auth => nil, :authentication_scheme => 'basic', :authentication_realm => 'test_realm')
   end
   
-  it 'should not include body in authenticated retry' do
+  it 'should not include body in authenticated retry (because it is already stored on the request object from the first time around)' do
     @http_conn.expects(:request).with(anything, 'testing').once.returns(@unauth_response)
     @http_conn.expects(:request).with(anything).once.returns(@ok_response)
 
@@ -147,85 +117,48 @@ describe AdvancedHttp::Resource, '#do_request (basic auth)' do
     @resource.send(:do_request, @request)    
   end 
 
-  it 'should set basic auth on request before retry' do
+  it 'should set auth info on request before retry' do
     @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
-    @request.expects(:basic_auth).with('me', 'mine')
+    @auth_manager.expects(:set_auth_info).once.with {|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}
+ 
+    @resource.send(:do_request, @request)    
+  end 
+
+  it 'should register challenge if initial response is unauthorized' do 
+    @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
+    @auth_manager.expects(:register_challenge).with(@unauth_response)
  
     @resource.send(:do_request, @request)    
   end 
   
-  it 'should look up authentication information' do
-    @auth_provider.expects(:authentication_info).with('test_realm').returns(['me', 'emin'])
-
-    @resource.send(:do_request, @request)    
-  end 
-  
   it 'should log the retry' do
-    @resource.expects(:log).with(:info, regexp_matches(/(basic_auth: realm='test_realm', account='me')/))
-    @resource.expects(:log).with(:info, anything)
+    @logger.expects(:info).times(2)
+    
     @resource.send(:do_request, @request)    
   end   
   
-  it 'should warn log if credentials are missing' do
-    @auth_provider.expects(:authentication_info).returns(nil)
-
-    @resource.expects(:log).with(:info, anything)
-    @resource.expects(:log).with(:warn, "    No credentials known for test_realm")
-    @resource.send(:do_request, @request)    
-  end 
-  
-  it 'should set Accept request header if :accept options is passed' do
-  
-  end 
-end 
-
-describe AdvancedHttp::Resource, '#do_request (digest auth)' do
-  before do
-    @auth_provider = stub('auth_provider', :authentication_info => ['me', 'mine'])
-    @resource = AdvancedHttp::Resource.new('http://www.example/foo', :auth_info => @auth_provider)
+  it 'should set auth info before request if it is available' do
+    @http_conn.expects(:request).times(1).returns(@ok_response)
+    @auth_manager.expects(:auth_info_available_for?).with(Addressable::URI.parse('http://www.example/foo')).returns(true)
+    @auth_manager.expects(:set_auth_info).once.with {|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}
     
-    @digest_challenge = stub('digest_challenge')
-    @unauth_response = stub('unauth_response', :code => '401', :digest_auth_allowed? => true, 
-                            :basic_auth_allowed? => false, :realm => 'test_realm', 
-                            :digest_challenge => @digest_challenge)
-    @ok_response = stub('ok_response', :code => '200')
+    @resource.send(:do_request, @request)    
+  end 
+
+  it 'should set auth info before request if it is available' do
+    @http_conn.expects(:request).times(1).returns(@ok_response)
+    @auth_manager.expects(:auth_info_available_for?).with(Addressable::URI.parse('http://www.example/foo')).returns(true)
+    @auth_manager.expects(:set_auth_info).once.with {|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}
     
-    @http_conn = mock('http_conn')
-    Net::HTTP.expects(:start).with('www.example', 80).yields(@http_conn)
-    @http_conn.stubs(:request).returns(@unauth_response, @ok_response)
-
-    @request = stub("http_req", :method => 'GET', :digest_auth => nil, :authentication_scheme => 'digest', :authentication_realm => 'test_realm')
-  end
-  
-  it 'should retry unauthorized requests with auth if possible' do
-    @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
- 
-    @resource.send(:do_request, @request)    
-  end 
-
-  it 'should set basic auth on request before retry' do
-    @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
-    @request.expects(:digest_auth).with('me', 'mine', @digest_challenge)
- 
-    @resource.send(:do_request, @request)    
-  end 
-  
-  it 'should look up authentication information' do
-    @auth_provider.expects(:authentication_info).with('test_realm').returns(['me', 'emin'])
-
-    @resource.send(:do_request, @request)    
-  end 
-  
-  it 'should log the retry' do
-    @resource.expects(:log).with(:info, regexp_matches(/(digest_auth: realm='test_realm', account='me')/i))
-    @resource.expects(:log).with(:info, anything)
     @resource.send(:do_request, @request)    
   end 
 end 
 
 describe AdvancedHttp::Resource, '#get_body' do
   before do
-    @resource = AdvancedHttp::Resource.new('http://www.example/foo')
+    @accessor = stub('http_accessor')
+
+    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
     @response = stub('http_response', :body => 'I am foo', :code => '200')
     @resource.stubs(:do_request).with(instance_of(Net::HTTP::Get)).returns(@response)
   end
@@ -271,7 +204,9 @@ end
 
 describe AdvancedHttp::Resource, '#get_json_body' do
   before do
-    @resource = AdvancedHttp::Resource.new('http://www.example/foo')
+    @accessor = stub('http_accessor')
+
+    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
   end
   
   it 'should call get body with parse_as option set to :json' do   
@@ -287,7 +222,8 @@ end
 
 describe AdvancedHttp::Resource, '#get' do
   before do
-    @resource = AdvancedHttp::Resource.new('http://www.example/foo')
+    @accessor = stub('http_accessor')
+    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
     @response = stub('http_response', :body => 'I am foo', :code => '200', :message => 'OK')
     @resource.stubs(:do_request).with(instance_of(Net::HTTP::Get)).returns(@response)
   end
@@ -364,7 +300,8 @@ describe AdvancedHttp::Resource, '#get' do
 end 
 describe AdvancedHttp::Resource, '#get (URI with query string)' do
   before do
-    @resource = AdvancedHttp::Resource.new('http://www.example/foo?q=test')
+    @accessor = stub('http_accessor')
+    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo?q=test')
     @response = stub('http_response', :body => 'I am foo', :code => '200')
     @resource.stubs(:do_request).with(instance_of(Net::HTTP::Get)).returns(@response)
   end
@@ -377,7 +314,8 @@ end
 
 describe AdvancedHttp::Resource, '#get (unacceptable redirection)' do
   before do
-    @resource = AdvancedHttp::Resource.new('http://www.example/foo')
+    @accessor = stub('http_accessor')
+    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
     @redir_response = stub('http_response', :code => '300', :message => 'Multiple Choices')
     @redir_response.stubs(:[]).with('location').returns('http://www.example/bar')
     
@@ -400,7 +338,8 @@ end
 [['307', 'Temporary'], ['302', 'Found']].each do |code, message|
   describe AdvancedHttp::Resource, "#get (#{message} redirection)" do
     before do
-      @resource = AdvancedHttp::Resource.new('http://www.example/foo')
+      @accessor = stub('http_accessor')
+      @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
       @redir_response = stub('http_response', :code => code)
       @redir_response.stubs(:[]).with('location').returns('http://www.example/bar')
       @ok_response = stub('http_response', :code => '200', :body => "I am foo (bar)") 
@@ -436,7 +375,8 @@ end
 
 describe AdvancedHttp::Resource, '#get (Permanent redirection)' do
   before do
-    @resource = AdvancedHttp::Resource.new('http://www.example/foo')
+    @accessor = stub('http_accessor')
+    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
     @redir_response = stub('http_response', :code => '301')
     @redir_response.stubs(:[]).with('location').returns('http://www.example/bar')
     @ok_response = stub('http_response', :code => '200', :body => "I am foo (bar)") 
@@ -464,7 +404,8 @@ end
 
 describe AdvancedHttp::Resource, '#post' do
   before do
-    @resource = AdvancedHttp::Resource.new('http://www.example/foo')
+    @accessor = stub('http_accessor')
+    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
     @response = stub('http_response', :is_a? => false, :body => 'Created', :code => '201', :message => 'Created')
     @response.stubs(:[]).with('location').returns('http://www.example/foo/42')
     
@@ -479,7 +420,7 @@ describe AdvancedHttp::Resource, '#post' do
   end 
 
   it 'should include query string in request uri if there is one' do
-    @resource = AdvancedHttp::Resource.new('http://www.example/foo?q=test')
+    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo?q=test')
     
     @resource.expects(:do_request).with{|r,_| r.path =='http://www.example/foo?q=test'}.returns(@response)
 
@@ -555,7 +496,11 @@ end
 
 describe AdvancedHttp::Resource, '#put' do
   before do
-    @resource = AdvancedHttp::Resource.new('http://www.example/foo')
+    @logger = stub('logger', :info => false, :debug => false)
+    @auth_manager = stub('auth_manager', :auth_info_available_for? => false)
+    @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager)
+
+    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
     @response = stub('http_response', :is_a? => false, :body => 'Created', :code => '201', :message => 'Created')
     @response.stubs(:[]).with('location').returns('http://www.example/foo/42')
     
@@ -568,7 +513,7 @@ describe AdvancedHttp::Resource, '#put' do
   end 
 
   it 'should make request to correct path' do
-    @resource = AdvancedHttp::Resource.new('http://www.example/foo?q=test')
+    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo?q=test')
     @resource.expects(:do_request).with{|r,_| r.path == 'http://www.example/foo?q=test'}.returns(@response)
     @resource.put("this=that", 'application/x-form-urlencoded')
   end 

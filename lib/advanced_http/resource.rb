@@ -23,26 +23,13 @@ module AdvancedHttp
   # Web.  It is identified by one or more URIs and allows the normal
   # HTTP methods to be performed on the resource.
   class Resource
-    attr_reader :uri
+    attr_reader :uri, :owner
     
-    # Initialize a newly created resource object.  Valid options:
-    #
-    #  +:logger+:: A Logger object tho which messages should be
-    #     logged.  No logging is done unless this option is set.
-    #     Errors are not logged but are raised.  If you want errors
-    #     logged you must do it at the application level.
-    #
-    #  +:auth_info+:: An object which responds to
-    #     +#authentication_info(realm)+ with an array, +[account,
-    #     password]+ for that realm, or nil if the realm is not recognized.
-    def initialize(uri, options = {})
-      options = options.clone
-      
-      @logger = options.delete(:logger)
-      @auth_info_provider = options.delete(:auth_info)
-      
-      raise ArgumentError, "Unknown option(s): #{options.keys.join(', ')}" unless options.empty?
-      
+    # Initialize a newly created resource object.  +owner+ is the
+    # HttpAccessor that owns the new resource.
+    def initialize(owner, uri)
+      @owner = owner
+            
       reset_uri(uri)
     end
     
@@ -51,7 +38,7 @@ module AdvancedHttp
     # headers, etc).  This method will follow redirect when
     # appropriate. If successful an HTTPResponse will be
     # returned.
-    
+    #
     # Options 
     #
     #  +:accept+:: A MIME type, or array of MIME types, that are
@@ -190,19 +177,10 @@ module AdvancedHttp
     
     protected
 
-    attr_reader :logger, :auth_info_provider
+    attr_reader :auth_info_provider
     
-    # levels: :info, :debug.
-    def log(level, message)
-      return unless logger
-
-      case level
-      when :info
-        logger.info(message)
-      when :debug
-        logger.debug(message)
-      end
-        
+    def logger
+      owner.logger
     end
     
     # Sets the effective URI for this resource.
@@ -215,48 +193,56 @@ module AdvancedHttp
       @uri = Addressable::URI.parse(new_uri)
     end
     
-    # makes an HTTP request against the server that hosts this resource and returns the HTTPResponse.
+    # makes an HTTP request against the server that hosts this
+    # resource and returns the HTTPResponse.
     def do_request(an_http_request, body = nil)
       Net::HTTP.start(effective_uri.host, effective_uri.port) do |c|
+        
+        set_auth_info(an_http_request) if auth_info_available?
         
         resp = nil
         bm = Benchmark.measure do 
           resp = c.request(an_http_request, body)
         end
-        log(:info, "  #{an_http_request.method} #{effective_uri} (#{resp.code}) (#{format('%0.3f', bm.real)} sec)")
+        logger.info do
+          msg = "#{an_http_request.method} #{effective_uri}"
+          msg << " (#{an_http_request.authentication_scheme.downcase}_auth: realm='#{an_http_request.authentication_realm}', account='#{an_http_request.authentication_username}')" if an_http_request.authenticating?
+          msg << " (#{format('%0.3f', bm.real)} sec)"
+        end      
         
         if '401' == resp.code          
-          #unless creds = auth_info(resp.realm)
-          unless creds = auth_info(resp.realm)
-            log(:warn, "    No credentials known for #{resp.realm}")
-            return resp
-          end
-          # Retry with authorization 
-          account, password = creds
-          if resp.digest_auth_allowed?
-            auth_type = 'digest'
-            an_http_request.digest_auth(account, password, resp.digest_challenge)
-          elsif resp.basic_auth_allowed?
-            auth_type = 'basic'
-            an_http_request.basic_auth(account, password)
-          else
-            return resp  # don't know what to do...
-          end
+          auth_manager.register_challenge(resp)
+          set_auth_info(an_http_request)
           bm = Benchmark.measure do 
             resp = c.request(an_http_request)
           end
-          log(:info, "  #{an_http_request.method} #{effective_uri} (#{an_http_request.authentication_scheme.downcase}_auth: realm='#{an_http_request.authentication_realm}', account='#{creds.first}') (#{resp.code}) (#{format('%0.3f', bm.real)} sec)")
+          logger.info do
+            msg = "#{an_http_request.method} #{effective_uri}"
+            msg << " (#{an_http_request.authentication_scheme.downcase}_auth: realm='#{an_http_request.authentication_realm}', account='#{an_http_request.authentication_username}')"
+            msg << " (#{format('%0.3f', bm.real)} sec)"
+          end      
         end 
          
         resp
-        
       end
-      
+
     rescue => e
-      log(:debug, "  #{an_http_request.method} #{effective_uri} failed with #{e.message}")
+      logger.debug{"  #{an_http_request.method} #{effective_uri} failed with #{e.message}"}
       raise e.class, e.message + " (while #{an_http_request.method} #{effective_uri})"
     end
 
+    def auth_manager
+      owner.auth_manager
+    end
+    
+    def auth_info_available?
+      auth_manager.auth_info_available_for?(effective_uri)
+    end
+
+    def set_auth_info(http_request)
+      auth_manager.set_auth_info(http_request, effective_uri)
+    end    
+    
     def auth_info(realm)
       auth_info_provider ? auth_info_provider.authentication_info(realm) : nil
     end
