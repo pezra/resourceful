@@ -7,7 +7,17 @@ module AdvancedHttp
   # provided by the AdvancedHttp library.  Conceptually this object
   # acts a collection of all the resources available via HTTP.
   class HttpAccessor
-   
+    
+    # This is an imitation Logger used when no real logger is
+    # registered.  This allows most of the code to assume that there
+    # is always a logger available, which significantly improved the
+    # readability of the logging related code.
+    class BitBucketLogger
+      def warn(*args); end
+      def info(*args); end
+      def debug(*args); end
+    end
+    
     # The authentication_info_provider which is used to acquire
     # the account and password to use if a request required
     # authentication.
@@ -35,7 +45,7 @@ module AdvancedHttp
       options = options.clone
       
       self.authentication_info_provider = options.delete(:authentication_info_provider)
-      self.logger = options.delete(:logger)
+      self.logger = options.delete(:logger) || BitBucketLogger.new
       
       raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless options.empty?
       
