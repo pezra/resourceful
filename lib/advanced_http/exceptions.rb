@@ -37,4 +37,19 @@ module AdvancedHttp
 
   class HttpRedirectionError < HttpRequestError
   end
+
+  # Used to indicate that no authentication credentials were found
+  # realm in which the requested resource resides.
+  class NoAuthenticationCredentialsError < Exception
+  end
+  
+  # Raised to indicate that none of the authentication scheme proposed
+  # by the server are supported.
+  class UnsupportedAuthenticationSchemeError < Exception
+  end
+  
+  # Used to indicate that no authentication realm information is
+  # available for the resource in question
+  class NoAuthenticationRealmInformationError < Exception
+  end
 end

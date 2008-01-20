@@ -1,4 +1,6 @@
 require 'advanced_http/resource'
+require 'advanced_http/authentication_manager'
+
 require 'advanced_http/stubbed_resource_proxy'
 
 module AdvancedHttp
@@ -17,12 +19,15 @@ module AdvancedHttp
       def info(*args); end
       def debug(*args); end
     end
-    
-    # The authentication_info_provider which is used to acquire
-    # the account and password to use if a request required
-    # authentication.
-    attr_accessor :authentication_info_provider
 
+    # This is an imitation authentication information provider that
+    # always response with nil.  This allows code to assume that there
+    # is always an authentication information provider, which
+    # significantly improves the readability of the code
+    class NoOpAuthenticationInfoProvider
+      def authentication_info(realm); nil; end
+    end
+    
     # A logger object to which messages about the activities of this
     # object will be written.  This should be an object that responds
     # to +#info(message)+ and +#debug(message)+.  
@@ -30,6 +35,8 @@ module AdvancedHttp
     # Errors will not be logged.  Instead an exception will be raised
     # and the application code should log it if appropriate.
     attr_accessor :logger
+    
+    attr_reader :auth_manager
     
     # Initializes a new HttpAccessor.  Valid options:
     #
@@ -44,12 +51,11 @@ module AdvancedHttp
     def initialize(options = {})
       options = options.clone
       
-      self.authentication_info_provider = options.delete(:authentication_info_provider)
       self.logger = options.delete(:logger) || BitBucketLogger.new
       
-      raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless options.empty?
+      @auth_manager = AuthenticationManager.new(options.delete(:authentication_info_provider) || NoOpAuthenticationInfoProvider.new)
       
-      self.logger.debug("No authentication information provided.") if logger and not authentication_info_provider
+      raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless options.empty?
     end
 
     # Returns a resource object representing the resource indicated
@@ -61,7 +67,7 @@ module AdvancedHttp
               uri_or_name
             end
       
-      resource = Resource.new(uri, :auth_info => authentication_info_provider, :logger => logger)
+      resource = Resource.new(self, uri)
       return resource unless canned_responses[uri]
       
       # we have some stubbing todo 

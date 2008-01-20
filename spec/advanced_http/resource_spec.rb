@@ -88,7 +88,7 @@ end
 describe AdvancedHttp::Resource, '#do_request (auth)' do
   before do
     @logger = stub('logger', :info => false, :debug => false)
-    @auth_manager = stub('auth_manager', :auth_info_available_for? => false, :register_challenge => nil, :set_auth_info => nil)
+    @auth_manager = stub('auth_manager', :auth_info_available_for? => false, :register_challenge => nil, :credentials_for => 'Digest foo=bar')
     @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager)
 
     @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
@@ -101,7 +101,7 @@ describe AdvancedHttp::Resource, '#do_request (auth)' do
     Net::HTTP.stubs(:start).with('www.example', 80).yields(@http_conn)
     @http_conn.stubs(:request).returns(@unauth_response, @ok_response)
 
-    @request = stub("http_req", :method => 'GET', :basic_auth => nil, :authentication_scheme => 'basic', :authentication_realm => 'test_realm')
+    @request = stub("http_req", :method => 'GET', :basic_auth => nil, :authentication_scheme => 'basic', :authentication_realm => 'test_realm', :[]= => nil)
   end
   
   it 'should not include body in authenticated retry (because it is already stored on the request object from the first time around)' do
@@ -119,14 +119,16 @@ describe AdvancedHttp::Resource, '#do_request (auth)' do
 
   it 'should set auth info on request before retry' do
     @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
-    @auth_manager.expects(:set_auth_info).once.with {|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}
- 
+    @auth_manager.expects(:credentials_for).once.
+      with{|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}.returns('Digest bar=baz')
+    @request.expects(:[]=).with('Authorization', 'Digest bar=baz')
+    
     @resource.send(:do_request, @request)    
   end 
 
   it 'should register challenge if initial response is unauthorized' do 
     @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
-    @auth_manager.expects(:register_challenge).with(@unauth_response)
+    @auth_manager.expects(:register_challenge).with(@unauth_response, Addressable::URI.parse('http://www.example/foo'))
  
     @resource.send(:do_request, @request)    
   end 
@@ -140,7 +142,7 @@ describe AdvancedHttp::Resource, '#do_request (auth)' do
   it 'should set auth info before request if it is available' do
     @http_conn.expects(:request).times(1).returns(@ok_response)
     @auth_manager.expects(:auth_info_available_for?).with(Addressable::URI.parse('http://www.example/foo')).returns(true)
-    @auth_manager.expects(:set_auth_info).once.with {|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}
+    @auth_manager.expects(:credentials_for).once.with {|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}.returns("Digest foo")
     
     @resource.send(:do_request, @request)    
   end 
@@ -148,7 +150,9 @@ describe AdvancedHttp::Resource, '#do_request (auth)' do
   it 'should set auth info before request if it is available' do
     @http_conn.expects(:request).times(1).returns(@ok_response)
     @auth_manager.expects(:auth_info_available_for?).with(Addressable::URI.parse('http://www.example/foo')).returns(true)
-    @auth_manager.expects(:set_auth_info).once.with {|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}
+    @auth_manager.expects(:credentials_for).once.with{|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}.
+      returns('Digest bar=baz')
+    @request.expects(:[]=).with('Authorization', 'Digest bar=baz')
     
     @resource.send(:do_request, @request)    
   end 

@@ -1,6 +1,5 @@
 require 'net/http'
 require 'uri'
-require 'net_http_auth_ext'
 require 'benchmark'
 require 'addressable/uri'
 require 'advanced_http/exceptions'
@@ -197,8 +196,8 @@ module AdvancedHttp
     # resource and returns the HTTPResponse.
     def do_request(an_http_request, body = nil)
       Net::HTTP.start(effective_uri.host, effective_uri.port) do |c|
-        
-        set_auth_info(an_http_request) if auth_info_available?
+ 
+        an_http_request['Authorization'] = auth_manager.credentials_for(an_http_request, effective_uri) if auth_info_available?
         
         resp = nil
         bm = Benchmark.measure do 
@@ -211,8 +210,9 @@ module AdvancedHttp
         end      
         
         if '401' == resp.code          
-          auth_manager.register_challenge(resp)
-          set_auth_info(an_http_request)
+          auth_manager.register_challenge(resp, effective_uri)
+          an_http_request['Authorization'] = auth_manager.credentials_for(an_http_request, effective_uri)
+          
           bm = Benchmark.measure do 
             resp = c.request(an_http_request)
           end
@@ -228,7 +228,10 @@ module AdvancedHttp
 
     rescue => e
       logger.debug{"  #{an_http_request.method} #{effective_uri} failed with #{e.message}"}
-      raise e.class, e.message + " (while #{an_http_request.method} #{effective_uri})"
+      new_e = e.class.new(e.message + " (while #{an_http_request.method} #{effective_uri})")
+      new_e.set_backtrace(e.backtrace)
+      
+      raise new_e
     end
 
     def auth_manager
@@ -239,14 +242,6 @@ module AdvancedHttp
       auth_manager.auth_info_available_for?(effective_uri)
     end
 
-    def set_auth_info(http_request)
-      auth_manager.set_auth_info(http_request, effective_uri)
-    end    
-    
-    def auth_info(realm)
-      auth_info_provider ? auth_info_provider.authentication_info(realm) : nil
-    end
-    
     def configure_request_from_options(request, options)
       options = options.clone
       
