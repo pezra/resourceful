@@ -205,9 +205,11 @@ module AdvancedHttp
         end
         logger.info do
           msg = "#{an_http_request.method} #{effective_uri}"
-          msg << " (#{an_http_request.authentication_scheme.downcase}_auth: realm='#{an_http_request.authentication_realm}', account='#{an_http_request.authentication_username}')" if an_http_request.authenticating?
+          msg << " (Authentication credentials included)" if an_http_request['Authorization']
           msg << " (#{format('%0.3f', bm.real)} sec)"
-        end      
+        end
+        logger.debug "  Authentication credentials: #{an_http_request['Authorization']}" if an_http_request['Authorization']
+          
         
         if '401' == resp.code          
           auth_manager.register_challenge(resp, effective_uri)
@@ -218,9 +220,10 @@ module AdvancedHttp
           end
           logger.info do
             msg = "#{an_http_request.method} #{effective_uri}"
-            msg << " (#{an_http_request.authentication_scheme.downcase}_auth: realm='#{an_http_request.authentication_realm}', account='#{an_http_request.authentication_username}')"
+            msg << " (Authentication credentials included)" if an_http_request['Authorization']
             msg << " (#{format('%0.3f', bm.real)} sec)"
-          end      
+          end
+          logger.debug "  Authentication credentials: #{an_http_request['Authorization']}" if an_http_request['Authorization']
         end 
          
         resp

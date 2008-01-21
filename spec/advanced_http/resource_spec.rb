@@ -29,7 +29,7 @@ describe AdvancedHttp::Resource do
   end 
 
   it 'should execute request against remote server' do
-    req = stub("http_req", :method => 'GET')
+    req = stub("http_req", :method => 'GET', :[] => nil)
     http_conn = stub('http_conn')
     response = stub('response', :code => '200')
     Net::HTTP.expects(:start).with('www.example', 80).yields(http_conn).returns(response)
@@ -39,7 +39,7 @@ describe AdvancedHttp::Resource do
   end 
 
   it 'should send body to remote server if provided' do
-    req = stub("http_req", :method => 'POST')
+    req = stub("http_req", :method => 'POST', :[] => nil)
     http_conn = mock('http_conn')
     Net::HTTP.expects(:start).with('www.example', 80).yields(http_conn).returns(response = stub('response', :code => '201'))
     http_conn.expects(:request).with(req, "body").returns(response)
@@ -102,6 +102,7 @@ describe AdvancedHttp::Resource, '#do_request (auth)' do
     @http_conn.stubs(:request).returns(@unauth_response, @ok_response)
 
     @request = stub("http_req", :method => 'GET', :basic_auth => nil, :authentication_scheme => 'basic', :authentication_realm => 'test_realm', :[]= => nil)
+    @request.stubs(:[]).with('Authorization').returns(nil, 'Digest foo=bar')
   end
   
   it 'should not include body in authenticated retry (because it is already stored on the request object from the first time around)' do
