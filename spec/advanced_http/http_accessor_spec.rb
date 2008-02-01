@@ -126,6 +126,37 @@ describe AdvancedHttp::HttpAccessor do
   end 
 end
 
+describe AdvancedHttp::HttpAccessor, "#get_body(uri, options = {})" do 
+  before do
+    @logger = stub('logger')
+    @authentication_info_provider = stub('authentication_info_provider')
+    @accessor = AdvancedHttp::HttpAccessor.new(:authentication_info_provider => @authentication_info_provider,
+                                               :logger => @logger)
+    @resource = stub('resource', :get_body => 'boo!')
+    @accessor.stubs(:resource).returns(@resource)
+  end
+  
+  it 'should get the resource specified by uri' do
+    @accessor.expects(:resource).with('http://www.example/foo').returns(@resource)
+    @accessor.get_body('http://www.example/foo')
+  end 
+  
+  it 'should call get_body on the resource' do
+    @resource.expects(:get_body).returns("ha!")
+    @accessor.get_body('http://www.example/foo')    
+  end 
+
+  it 'should pass options to resource.get_body' do
+    @resource.expects(:get_body).with(:marker).returns("ha!")
+    @accessor.get_body('http://www.example/foo', :marker)
+  end 
+  
+  it 'should return what ever resource.get_body() does' do
+    @resource.expects(:get_body).returns(:marker)
+    @accessor.get_body('http://www.example/foo')
+  end 
+end
+
 describe AdvancedHttp::HttpAccessor, 'request stubbing' do
   before do
     @accessor = AdvancedHttp::HttpAccessor.new()

@@ -75,6 +75,12 @@ module AdvancedHttp
       return s_resource
     end
     alias [] resource
+
+    # Returns the representation of the resource indicated by +uri+.
+    # This is identical to +resource(uri).get_body(options)+
+    def get_body(uri, options = {})
+      resource(uri).get_body(options)
+    end
     
     def named_uris
       @@named_uris
