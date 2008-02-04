@@ -63,7 +63,8 @@ end
 describe AdvancedHttp::Resource, '#do_request (non-auth)' do
   before do
     @logger = stub('logger', :info => false, :debug => false)
-    @auth_manager = stub('auth_manager', :auth_info_available_for? => false)
+    @auth_manager = stub('auth_manager')
+    @auth_manager.stubs(:auth_info_available_for?).returns(false,true)
     @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager)
 
     @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
@@ -88,7 +89,7 @@ end
 describe AdvancedHttp::Resource, '#do_request (auth)' do
   before do
     @logger = stub('logger', :info => false, :debug => false)
-    @auth_manager = stub('auth_manager', :auth_info_available_for? => false, :register_challenge => nil, :credentials_for => 'Digest foo=bar')
+    @auth_manager = stub('auth_manager', :auth_info_available_for? => [false,true], :register_challenge => nil, :credentials_for => 'Digest foo=bar')
     @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager)
 
     @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
@@ -107,7 +108,7 @@ describe AdvancedHttp::Resource, '#do_request (auth)' do
   
   it 'should not include body in authenticated retry (because it is already stored on the request object from the first time around)' do
     @http_conn.expects(:request).with(anything, 'testing').once.returns(@unauth_response)
-    @http_conn.expects(:request).with(anything).once.returns(@ok_response)
+    @http_conn.expects(:request).with(anything, nil).once.returns(@ok_response)
 
     @resource.send(:do_request, @request, 'testing')    
   end 

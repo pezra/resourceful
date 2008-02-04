@@ -194,7 +194,7 @@ module AdvancedHttp
     
     # makes an HTTP request against the server that hosts this
     # resource and returns the HTTPResponse.
-    def do_request(an_http_request, body = nil)
+    def do_request(an_http_request, body = nil, is_auth_retry = false)
       Net::HTTP.start(effective_uri.host, effective_uri.port) do |c|
  
         an_http_request['Authorization'] = auth_manager.credentials_for(an_http_request, effective_uri) if auth_info_available?
@@ -204,29 +204,19 @@ module AdvancedHttp
           resp = c.request(an_http_request, body)
         end
         logger.info do
-          msg = "#{an_http_request.method} #{effective_uri}"
-          msg << " (Authentication credentials included)" if an_http_request['Authorization']
+          msg = "#{an_http_request.method} #{effective_uri} (#{resp.code})"
           msg << " (#{format('%0.3f', bm.real)} sec)"
+          msg << " (w/ auth credentials)" if an_http_request['Authorization']
         end
         logger.debug "  Authentication credentials: #{an_http_request['Authorization']}" if an_http_request['Authorization']
           
         
-        if '401' == resp.code          
+        if '401' == resp.code and not is_auth_retry         
           auth_manager.register_challenge(resp, effective_uri)
-          an_http_request['Authorization'] = auth_manager.credentials_for(an_http_request, effective_uri)
-          
-          bm = Benchmark.measure do 
-            resp = c.request(an_http_request)
-          end
-          logger.info do
-            msg = "#{an_http_request.method} #{effective_uri}"
-            msg << " (Authentication credentials included)" if an_http_request['Authorization']
-            msg << " (#{format('%0.3f', bm.real)} sec)"
-          end
-          logger.debug "  Authentication credentials: #{an_http_request['Authorization']}" if an_http_request['Authorization']
+          do_request(an_http_request, nil, true)  # retry it
+        else
+          resp
         end 
-         
-        resp
       end
 
     rescue => e
