@@ -60,13 +60,7 @@ module AdvancedHttp
 
     # Returns a resource object representing the resource indicated
     # by the specified URI.  A resource object will be created if necessary.
-    def resource(uri_or_name)
-      uri = if uri_or_name.kind_of?(Symbol)
-              named_uris[uri_or_name] 
-            else
-              uri_or_name
-            end
-      
+    def resource(uri)
       resource = Resource.new(self, uri)
       return resource unless canned_responses[uri]
       
@@ -80,20 +74,6 @@ module AdvancedHttp
     # This is identical to +resource(uri).get_body(options)+
     def get_body(uri, options = {})
       resource(uri).get_body(options)
-    end
-    
-    def named_uris
-      @@named_uris
-    end
-    
-    class << self
-      @@named_uris = Hash.new
-      # A Hash of named URIs.  Many methods in AdvancedHTTP that need a URI
-      # also take a name which they then resolve into a real URI using
-      # this Hash.
-      def named_uris
-        @@named_uris
-      end
     end
     
     # Sets up a canned response for a particular HTTP request.  Once
