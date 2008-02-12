@@ -21,7 +21,7 @@ describe AdvancedHttp::Resource do
   end
 
   it "should know it's URI" do
-    @resource.uri.should == Addressable::URI.parse('http://www.example/foo')
+    @resource.uri.should == 'http://www.example/foo'
   end
   
   it 'should be creatable with a URI' do
@@ -48,14 +48,14 @@ describe AdvancedHttp::Resource do
   end 
   
   it 'should provide effective URI attribute' do
-    @resource.effective_uri.should == Addressable::URI.parse('http://www.example/foo')
+    @resource.effective_uri.should == 'http://www.example/foo'
   end 
   
   it 'should forget current effective URI upon reset' do
     @resource.send(:effective_uri=, 'http://www.example/bar')
-    @resource.effective_uri.should == Addressable::URI.parse('http://www.example/bar')
+    @resource.effective_uri.should == 'http://www.example/bar'
     @resource.reset
-    @resource.effective_uri.should == Addressable::URI.parse('http://www.example/foo')
+    @resource.effective_uri.should == 'http://www.example/foo'
   end 
   
 end 
@@ -187,7 +187,7 @@ describe AdvancedHttp::Resource, '#get_body' do
   it 'should raise arg error for unrecognized options' do
     lambda {
       @resource.get_body(:foo => 'nonsense/foo', :bar => 'yer')
-    }.should raise_error(ArgumentError, /Unrecognized option\(s\): (?:foo|bar), (?:foo|bar)/)
+    }.should raise_error(ArgumentError, /Unrecognized options: (?:foo|bar), (?:foo|bar)/)
   end 
   
   it 'should recognize parse_as option' do
@@ -231,7 +231,7 @@ describe AdvancedHttp::Resource, '#get' do
     @accessor = stub('http_accessor')
     @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
     @response = stub('http_response', :body => 'I am foo', :code => '200', :message => 'OK')
-    @resource.stubs(:do_request).with(instance_of(Net::HTTP::Get)).returns(@response)
+    @resource.stubs(:do_request).returns(@response)
   end
 
   it 'should return the HTTPResponse' do
@@ -296,14 +296,43 @@ describe AdvancedHttp::Resource, '#get' do
   it 'should not accept unknown options' do
     lambda{
       @resource.get(:my_option => 'cool', :foo => :bar)
-    }.should raise_error(ArgumentError, /Unrecognized option\(s\): (?:my_option, foo)|(?:foo, my_option)/)
+    }.should raise_error(ArgumentError, /Unrecognized options: (?:my_option, foo)|(?:foo, my_option)/)
   end 
 
   it 'should raise reasonable exception when hostname lookup fails' do
     
   end 
   
+  it 'should not follow more than max_redirects redirections' do
+    response1 = stub('http_response1', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/bar')
+    response2 = stub('http_response2', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/baz')
+    response3 = stub('http_response3', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/blah')
+    @resource.expects(:do_request).times(3).returns(response1, response2, response3)
+    
+    lambda {
+      @resource.get(:max_redirects => 2)
+    }.should raise_error(AdvancedHttp::TooManyRedirectsError)
+  end 
+
+  it 'should not follow circular redirects' do
+    response1 = stub('http_response1', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/bar')
+    response2 = stub('http_response2', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/foo')
+    @resource.expects(:do_request).times(2).returns(response1, response2)
+    
+    lambda {
+      @resource.get()
+    }.should raise_error(AdvancedHttp::CircularRedirectionError)
+  end 
+  
+  it 'should set headers on request if specified' do
+    get_request = stub('get_request', :[] => nil)
+    Net::HTTP::Get.expects(:new).returns(get_request)
+    get_request.expects(:[]=).with('X-Test', 'this-is-a-test')
+    
+    @resource.get(:http_header_fields => {'X-Test' => 'this-is-a-test'})
+  end
 end 
+
 describe AdvancedHttp::Resource, '#get (URI with query string)' do
   before do
     @accessor = stub('http_accessor')
@@ -363,13 +392,13 @@ end
     it 'should not reset URI' do
       @resource.get
       
-      @resource.uri.should == Addressable::URI.parse('http://www.example/foo')
+      @resource.uri.should == 'http://www.example/foo'
     end 
 
     it 'should set effective URI' do
       @resource.get
       
-      @resource.effective_uri.should == Addressable::URI.parse('http://www.example/bar')
+      @resource.effective_uri.should == 'http://www.example/bar'
     end 
 
     it 'should return body of second response' do
@@ -399,7 +428,7 @@ describe AdvancedHttp::Resource, '#get (Permanent redirection)' do
 
   it 'should reset URI' do
     @resource.get
-    @resource.uri.should == Addressable::URI.parse('http://www.example/bar')
+    @resource.uri.should == 'http://www.example/bar'
   end 
   
   it 'should return body of second response' do
@@ -437,7 +466,7 @@ describe AdvancedHttp::Resource, '#post' do
   it 'should raise argument error for unsupported options' do
     lambda{
       @resource.post("this=that", 'application/x-form-urlencoded', :bar => 'foo')
-    }.should raise_error(ArgumentError, "Unrecognized option(s): bar")
+    }.should raise_error(ArgumentError, "Unrecognized options: bar")
   end 
   
   it 'should support :accept option' do
@@ -477,14 +506,14 @@ describe AdvancedHttp::Resource, '#post' do
     }.should raise_error(AdvancedHttp::HttpServerError)
   end 
   
-  it 'should raise redirected exception for 3xx response' do
-    @response.expects(:code).at_least_once.returns('301')
+  it 'should raise redirected exception for 305 response' do
+    @response.expects(:code).at_least_once.returns('305')
     lambda{
       @resource.post("this=that", 'application/x-form-urlencoded')
     }.should raise_error(AdvancedHttp::HttpRedirectionError)    
   end 
 
-  it 'should return response to get against redirect target for 303 response' do
+  it 'should return response to GET against redirect target for 303 responses' do
     see_other_response = stub('http_see_other_response',  :body => 'ok_response', :code => '303')
     see_other_response.expects(:[]).with('location').returns('http://alt.example/bar')
     
@@ -497,6 +526,51 @@ describe AdvancedHttp::Resource, '#post' do
     
     @resource.post("this=that", 'application/x-form-urlencoded')
   end 
+
+  it 'should return 303 responses if :ignore_redirects is true' do
+    see_other_response = stub('http_see_other_response',  :body => 'ok_response', :code => '303')
+    @resource.expects(:do_request).returns(see_other_response)
+
+    @resource.post("this=that", 'application/x-form-urlencoded', :ignore_redirects => true).should == see_other_response
+  end 
+
+  
+  it 'should not follow more than max_redirects redirections' do
+    response1 = stub('http_response1', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/bar')
+    response2 = stub('http_response2', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/baz')
+    response3 = stub('http_response3', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/blah')
+    @resource.expects(:do_request).times(3).returns(response1, response2, response3)
+    
+    lambda {
+      @resource.post("this=that", 'application/x-form-urlencoded', :max_redirects => 2)
+    }.should raise_error(AdvancedHttp::TooManyRedirectsError)
+  end 
+
+  it 'should not follow circular redirects' do
+    response1 = stub('http_response1', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/bar')
+    response2 = stub('http_response2', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/foo')
+    @resource.expects(:do_request).times(2).returns(response1, response2)
+    
+    lambda {
+      @resource.post("this=that", 'application/x-form-urlencoded')
+    }.should raise_error(AdvancedHttp::CircularRedirectionError)
+  end 
+
+  it 'should not follow redirects :ignore_redirects is set to true' do
+    response1 = stub('http_response1', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/bar')
+    @resource.expects(:do_request).times(1).returns(response1)
+    
+    @resource.post("this=that", 'application/x-form-urlencoded', :ignore_redirects => true).should == response1
+    
+  end
+  
+  it 'should set headers on request if specified' do
+    post_request = stub('get_request', :[]= => nil)
+    Net::HTTP::Post.expects(:new).returns(post_request)
+    post_request.expects(:[]=).with('X-Test', 'this-is-a-test')
+    
+    @resource.post("this=that", 'application/x-www-form-urlencoded', :http_header_fields => {'X-Test' => 'this-is-a-test'})
+  end
 
 end
 
@@ -527,7 +601,7 @@ describe AdvancedHttp::Resource, '#put' do
   it 'should raise argument error for unsupported options' do
     lambda{
       @resource.put("this=that", 'application/x-form-urlencoded', :bar => 'foo')
-    }.should raise_error(ArgumentError, "Unrecognized option(s): bar")
+    }.should raise_error(ArgumentError, "Unrecognized options: bar")
   end 
   
   it 'should support :accept option' do
@@ -571,12 +645,56 @@ describe AdvancedHttp::Resource, '#put' do
     }.should raise_error(AdvancedHttp::HttpServerError)
   end 
   
-  it 'should raise redirected exception for 3xx response' do
-    @response.expects(:code).at_least_once.returns('301')
+  it 'should raise redirected exception for 305 response' do
+    @response.expects(:code).at_least_once.returns('305')
     lambda{
       @resource.put("this=that", 'application/x-form-urlencoded')
     }.should raise_error(AdvancedHttp::HttpRedirectionError)    
   end 
+
+  it 'should raise redirected exception for 303 response' do
+    @response.expects(:code).at_least_once.returns('303')
+    lambda{
+      @resource.put("this=that", 'application/x-form-urlencoded')
+    }.should raise_error(AdvancedHttp::HttpRedirectionError)    
+  end 
+
+  it 'should not follow more than max_redirects redirections' do
+    response1 = stub('http_response1', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/bar')
+    response2 = stub('http_response2', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/baz')
+    response3 = stub('http_response3', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/blah')
+    @resource.expects(:do_request).times(3).returns(response1, response2, response3)
+    
+    lambda {
+      @resource.put("this=that", 'application/x-form-urlencoded', :max_redirects => 2)
+    }.should raise_error(AdvancedHttp::TooManyRedirectsError)
+  end 
+
+  it 'should not follow circular redirects' do
+    response1 = stub('http_response1', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/bar')
+    response2 = stub('http_response2', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/foo')
+    @resource.expects(:do_request).times(2).returns(response1, response2)
+    
+    lambda {
+      @resource.put("this=that", 'application/x-form-urlencoded')
+    }.should raise_error(AdvancedHttp::CircularRedirectionError)
+  end 
+
+  it 'should not follow redirects :ignore_redirects is set to true' do
+    response1 = stub('http_response1', :code => '302', :message => 'temp redirect', :[] => 'http://www.example/bar')
+    @resource.expects(:do_request).times(1).returns(response1)
+    
+    @resource.put("this=that", 'application/x-form-urlencoded', :ignore_redirects => true).should == response1
+    
+  end 
+
+  it 'should set headers on request if specified' do
+    put_request = stub('get_request', :[]= => nil)
+    Net::HTTP::Put.expects(:new).returns(put_request)
+    put_request.expects(:[]=).with('X-Test', 'this-is-a-test')
+    
+    @resource.put("this=that", 'application/x-www-form-urlencoded', :http_header_fields => {'X-Test' => 'this-is-a-test'})
+  end
 
 end
 

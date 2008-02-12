@@ -73,13 +73,13 @@ describe AdvancedHttp::HttpAccessor do
   end 
 
   it 'should be able to return a particular resource (#[])' do
-    @accessor['http://www.example/'].effective_uri.should == Addressable::URI.parse('http://www.example/')
+    @accessor['http://www.example/'].effective_uri.should == 'http://www.example/'
   end 
 
   it 'should be able to return a particular resource based on a URI name (#[])' do
     @accessor.named_uris[:return_particular_resource_based_on_name] = 'http://www.example/'
     
-    @accessor[:return_particular_resource_based_on_name].effective_uri.should == Addressable::URI.parse('http://www.example/')
+    @accessor[:return_particular_resource_based_on_name].effective_uri.should == 'http://www.example/'
   end 
 
   it 'should create resource if it does not already exist (#[])' do
@@ -99,13 +99,13 @@ describe AdvancedHttp::HttpAccessor do
   end 
 
   it 'should be able to return a particular resource (#resource)' do
-    @accessor.resource('http://www.example/').effective_uri.should == Addressable::URI.parse('http://www.example/')
+    @accessor.resource('http://www.example/').effective_uri.should == 'http://www.example/'
   end 
 
   it 'should be able to return a particular resource based on a URI name (#[])' do
     @accessor.named_uris[:return_particular_resource_based_on_name_non_square_bracket] = 'http://www.example/'
     
-    @accessor[:return_particular_resource_based_on_name_non_square_bracket].effective_uri.should == Addressable::URI.parse('http://www.example/')
+    @accessor[:return_particular_resource_based_on_name_non_square_bracket].effective_uri.should == 'http://www.example/'
   end 
 
   

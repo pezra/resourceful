@@ -38,6 +38,18 @@ module AdvancedHttp
   class HttpRedirectionError < HttpRequestError
   end
 
+  # Used to indicated that a request failed because the server(s)
+  # instructed us to perform more than the maximum allowed number of
+  # redirections.
+  class TooManyRedirectsError < Exception
+  end
+
+  # Used to indicate the a redirection path has looped back on it self
+  # in a way that following the redirections will never result in
+  # never finding the actual resource.
+  class CircularRedirectionError < Exception
+  end
+  
   # Used to indicate that no authentication credentials were found
   # realm in which the requested resource resides.
   class NoAuthenticationCredentialsError < Exception

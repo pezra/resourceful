@@ -3,6 +3,8 @@ require 'uri'
 require 'benchmark'
 require 'addressable/uri'
 require 'advanced_http/exceptions'
+require 'set'
+require 'advanced_http/options_interpreter'
 
 module AdvancedHttp
 
@@ -28,8 +30,9 @@ module AdvancedHttp
     # HttpAccessor that owns the new resource.
     def initialize(owner, uri)
       @owner = owner
-            
-      reset_uri(uri)
+      @alternate_uris = Set.new
+      
+      self.uri = uri
     end
     
     # Gets a representation of the resource this object represents and
@@ -43,29 +46,49 @@ module AdvancedHttp
     #  +:accept+:: A MIME type, or array of MIME types, that are
     #    acceptable as the formats for the response.  Anything object
     #    that responds to +#to_str+ will work as a mime type.
+    #
+    #  +:max_redirects+:: The maximum number of redirect responses to
+    #    follow before giving up.
+    #
+    #  +:ignore_redirects+:: Rather than following redirects simply
+    #    return the redirect response.
+    #
+    #  +:http_header_fields+:: Hash of HTTP header fields to include
+    #    in the request.
     def get(options = {})
-      request = Net::HTTP::Get.new(effective_uri.to_s)
-      left_over_opts = configure_request_from_options(request, options)
+      opts = HTTP_REQUEST_OPTS_INTERPRETER.interpret(options)
       
-      raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless left_over_opts.empty?
+      request = Net::HTTP::Get.new(effective_uri)
+      request['Accept'] = opts[:accept] if opts.has_key?(:accept)
+      opts[:http_header_fields].each do |name, value|
+        request[name] = value
+      end
       
       resp = do_request(request)
       
-      return resp if /^2/ =~ resp.code # we are done
-      
-      # additional action is required
-      if '301' == resp.code
-        # response was a permanent redirect; follow it
-        reset_uri(resp['location'])
-        get
-      elsif ['302','307'].include? resp.code
-        # temporary redirect
-        self.effective_uri = resp['location']
-        get
+      case resp.code
+      when /^2/
+        return resp
+        
+      when /^30[127]/
+        raise TooManyRedirectsError if opts[:max_redirects] and alternate_uris.size >  opts[:max_redirects]
+        raise CircularRedirectionError if alternate_uris.include?(resp['location'])
+        
+        if resp.code == '301'
+          self.uri = resp['location']
+        else
+          self.effective_uri = resp['location']
+        end
+        
+        get options
+        
       else
-        # the response was unacceptable
-        raise HttpRequestError.new_from(request, resp, self)
+         raise HttpRequestError.new_from(request, resp, self)
       end 
+      
+    rescue Exception => e
+      reset
+      raise e
     end
 
     # Gets a representation of the resource this object represents.
@@ -118,18 +141,51 @@ module AdvancedHttp
     #  +:accept+:: A MIME type, or array of MIME types, that are
     #    acceptable as the formats for the response.  Anything object
     #    that responds to +#to_str+ will work as a mime type.
+    #
+    #  +:max_redirects+:: The maximum number of redirect responses to
+    #    follow before giving up.
+    # 
+    #  +:ignore_redirects+:: Rather than following redirects simply
+    #    return the redirect response.
+    #
+    #  +:http_header_fields+:: Hash of HTTP header fields to include
+    #    in the request.
     def post(data, mime_type, options = {})
-      req = Net::HTTP::Post.new(effective_uri.to_s)
+      opts = HTTP_REQUEST_OPTS_INTERPRETER.interpret(options)
+      
+      req = Net::HTTP::Post.new(effective_uri)
       req['content-type'] = mime_type
-      left_over_opts = configure_request_from_options(req, options)
-      raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless left_over_opts.empty?
+      req['accept'] = opts[:accept] if opts.has_key?(:accept)
+      opts[:http_header_fields].each do |name, value|
+        req[name] = value
+      end
+      
       resp = do_request(req, data)
 
-      return resp if /^2/ === resp.code
-      
-      if '303' == resp.code
+      case resp.code 
+      when /^2\d\d$/
+        return resp
+        
+      when '303'
+        return resp if opts[:ignore_redirects] 
+        
         alt_resource = Resource.new(resp['location'])
         alt_resource.get_response
+        
+      when /^30[127]$/
+        raise TooManyRedirectsError if opts[:max_redirects] and alternate_uris.size >  opts[:max_redirects]
+        raise CircularRedirectionError if alternate_uris.include?(resp['location'])
+        
+        return resp if opts[:ignore_redirects]
+        
+        if resp.code == '301'
+          self.uri = resp['location']
+        else
+          self.effective_uri = resp['location']
+        end
+        
+        post data, mime_type, options
+
       else
         # something went wrong...
         raise HttpRequestError.new_from(req, resp, self)
@@ -144,19 +200,50 @@ module AdvancedHttp
     #
     #  +:accept+:: A MIME type, or array of MIME types, that are
     #    acceptable as the formats for the response.  Anything object
-    #    that responds to +#to_str+ will work as a mime type.
+    #    that responds to +#to_str+ will work 
+    #
+    #  +:max_redirects+:: The maximum number of redirect responses to
+    #    follow before giving up.
+    # 
+    #  +:ignore_redirects+:: Rather than following redirects simply
+    #    return the redirect response.
+    #
+    #  +:http_header_fields+:: Hash of HTTP header fields to include
+    #    in the request.
     def put(data, mime_type, options = {})
-      req = Net::HTTP::Put.new(effective_uri.to_s)
+      opts = HTTP_REQUEST_OPTS_INTERPRETER.interpret(options)
+      
+      req = Net::HTTP::Put.new(effective_uri)
       req['content-type'] = mime_type
-      left_over_opts = configure_request_from_options(req, options)
-      raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless left_over_opts.empty?
+      req['accept'] = opts[:accept] if opts.has_key?(:accept)
+      opts[:http_header_fields].each do |name, value|
+        req[name] = value
+      end
       
       resp = do_request(req, data)
 
-      return resp if /^2/ === resp.code
-      
-      # something went wrong...
-      raise HttpRequestError.new_from(req, resp, self)
+      case resp.code 
+      when /^2\d\d$/
+        return resp
+        
+      when /^30[127]$/
+        raise TooManyRedirectsError if opts[:max_redirects] and alternate_uris.size >  opts[:max_redirects]
+        raise CircularRedirectionError if alternate_uris.include?(resp['location'])
+        
+        return resp if opts[:ignore_redirects]
+        
+        if resp.code == '301'
+          self.uri = resp['location']
+        else
+          self.effective_uri = resp['location']
+        end
+        
+        put data, mime_type, options
+
+      else
+        # something went wrong...
+        raise HttpRequestError.new_from(req, resp, self)
+      end
     end
 
     # Returns the current effective URI for this resource.  The
@@ -171,12 +258,14 @@ module AdvancedHttp
     # example, this will cause the next call to get to fetch the URI
     # for this resource, rather than the effective URI.
     def reset
-      self.effective_uri = nil
+      @effective_uri = nil
+      self.alternate_uris.clear
     end
     
     protected
 
     attr_reader :auth_info_provider
+    attr_reader :alternate_uris
     
     def logger
       owner.logger
@@ -184,20 +273,30 @@ module AdvancedHttp
     
     # Sets the effective URI for this resource.
     def effective_uri=(new_effective_uri)
-      @effective_uri = new_effective_uri.nil? ? nil : Addressable::URI.parse(new_effective_uri)
-    end
+      new_effective_uri = Addressable::URI.parse(new_effective_uri).normalize.to_s
+      alternate_uris << new_effective_uri
       
-    def reset_uri(new_uri)
+      @effective_uri = new_effective_uri
+    end
+    
+    # Sets the canonical URI for this resource.  This is generally
+    # only used on new resources, or if a permanent redirect is
+    # received.
+    def uri=(new_uri)
+      new_uri = Addressable::URI.parse(new_uri).normalize.to_s
+      
+      alternate_uris << new_uri
+      @uri = new_uri
       @effective_uri = nil
-      @uri = Addressable::URI.parse(new_uri)
     end
     
     # makes an HTTP request against the server that hosts this
     # resource and returns the HTTPResponse.
     def do_request(an_http_request, body = nil, is_auth_retry = false)
-      Net::HTTP.start(effective_uri.host, effective_uri.port) do |c|
+      e_uri = Addressable::URI.parse(effective_uri)
+      Net::HTTP.start(e_uri.host, e_uri.port) do |c|
  
-        an_http_request['Authorization'] = auth_manager.credentials_for(an_http_request, effective_uri) if auth_info_available?
+        an_http_request['Authorization'] = auth_manager.credentials_for(an_http_request, e_uri) if auth_info_available?
         
         resp = nil
         bm = Benchmark.measure do 
@@ -212,7 +311,7 @@ module AdvancedHttp
           
         
         if '401' == resp.code and not is_auth_retry         
-          auth_manager.register_challenge(resp, effective_uri)
+          auth_manager.register_challenge(resp, e_uri)
           do_request(an_http_request, nil, true)  # retry it
         else
           resp
@@ -232,7 +331,7 @@ module AdvancedHttp
     end
     
     def auth_info_available?
-      auth_manager.auth_info_available_for?(effective_uri)
+      auth_manager.auth_info_available_for?(Addressable::URI.parse(effective_uri))
     end
 
     def configure_request_from_options(request, options)
@@ -244,7 +343,16 @@ module AdvancedHttp
       
       return options
     end
+
+    HTTP_REQUEST_OPTS_INTERPRETER = OptionsInterpreter.new do 
+      option(:max_redirects)
+      option(:ignore_redirects)
+      option(:accept) {|accept| [accept].flatten.map{|m| m.to_str}}
+      option(:http_header_fields, :default => {})
+    end
   end
+  
+  
 end
 
   
