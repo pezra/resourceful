@@ -15,14 +15,14 @@ Example
 
 Get html page
 
-    require 'advanced_http'
+    require 'resourceful'
     http = Resourceful::HttpAccessor.new
     resp = http.resource('http://rubyforge.org').get(:accept => 'text/html')
     puts resp.body
 
 Get page requiring HTTP Authentication
 
-    require 'advanced_http'
+    require 'resourceful'
     class AuthInfoProvider
       def authenication_info(realm)
         ['my_account', 'my-super-secert-password']
@@ -34,4 +34,4 @@ Get page requiring HTTP Authentication
     puts resp.body
 
 
-Copyright (c) 2007 Absolute Performance, Inc, released under the GNU Lesser General Public License.
+Copyright (c) 2008 Absolute Performance, Inc, released under the GNU Lesser General Public License.
