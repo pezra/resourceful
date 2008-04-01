@@ -1,9 +1,9 @@
  require 'pathname'
 require Pathname(__FILE__).dirname + '../spec_helper'
 
-require 'advanced_http/authentication_manager'
+require 'resourceful/authentication_manager'
 
-module AdvancedHttp
+module Resourceful
   describe DigestAuthRealm, '#initialize(unauthorized_response, request_uri, auth_info_provider)' do
     def digest_challange_with_domain
       "Digest opaque=\"f9881f17cd67311b1d79abd587675d6e\", nonce=\"MjAwNy0xMC0wMyAwNDoxMjowMDo1NjcyMDk6NTcxMWZmMTEzMGRlMTI1OTNkNjY2NDdmYzFiOTA0Nj\", realm=\"SystemShepherd\", qop=\"auth\", algorithm=MD5-sess, domain=\"/bar http://baz.example/foo\""
@@ -49,7 +49,7 @@ module AdvancedHttp
       
       lambda{
         DigestAuthRealm.new(@unauth_response, @example_uri, @auth_info_provider)
-      }.should raise_error(AdvancedHttp::NoAuthenticationCredentialsError, "No authentication credentials are known for the SystemShepherd realm")
+      }.should raise_error(Resourceful::NoAuthenticationCredentialsError, "No authentication credentials are known for the SystemShepherd realm")
     end
     
     it 'should get authentication info' do
@@ -112,19 +112,19 @@ module AdvancedHttp
   end 
 end
   
-describe AdvancedHttp::AuthenticationManager, '.new(auth_info_provider)' do 
+describe Resourceful::AuthenticationManager, '.new(auth_info_provider)' do 
   it 'should return a new authentication manager' do
     @auth_info_provider = stub('auth_info_provider')
-    AdvancedHttp::AuthenticationManager.new(@auth_info_provider).should be_instance_of(AdvancedHttp::AuthenticationManager)
+    Resourceful::AuthenticationManager.new(@auth_info_provider).should be_instance_of(Resourceful::AuthenticationManager)
   end 
 end
 
 
-describe AdvancedHttp::AuthenticationManager, '#register_challenge(unauthorized_http_response, request_uri)' do
+describe Resourceful::AuthenticationManager, '#register_challenge(unauthorized_http_response, request_uri)' do
   before do
     @example_uri = Addressable::URI.parse('http://foo.example/bar')
     @auth_info_provider = stub('auth_info_provider', :authentication_info => ['me', 'mine'])
-    @auth_manager = AdvancedHttp::AuthenticationManager.new(@auth_info_provider)
+    @auth_manager = Resourceful::AuthenticationManager.new(@auth_info_provider)
     
     @unauth_response = stub('unauth_http_response', :code => '401', :get_fields => ["Digest opaque=\"f9881f17cd67311b1d79abd587675d6e\", nonce=\"MjAwNy0xMC0wMyAwNDoxMjowMDo1NjcyMDk6NTcxMWZmMTEzMGRlMTI1OTNkNjY2NDdmYzFiOTA0Nj\", realm=\"SystemShepherd\", qop=\"auth\", algorithm=MD5-sess, domain=\"/bar http://baz.example/foo\""])
   end
@@ -140,11 +140,11 @@ describe AdvancedHttp::AuthenticationManager, '#register_challenge(unauthorized_
   end 
 end
 
-describe AdvancedHttp::AuthenticationManager, '#credentials_for(uri)' do
+describe Resourceful::AuthenticationManager, '#credentials_for(uri)' do
   before do
     @example_uri = Addressable::URI.parse('http://foo.example/bar')
     @auth_info_provider = stub('auth_info_provider', :authentication_info => ['me', 'mine'])
-    @auth_manager = AdvancedHttp::AuthenticationManager.new(@auth_info_provider)
+    @auth_manager = Resourceful::AuthenticationManager.new(@auth_info_provider)
     
     @unauth_response = stub('unauth_http_response', :code => '401', :get_fields => ["Digest opaque=\"f9881f17cd67311b1d79abd587675d6e\", nonce=\"MjAwNy0xMC0wMyAwNDoxMjowMDo1NjcyMDk6NTcxMWZmMTEzMGRlMTI1OTNkNjY2NDdmYzFiOTA0Nj\", realm=\"SystemShepherd\", qop=\"auth\", algorithm=MD5-sess, domain=\"/bar http://baz.example/foo\""])
     @auth_manager.register_challenge(@unauth_response, @example_uri)
@@ -162,7 +162,7 @@ describe AdvancedHttp::AuthenticationManager, '#credentials_for(uri)' do
   it 'should raise error if the request is for a resource that is not in any known realm' do
     lambda{
       @auth_manager.credentials_for(@request, Addressable::URI.parse('http://some-other-domain.example/bar'))
-    }.should raise_error(AdvancedHttp::NoAuthenticationRealmInformationError)
+    }.should raise_error(Resourceful::NoAuthenticationRealmInformationError)
   end 
   
 end

@@ -2,9 +2,9 @@ require 'addressable/uri'
 require 'net/http'
 require 'httpauth'
 
-require 'advanced_http/exceptions'
+require 'resourceful/exceptions'
 
-module AdvancedHttp
+module Resourceful
   class DigestAuthRealm
     attr_reader :name, :domain
     
@@ -62,7 +62,7 @@ module AdvancedHttp
 
   
   # Manages authentication across multiple realms for a single
-  # AdvancedHttp::HttpAccessor.
+  # Resourceful::HttpAccessor.
   class AuthenticationManager
       
     # Initializes a newly created AuthenticationManager.

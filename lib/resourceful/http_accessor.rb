@@ -1,12 +1,12 @@
-require 'advanced_http/resource'
-require 'advanced_http/authentication_manager'
+require 'resourceful/resource'
+require 'resourceful/authentication_manager'
 
-require 'advanced_http/stubbed_resource_proxy'
+require 'resourceful/stubbed_resource_proxy'
 
-module AdvancedHttp
+module Resourceful
   
   # This class provides a simple interface to the functionality
-  # provided by the AdvancedHttp library.  Conceptually this object
+  # provided by the Resourceful library.  Conceptually this object
   # acts a collection of all the resources available via HTTP.
   class HttpAccessor
     

@@ -1,30 +1,30 @@
 require 'pathname'
 require Pathname(__FILE__).dirname + '../spec_helper'
 
-require 'advanced_http/stubbed_resource_proxy'
+require 'resourceful/stubbed_resource_proxy'
 
-describe AdvancedHttp::StubbedResourceProxy, "init" do
+describe Resourceful::StubbedResourceProxy, "init" do
   it 'should require real resource' do
     lambda{
-      AdvancedHttp::StubbedResourceProxy.new
+      Resourceful::StubbedResourceProxy.new
     }.should raise_error(ArgumentError)
   end 
   
   it 'should require canned responses hash' do
     lambda{
-      AdvancedHttp::StubbedResourceProxy.new(stub('resource'))
+      Resourceful::StubbedResourceProxy.new(stub('resource'))
     }.should raise_error(ArgumentError)    
   end 
   
   it 'should be creatable with a Resource and canned responses' do
-    AdvancedHttp::StubbedResourceProxy.new(stub('resource'), {})
+    Resourceful::StubbedResourceProxy.new(stub('resource'), {})
   end 
 end 
 
-describe AdvancedHttp::StubbedResourceProxy do
+describe Resourceful::StubbedResourceProxy do
   before do
     @resource = stub('resource', :effective_uri => "http://test.invalid/foo")
-    @stubbed_resource = AdvancedHttp::StubbedResourceProxy.
+    @stubbed_resource = Resourceful::StubbedResourceProxy.
       new(@resource, [{:mime_type => 'application/xml', 
                         :body => '<thing>1</thing>'}])
   end

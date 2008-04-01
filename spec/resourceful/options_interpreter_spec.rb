@@ -1,16 +1,16 @@
 require File.dirname(__FILE__) + "/../spec_helper"
-require 'advanced_http/options_interpreter'
+require 'resourceful/options_interpreter'
 
-describe AdvancedHttp::OptionsInterpreter, '#initialize' do
+describe Resourceful::OptionsInterpreter, '#initialize' do
   it 'should be creatable block' do
-    AdvancedHttp::OptionsInterpreter.new() {}
+    Resourceful::OptionsInterpreter.new() {}
   end 
 end 
 
 
-describe AdvancedHttp::OptionsInterpreter, "#option()" do
+describe Resourceful::OptionsInterpreter, "#option()" do
   before do
-    @interpreter = AdvancedHttp::OptionsInterpreter.new()
+    @interpreter = Resourceful::OptionsInterpreter.new()
   end
   
   it 'should take option name' do
@@ -24,9 +24,9 @@ describe AdvancedHttp::OptionsInterpreter, "#option()" do
   end 
 end 
 
-describe AdvancedHttp::OptionsInterpreter, '#interpret(options)' do
+describe Resourceful::OptionsInterpreter, '#interpret(options)' do
   before do
-    @interpreter = AdvancedHttp::OptionsInterpreter.new()
+    @interpreter = Resourceful::OptionsInterpreter.new()
     @interpreter.option(:foo)
   end
   
@@ -56,7 +56,7 @@ describe AdvancedHttp::OptionsInterpreter, '#interpret(options)' do
   end 
   
   it 'should not include options that were not passed in resulting hash' do
-    @interpreter = AdvancedHttp::OptionsInterpreter.new()
+    @interpreter = Resourceful::OptionsInterpreter.new()
     @interpreter.option(:foo)
     
     @interpreter.interpret({}).keys.should_not include(:foo)
@@ -65,7 +65,7 @@ describe AdvancedHttp::OptionsInterpreter, '#interpret(options)' do
   it 'should not invoked option value munging block if option is not specified'
   
   it 'should use default if option is not specified' do
-    @interpreter = AdvancedHttp::OptionsInterpreter.new()
+    @interpreter = Resourceful::OptionsInterpreter.new()
     @interpreter.option(:foo, :default => 'hello')
 
     opts = @interpreter.interpret({})
@@ -74,7 +74,7 @@ describe AdvancedHttp::OptionsInterpreter, '#interpret(options)' do
   end 
 
   it 'should use default value if option is specified as nil' do
-    @interpreter = AdvancedHttp::OptionsInterpreter.new()
+    @interpreter = Resourceful::OptionsInterpreter.new()
     @interpreter.option(:foo, :default => 'hello')
 
     opts = @interpreter.interpret({:foo => nil})
@@ -83,7 +83,7 @@ describe AdvancedHttp::OptionsInterpreter, '#interpret(options)' do
   end 
 
   it 'should not use default if option is specified ' do
-    @interpreter = AdvancedHttp::OptionsInterpreter.new()
+    @interpreter = Resourceful::OptionsInterpreter.new()
     @interpreter.option(:foo, :default => 'hello')
 
     opts = @interpreter.interpret({:foo => 'bye'})

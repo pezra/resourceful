@@ -1,4 +1,4 @@
-module AdvancedHttp
+module Resourceful
   class UnsupportedUriScheme < Exception
   end
   

@@ -1,6 +1,6 @@
-require 'advanced_http/resource'
+require 'resourceful/resource'
   
-module AdvancedHttp
+module Resourceful
   class StubbedResourceProxy
     def initialize(resource, canned_responses)
       @resource = resource

@@ -1,4 +1,4 @@
-module AdvancedHttp
+module Resourceful
   class HttpRequestError < Exception
     attr_reader :response, :request
     

@@ -1,23 +1,23 @@
 require 'pathname'
 require Pathname(__FILE__).dirname + '../spec_helper'
 
-require 'advanced_http/resource'
+require 'resourceful/resource'
 
 
-describe AdvancedHttp::Resource, 'init' do
+describe Resourceful::Resource, 'init' do
   it 'should require an owner and a URI' do
     accessor = stub('http_accessor')
-    AdvancedHttp::Resource.new(accessor, 'http://www.example/foo')
+    Resourceful::Resource.new(accessor, 'http://www.example/foo')
   end   
   
 end
 
-describe AdvancedHttp::Resource do
+describe Resourceful::Resource do
   before do
     @logger = stub('logger', :info => false, :debug => false)
     @auth_manager = stub('auth_manager', :auth_info_available_for? => false)
     @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager)
-    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
+    @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo')
   end
 
   it "should know it's URI" do
@@ -25,7 +25,7 @@ describe AdvancedHttp::Resource do
   end
   
   it 'should be creatable with a URI' do
-    AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
+    Resourceful::Resource.new(@accessor, 'http://www.example/foo')
   end 
 
   it 'should execute request against remote server' do
@@ -60,14 +60,14 @@ describe AdvancedHttp::Resource do
   
 end 
 
-describe AdvancedHttp::Resource, '#do_request (non-auth)' do
+describe Resourceful::Resource, '#do_request (non-auth)' do
   before do
     @logger = stub('logger', :info => false, :debug => false)
     @auth_manager = stub('auth_manager')
     @auth_manager.stubs(:auth_info_available_for?).returns(false,true)
     @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager)
 
-    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
+    @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo')
     @ok_response = stub('ok_response', :code => '200')
     
     @http_conn = stub('http_conn')
@@ -86,13 +86,13 @@ describe AdvancedHttp::Resource, '#do_request (non-auth)' do
   end 
 end
 
-describe AdvancedHttp::Resource, '#do_request (auth)' do
+describe Resourceful::Resource, '#do_request (auth)' do
   before do
     @logger = stub('logger', :info => false, :debug => false)
     @auth_manager = stub('auth_manager', :auth_info_available_for? => [false,true], :register_challenge => nil, :credentials_for => 'Digest foo=bar')
     @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager)
 
-    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
+    @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo')
     
     @unauth_response = stub('unauth_response', :code => '401', :digest_auth_allowed? => false, 
                             :basic_auth_allowed? => true, :realm => 'test_realm')
@@ -160,11 +160,11 @@ describe AdvancedHttp::Resource, '#do_request (auth)' do
   end 
 end 
 
-describe AdvancedHttp::Resource, '#get_body' do
+describe Resourceful::Resource, '#get_body' do
   before do
     @accessor = stub('http_accessor')
 
-    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
+    @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo')
     @response = stub('http_response', :body => 'I am foo', :code => '200')
     @resource.stubs(:do_request).with(instance_of(Net::HTTP::Get)).returns(@response)
   end
@@ -208,11 +208,11 @@ describe AdvancedHttp::Resource, '#get_body' do
   end 
 end 
 
-describe AdvancedHttp::Resource, '#get_json_body' do
+describe Resourceful::Resource, '#get_json_body' do
   before do
     @accessor = stub('http_accessor')
 
-    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
+    @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo')
   end
   
   it 'should call get body with parse_as option set to :json' do   
@@ -226,10 +226,10 @@ describe AdvancedHttp::Resource, '#get_json_body' do
   end
 end 
 
-describe AdvancedHttp::Resource, '#get' do
+describe Resourceful::Resource, '#get' do
   before do
     @accessor = stub('http_accessor')
-    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
+    @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo')
     @response = stub('http_response', :body => 'I am foo', :code => '200', :message => 'OK')
     @resource.stubs(:do_request).returns(@response)
   end
@@ -254,14 +254,14 @@ describe AdvancedHttp::Resource, '#get' do
     @response.expects(:code).at_least_once.returns('400')
     lambda{
       @resource.get      
-    }.should raise_error(AdvancedHttp::HttpClientError)
+    }.should raise_error(Resourceful::HttpClientError)
   end 
   
   it 'should raise server error for 5xx response codes' do
     @response.expects(:code).at_least_once.returns('500')
     lambda{
       @resource.get      
-    }.should raise_error(AdvancedHttp::HttpServerError)    
+    }.should raise_error(Resourceful::HttpServerError)    
   end 
   
   it "should make get request to server" do
@@ -311,7 +311,7 @@ describe AdvancedHttp::Resource, '#get' do
     
     lambda {
       @resource.get(:max_redirects => 2)
-    }.should raise_error(AdvancedHttp::TooManyRedirectsError)
+    }.should raise_error(Resourceful::TooManyRedirectsError)
   end 
 
   it 'should not follow circular redirects' do
@@ -321,7 +321,7 @@ describe AdvancedHttp::Resource, '#get' do
     
     lambda {
       @resource.get()
-    }.should raise_error(AdvancedHttp::CircularRedirectionError)
+    }.should raise_error(Resourceful::CircularRedirectionError)
   end 
   
   it 'should set headers on request if specified' do
@@ -333,10 +333,10 @@ describe AdvancedHttp::Resource, '#get' do
   end
 end 
 
-describe AdvancedHttp::Resource, '#get (URI with query string)' do
+describe Resourceful::Resource, '#get (URI with query string)' do
   before do
     @accessor = stub('http_accessor')
-    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo?q=test')
+    @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo?q=test')
     @response = stub('http_response', :body => 'I am foo', :code => '200')
     @resource.stubs(:do_request).with(instance_of(Net::HTTP::Get)).returns(@response)
   end
@@ -347,10 +347,10 @@ describe AdvancedHttp::Resource, '#get (URI with query string)' do
   end 
 end
 
-describe AdvancedHttp::Resource, '#get (unacceptable redirection)' do
+describe Resourceful::Resource, '#get (unacceptable redirection)' do
   before do
     @accessor = stub('http_accessor')
-    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
+    @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo')
     @redir_response = stub('http_response', :code => '300', :message => 'Multiple Choices')
     @redir_response.stubs(:[]).with('location').returns('http://www.example/bar')
     
@@ -363,7 +363,7 @@ describe AdvancedHttp::Resource, '#get (unacceptable redirection)' do
       
       lambda{
         @resource.get
-      }.should raise_error(AdvancedHttp::HttpRedirectionError)
+      }.should raise_error(Resourceful::HttpRedirectionError)
       
     end 
   end
@@ -371,10 +371,10 @@ describe AdvancedHttp::Resource, '#get (unacceptable redirection)' do
 end 
 
 [['307', 'Temporary'], ['302', 'Found']].each do |code, message|
-  describe AdvancedHttp::Resource, "#get (#{message} redirection)" do
+  describe Resourceful::Resource, "#get (#{message} redirection)" do
     before do
       @accessor = stub('http_accessor')
-      @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
+      @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo')
       @redir_response = stub('http_response', :code => code)
       @redir_response.stubs(:[]).with('location').returns('http://www.example/bar')
       @ok_response = stub('http_response', :code => '200', :body => "I am foo (bar)") 
@@ -408,10 +408,10 @@ end
   end 
 end
 
-describe AdvancedHttp::Resource, '#get (Permanent redirection)' do
+describe Resourceful::Resource, '#get (Permanent redirection)' do
   before do
     @accessor = stub('http_accessor')
-    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
+    @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo')
     @redir_response = stub('http_response', :code => '301')
     @redir_response.stubs(:[]).with('location').returns('http://www.example/bar')
     @ok_response = stub('http_response', :code => '200', :body => "I am foo (bar)") 
@@ -437,10 +437,10 @@ describe AdvancedHttp::Resource, '#get (Permanent redirection)' do
 
 end 
 
-describe AdvancedHttp::Resource, '#post' do
+describe Resourceful::Resource, '#post' do
   before do
     @accessor = stub('http_accessor')
-    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
+    @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo')
     @response = stub('http_response', :is_a? => false, :body => 'Created', :code => '201', :message => 'Created')
     @response.stubs(:[]).with('location').returns('http://www.example/foo/42')
     
@@ -455,7 +455,7 @@ describe AdvancedHttp::Resource, '#post' do
   end 
 
   it 'should include query string in request uri if there is one' do
-    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo?q=test')
+    @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo?q=test')
     
     @resource.expects(:do_request).with{|r,_| r.path =='http://www.example/foo?q=test'}.returns(@response)
 
@@ -496,21 +496,21 @@ describe AdvancedHttp::Resource, '#post' do
     @response.expects(:code).at_least_once.returns('404')
     lambda{
       @resource.post("this=that", 'application/x-form-urlencoded')
-    }.should raise_error(AdvancedHttp::HttpClientError)
+    }.should raise_error(Resourceful::HttpClientError)
   end 
 
   it 'should raise client error for 5xx response' do
     @response.expects(:code).at_least_once.returns('500')
     lambda{
       @resource.post("this=that", 'application/x-form-urlencoded')
-    }.should raise_error(AdvancedHttp::HttpServerError)
+    }.should raise_error(Resourceful::HttpServerError)
   end 
   
   it 'should raise redirected exception for 305 response' do
     @response.expects(:code).at_least_once.returns('305')
     lambda{
       @resource.post("this=that", 'application/x-form-urlencoded')
-    }.should raise_error(AdvancedHttp::HttpRedirectionError)    
+    }.should raise_error(Resourceful::HttpRedirectionError)    
   end 
 
   it 'should return response to GET against redirect target for 303 responses' do
@@ -519,7 +519,7 @@ describe AdvancedHttp::Resource, '#post' do
     
     @resource.expects(:do_request).with{|r,_| r.method == 'POST' and r.path == 'http://www.example/foo'}.returns(see_other_response)
 
-    AdvancedHttp::Resource.expects(:new).with('http://alt.example/bar').
+    Resourceful::Resource.expects(:new).with('http://alt.example/bar').
       returns(secondary_resource = mock('resource2'))
     ok_response = stub('http_ok_response',  :body => 'ok_response', :code => '200')
     secondary_resource.expects(:get_response).returns(ok_response)
@@ -543,7 +543,7 @@ describe AdvancedHttp::Resource, '#post' do
     
     lambda {
       @resource.post("this=that", 'application/x-form-urlencoded', :max_redirects => 2)
-    }.should raise_error(AdvancedHttp::TooManyRedirectsError)
+    }.should raise_error(Resourceful::TooManyRedirectsError)
   end 
 
   it 'should not follow circular redirects' do
@@ -553,7 +553,7 @@ describe AdvancedHttp::Resource, '#post' do
     
     lambda {
       @resource.post("this=that", 'application/x-form-urlencoded')
-    }.should raise_error(AdvancedHttp::CircularRedirectionError)
+    }.should raise_error(Resourceful::CircularRedirectionError)
   end 
 
   it 'should not follow redirects :ignore_redirects is set to true' do
@@ -574,13 +574,13 @@ describe AdvancedHttp::Resource, '#post' do
 
 end
 
-describe AdvancedHttp::Resource, '#put' do
+describe Resourceful::Resource, '#put' do
   before do
     @logger = stub('logger', :info => false, :debug => false)
     @auth_manager = stub('auth_manager', :auth_info_available_for? => false)
     @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager)
 
-    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo')
+    @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo')
     @response = stub('http_response', :is_a? => false, :body => 'Created', :code => '201', :message => 'Created')
     @response.stubs(:[]).with('location').returns('http://www.example/foo/42')
     
@@ -593,7 +593,7 @@ describe AdvancedHttp::Resource, '#put' do
   end 
 
   it 'should make request to correct path' do
-    @resource = AdvancedHttp::Resource.new(@accessor, 'http://www.example/foo?q=test')
+    @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo?q=test')
     @resource.expects(:do_request).with{|r,_| r.path == 'http://www.example/foo?q=test'}.returns(@response)
     @resource.put("this=that", 'application/x-form-urlencoded')
   end 
@@ -635,28 +635,28 @@ describe AdvancedHttp::Resource, '#put' do
     @response.expects(:code).at_least_once.returns('404')
     lambda{
       @resource.put("this=that", 'application/x-form-urlencoded')
-    }.should raise_error(AdvancedHttp::HttpClientError)
+    }.should raise_error(Resourceful::HttpClientError)
   end 
 
   it 'should raise client error for 5xx response' do
     @response.expects(:code).at_least_once.returns('500')
     lambda{
       @resource.put("this=that", 'application/x-form-urlencoded')
-    }.should raise_error(AdvancedHttp::HttpServerError)
+    }.should raise_error(Resourceful::HttpServerError)
   end 
   
   it 'should raise redirected exception for 305 response' do
     @response.expects(:code).at_least_once.returns('305')
     lambda{
       @resource.put("this=that", 'application/x-form-urlencoded')
-    }.should raise_error(AdvancedHttp::HttpRedirectionError)    
+    }.should raise_error(Resourceful::HttpRedirectionError)    
   end 
 
   it 'should raise redirected exception for 303 response' do
     @response.expects(:code).at_least_once.returns('303')
     lambda{
       @resource.put("this=that", 'application/x-form-urlencoded')
-    }.should raise_error(AdvancedHttp::HttpRedirectionError)    
+    }.should raise_error(Resourceful::HttpRedirectionError)    
   end 
 
   it 'should not follow more than max_redirects redirections' do
@@ -667,7 +667,7 @@ describe AdvancedHttp::Resource, '#put' do
     
     lambda {
       @resource.put("this=that", 'application/x-form-urlencoded', :max_redirects => 2)
-    }.should raise_error(AdvancedHttp::TooManyRedirectsError)
+    }.should raise_error(Resourceful::TooManyRedirectsError)
   end 
 
   it 'should not follow circular redirects' do
@@ -677,7 +677,7 @@ describe AdvancedHttp::Resource, '#put' do
     
     lambda {
       @resource.put("this=that", 'application/x-form-urlencoded')
-    }.should raise_error(AdvancedHttp::CircularRedirectionError)
+    }.should raise_error(Resourceful::CircularRedirectionError)
   end 
 
   it 'should not follow redirects :ignore_redirects is set to true' do

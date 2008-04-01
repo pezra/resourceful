@@ -2,11 +2,11 @@ require 'net/http'
 require 'uri'
 require 'benchmark'
 require 'addressable/uri'
-require 'advanced_http/exceptions'
+require 'resourceful/exceptions'
 require 'set'
-require 'advanced_http/options_interpreter'
+require 'resourceful/options_interpreter'
 
-module AdvancedHttp
+module Resourceful
 
   # Interface for an object that can provide user names and passwords
   # for HTTP authentication.

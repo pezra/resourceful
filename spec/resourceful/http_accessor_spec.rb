@@ -1,45 +1,45 @@
 require 'pathname'
 require Pathname(__FILE__).dirname + '../spec_helper'
 
-require 'advanced_http/http_accessor'
+require 'resourceful/http_accessor'
 
-describe AdvancedHttp::HttpAccessor, 'init' do
+describe Resourceful::HttpAccessor, 'init' do
     
   it 'should be instantiatable' do
-    AdvancedHttp::HttpAccessor.new().should be_instance_of(AdvancedHttp::HttpAccessor)
+    Resourceful::HttpAccessor.new().should be_instance_of(Resourceful::HttpAccessor)
   end 
   
   it 'should accept logger to new' do
-    ha = AdvancedHttp::HttpAccessor.new(:logger => (l = stub('logger', :debug)))
+    ha = Resourceful::HttpAccessor.new(:logger => (l = stub('logger', :debug)))
     
     ha.logger.should == l
   end 
 
   it 'should provide logger object even when no logger is specified' do
-    ha = AdvancedHttp::HttpAccessor.new()
+    ha = Resourceful::HttpAccessor.new()
     
-    ha.logger.should be_instance_of(AdvancedHttp::HttpAccessor::BitBucketLogger)
+    ha.logger.should be_instance_of(Resourceful::HttpAccessor::BitBucketLogger)
   end 
 
   it 'should raise arg error if unrecognized options are passed' do
     lambda {
-      ha = AdvancedHttp::HttpAccessor.new(:foo => 'foo', :bar => 'bar')
+      ha = Resourceful::HttpAccessor.new(:foo => 'foo', :bar => 'bar')
     }.should raise_error(ArgumentError, /Unrecognized option\(s\): (foo, bar)|(bar, foo)/)
   end 
 
   it 'should create an auth manager with the specified auth_info_provider' do
     auth_info_provider = stub('auth_info_provider')
-    AdvancedHttp::AuthenticationManager.expects(:new).with(auth_info_provider).returns(stub('auth_manager'))
+    Resourceful::AuthenticationManager.expects(:new).with(auth_info_provider).returns(stub('auth_manager'))
     
-    AdvancedHttp::HttpAccessor.new(:authentication_info_provider => auth_info_provider)
+    Resourceful::HttpAccessor.new(:authentication_info_provider => auth_info_provider)
   end 
 end 
 
-describe AdvancedHttp::HttpAccessor do 
+describe Resourceful::HttpAccessor do 
   before do
     @logger = stub('logger')
     @authentication_info_provider = stub('authentication_info_provider')
-    @accessor = AdvancedHttp::HttpAccessor.new(:authentication_info_provider => @authentication_info_provider,
+    @accessor = Resourceful::HttpAccessor.new(:authentication_info_provider => @authentication_info_provider,
                                                :logger => @logger)
   end
 
@@ -63,18 +63,18 @@ describe AdvancedHttp::HttpAccessor do
   end 
 
   it 'should create resource if it does not already exist (#[])' do
-    AdvancedHttp::Resource.expects(:new).returns(stub('resource'))
+    Resourceful::Resource.expects(:new).returns(stub('resource'))
     @accessor['http://www.example/previously-unused-uri']
   end 
 
   it 'should pass uri to resource upon creation (#[])' do
-    AdvancedHttp::Resource.expects(:new).with(anything, 'http://www.example/previously-unused-uri').
+    Resourceful::Resource.expects(:new).with(anything, 'http://www.example/previously-unused-uri').
       returns(stub('resource'))
     @accessor['http://www.example/previously-unused-uri']
   end 
   
   it 'should pass owning accessor to resource upon creation (#[])' do
-    AdvancedHttp::Resource.expects(:new).with(@accessor, anything).returns(stub('resource'))
+    Resourceful::Resource.expects(:new).with(@accessor, anything).returns(stub('resource'))
     @accessor['http://www.example/previously-unused-uri']
   end 
 
@@ -83,27 +83,27 @@ describe AdvancedHttp::HttpAccessor do
   end 
 
   it 'should create resource if it does not already exist (#resource)' do
-    AdvancedHttp::Resource.expects(:new).returns(stub('resource'))
+    Resourceful::Resource.expects(:new).returns(stub('resource'))
     @accessor.resource('http://www.example/previously-unused-uri')
   end 
 
   it 'should pass owning accessor to resource upon creation (#[])' do
-    AdvancedHttp::Resource.expects(:new).with(@accessor, anything).returns(stub('resource'))
+    Resourceful::Resource.expects(:new).with(@accessor, anything).returns(stub('resource'))
     @accessor.resource('http://www.example/previously-unused-uri')
   end 
 
   it 'should pass uri to resource upon creation (#resource)' do
-    AdvancedHttp::Resource.expects(:new).with(anything, 'http://www.example/previously-unused-uri').
+    Resourceful::Resource.expects(:new).with(anything, 'http://www.example/previously-unused-uri').
       returns(stub('resource'))
     @accessor.resource('http://www.example/previously-unused-uri')
   end 
 end
 
-describe AdvancedHttp::HttpAccessor, "#get_body(uri, options = {})" do 
+describe Resourceful::HttpAccessor, "#get_body(uri, options = {})" do 
   before do
     @logger = stub('logger')
     @authentication_info_provider = stub('authentication_info_provider')
-    @accessor = AdvancedHttp::HttpAccessor.new(:authentication_info_provider => @authentication_info_provider,
+    @accessor = Resourceful::HttpAccessor.new(:authentication_info_provider => @authentication_info_provider,
                                                :logger => @logger)
     @resource = stub('resource', :get_body => 'boo!')
     @accessor.stubs(:resource).returns(@resource)
@@ -130,9 +130,9 @@ describe AdvancedHttp::HttpAccessor, "#get_body(uri, options = {})" do
   end 
 end
 
-describe AdvancedHttp::HttpAccessor, 'request stubbing' do
+describe Resourceful::HttpAccessor, 'request stubbing' do
   before do
-    @accessor = AdvancedHttp::HttpAccessor.new()
+    @accessor = Resourceful::HttpAccessor.new()
   end
   
   it 'should allow http request to be stubbed for testing/debugging purposes' do
@@ -142,7 +142,7 @@ describe AdvancedHttp::HttpAccessor, 'request stubbing' do
   it 'should return request stubbing resource proxy' do
     @accessor.stub_request(:get, 'http://www.example/temptation-waits', 'text/plain', "This is a stubbed response")
     
-    @accessor.resource('http://www.example/temptation-waits').should be_kind_of(AdvancedHttp::StubbedResourceProxy)
+    @accessor.resource('http://www.example/temptation-waits').should be_kind_of(Resourceful::StubbedResourceProxy)
   end 
 
   it 'response to stubbed request should have canned body' do

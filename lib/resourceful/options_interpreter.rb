@@ -1,6 +1,6 @@
 require 'set'
 
-module AdvancedHttp
+module Resourceful
   class OptionsInterpreter
     def self.interpret(options_hash, &block)
       interpreter = self.new(options_hash)
