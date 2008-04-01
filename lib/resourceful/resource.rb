@@ -1,5 +1,4 @@
 require 'net/http'
-require 'uri'
 require 'benchmark'
 require 'addressable/uri'
 require 'resourceful/exceptions'
