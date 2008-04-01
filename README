@@ -1,7 +1,14 @@
 AdvancedHttp
 ============
 
-This library provides a sophiscated set HTTP related funcionality.   
+AdvancedHttp provides a convenient Ruby API for making HTTP requests.
+
+Features:
+
+  * GET, PUT and POST HTTP requests
+  * support for  HTTP Basic and Digest authentication
+  * pluggable unmarshallers for parsing response bodies
+
 
 Example
 =======
@@ -27,4 +34,4 @@ Get page requiring HTTP Authentication
     puts resp.body
 
 
-Copyright (c) 2007 Absolute Performance, Inc, released under the MIT license
+Copyright (c) 2007 Absolute Performance, Inc, released under the GNU Lesser General Public License.
