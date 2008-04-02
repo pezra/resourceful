@@ -16,7 +16,7 @@ describe Resourceful::Resource do
   before do
     @logger = stub('logger', :info => false, :debug => false)
     @auth_manager = stub('auth_manager', :auth_info_available_for? => false)
-    @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager)
+    @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager, :user_agent_string => 'test/1.0')
     @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo')
   end
 
@@ -29,7 +29,7 @@ describe Resourceful::Resource do
   end 
 
   it 'should execute request against remote server' do
-    req = stub("http_req", :method => 'GET', :[] => nil)
+    req = stub("http_req", :method => 'GET', :[] => nil, :[]= => nil)
     http_conn = stub('http_conn')
     response = stub('response', :code => '200')
     Net::HTTP.expects(:start).with('www.example', 80).yields(http_conn).returns(response)
@@ -39,7 +39,7 @@ describe Resourceful::Resource do
   end 
 
   it 'should send body to remote server if provided' do
-    req = stub("http_req", :method => 'POST', :[] => nil)
+    req = stub("http_req", :method => 'POST', :[] => nil, :[]= => nil)
     http_conn = mock('http_conn')
     Net::HTTP.expects(:start).with('www.example', 80).yields(http_conn).returns(response = stub('response', :code => '201'))
     http_conn.expects(:request).with(req, "body").returns(response)
@@ -60,21 +60,21 @@ describe Resourceful::Resource do
   
 end 
 
-describe Resourceful::Resource, '#do_request (non-auth)' do
+describe Resourceful::Resource, '#do_request' do
   before do
     @logger = stub('logger', :info => false, :debug => false)
     @auth_manager = stub('auth_manager')
     @auth_manager.stubs(:auth_info_available_for?).returns(false,true)
-    @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager)
+    @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager, :user_agent_string => "us/1.0")
 
     @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo')
     @ok_response = stub('ok_response', :code => '200')
     
     @http_conn = stub('http_conn')
-    Net::HTTP.expects(:start).with('www.example', 80).yields(@http_conn)
+    Net::HTTP.expects(:start).at_least_once.with('www.example', 80).yields(@http_conn)
     @http_conn.stubs(:request).returns(@ok_response)
 
-    @request = stub("http_req", :method => 'GET', :basic_auth => nil)
+    @request = stub("http_req", :method => 'GET', :basic_auth => nil, :[]= => nil, :[] => nil)
   end
   
   it 'should attach request information to exceptions raised' do
@@ -84,81 +84,78 @@ describe Resourceful::Resource, '#do_request (non-auth)' do
       @resource.send(:do_request, @request)        
     }.should raise_error(SocketError, 'getaddreinfo: Name or service not known (while GET http://www.example/foo)')
   end 
+
+  it 'should set the user agent header field' do
+    @accessor.expects(:user_agent_string).returns('user-agent-marker-string')
+    @request.expects(:[]=).with('User-Agent', 'user-agent-marker-string')
+    @resource.send(:do_request, @request)
+  end 
+  
+  describe Resourceful::Resource, '#do_request (auth)' do
+    before do
+      @auth_manager = stub('auth_manager', :auth_info_available_for? => [false,true], :register_challenge => nil, :credentials_for => 'Digest foo=bar')
+      @accessor.stubs(:auth_manager).returns(@auth_manager)
+      @unauth_response = stub('unauth_response', :code => '401', :digest_auth_allowed? => false, 
+                              :basic_auth_allowed? => true, :realm => 'test_realm')
+      @http_conn.stubs(:request).returns(@unauth_response, @ok_response)
+      @request = stub("http_req", :method => 'GET', :basic_auth => nil, :authentication_scheme => 'basic', :authentication_realm => 'test_realm', :[]= => nil)
+      @request.stubs(:[]).with('Authorization').returns(nil, 'Digest foo=bar')
+    end
+    
+    it 'should not include body in authenticated retry (because it is already stored on the request object from the first time around)' do
+      @http_conn.expects(:request).with(anything, 'testing').once.returns(@unauth_response)
+      @http_conn.expects(:request).with(anything, nil).once.returns(@ok_response)
+
+      @resource.send(:do_request, @request, 'testing')    
+    end 
+    
+    it 'should retry unauthorized requests with auth if possible' do
+      @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
+      
+      @resource.send(:do_request, @request)    
+    end 
+
+    it 'should set auth info on request before retry' do
+      @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
+      @auth_manager.expects(:credentials_for).once.
+        with{|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}.returns('Digest bar=baz')
+      @request.expects(:[]=).with('Authorization', 'Digest bar=baz')
+      
+      @resource.send(:do_request, @request)    
+    end 
+
+    it 'should register challenge if initial response is unauthorized' do 
+      @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
+      @auth_manager.expects(:register_challenge).with(@unauth_response, Addressable::URI.parse('http://www.example/foo'))
+      
+      @resource.send(:do_request, @request)    
+    end 
+    
+    it 'should log the retry' do
+      @logger.expects(:info).times(2)
+      
+      @resource.send(:do_request, @request)    
+    end   
+    
+    it 'should set auth info before request if it is available' do
+      @http_conn.expects(:request).times(1).returns(@ok_response)
+      @auth_manager.expects(:auth_info_available_for?).with(Addressable::URI.parse('http://www.example/foo')).returns(true)
+      @auth_manager.expects(:credentials_for).once.with {|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}.returns("Digest foo")
+      
+      @resource.send(:do_request, @request)    
+    end 
+
+    it 'should set auth info before request if it is available' do
+      @http_conn.expects(:request).times(1).returns(@ok_response)
+      @auth_manager.expects(:auth_info_available_for?).with(Addressable::URI.parse('http://www.example/foo')).returns(true)
+      @auth_manager.expects(:credentials_for).once.with{|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}.
+        returns('Digest bar=baz')
+      @request.expects(:[]=).with('Authorization', 'Digest bar=baz')
+      
+      @resource.send(:do_request, @request)    
+    end 
+  end 
 end
-
-describe Resourceful::Resource, '#do_request (auth)' do
-  before do
-    @logger = stub('logger', :info => false, :debug => false)
-    @auth_manager = stub('auth_manager', :auth_info_available_for? => [false,true], :register_challenge => nil, :credentials_for => 'Digest foo=bar')
-    @accessor = stub('http_accessor', :logger => @logger, :auth_manager => @auth_manager)
-
-    @resource = Resourceful::Resource.new(@accessor, 'http://www.example/foo')
-    
-    @unauth_response = stub('unauth_response', :code => '401', :digest_auth_allowed? => false, 
-                            :basic_auth_allowed? => true, :realm => 'test_realm')
-    @ok_response = stub('ok_response', :code => '200')
-    
-    @http_conn = mock('http_conn')
-    Net::HTTP.stubs(:start).with('www.example', 80).yields(@http_conn)
-    @http_conn.stubs(:request).returns(@unauth_response, @ok_response)
-
-    @request = stub("http_req", :method => 'GET', :basic_auth => nil, :authentication_scheme => 'basic', :authentication_realm => 'test_realm', :[]= => nil)
-    @request.stubs(:[]).with('Authorization').returns(nil, 'Digest foo=bar')
-  end
-  
-  it 'should not include body in authenticated retry (because it is already stored on the request object from the first time around)' do
-    @http_conn.expects(:request).with(anything, 'testing').once.returns(@unauth_response)
-    @http_conn.expects(:request).with(anything, nil).once.returns(@ok_response)
-
-    @resource.send(:do_request, @request, 'testing')    
-  end 
-  
-  it 'should retry unauthorized requests with auth if possible' do
-    @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
- 
-    @resource.send(:do_request, @request)    
-  end 
-
-  it 'should set auth info on request before retry' do
-    @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
-    @auth_manager.expects(:credentials_for).once.
-      with{|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}.returns('Digest bar=baz')
-    @request.expects(:[]=).with('Authorization', 'Digest bar=baz')
-    
-    @resource.send(:do_request, @request)    
-  end 
-
-  it 'should register challenge if initial response is unauthorized' do 
-    @http_conn.expects(:request).times(2).returns(@unauth_response, @ok_response)
-    @auth_manager.expects(:register_challenge).with(@unauth_response, Addressable::URI.parse('http://www.example/foo'))
- 
-    @resource.send(:do_request, @request)    
-  end 
-  
-  it 'should log the retry' do
-    @logger.expects(:info).times(2)
-    
-    @resource.send(:do_request, @request)    
-  end   
-  
-  it 'should set auth info before request if it is available' do
-    @http_conn.expects(:request).times(1).returns(@ok_response)
-    @auth_manager.expects(:auth_info_available_for?).with(Addressable::URI.parse('http://www.example/foo')).returns(true)
-    @auth_manager.expects(:credentials_for).once.with {|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}.returns("Digest foo")
-    
-    @resource.send(:do_request, @request)    
-  end 
-
-  it 'should set auth info before request if it is available' do
-    @http_conn.expects(:request).times(1).returns(@ok_response)
-    @auth_manager.expects(:auth_info_available_for?).with(Addressable::URI.parse('http://www.example/foo')).returns(true)
-    @auth_manager.expects(:credentials_for).once.with{|r,u| r.equal?(@request) && u.to_s == 'http://www.example/foo'}.
-      returns('Digest bar=baz')
-    @request.expects(:[]=).with('Authorization', 'Digest bar=baz')
-    
-    @resource.send(:do_request, @request)    
-  end 
-end 
 
 describe Resourceful::Resource, '#get_body' do
   before do

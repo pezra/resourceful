@@ -24,7 +24,7 @@ describe Resourceful::HttpAccessor, 'init' do
   it 'should raise arg error if unrecognized options are passed' do
     lambda {
       ha = Resourceful::HttpAccessor.new(:foo => 'foo', :bar => 'bar')
-    }.should raise_error(ArgumentError, /Unrecognized option\(s\): (foo, bar)|(bar, foo)/)
+    }.should raise_error(ArgumentError, /Unrecognized options: (foo, bar)|(bar, foo)/)
   end 
 
   it 'should create an auth manager with the specified auth_info_provider' do
@@ -32,7 +32,20 @@ describe Resourceful::HttpAccessor, 'init' do
     Resourceful::AuthenticationManager.expects(:new).with(auth_info_provider).returns(stub('auth_manager'))
     
     Resourceful::HttpAccessor.new(:authentication_info_provider => auth_info_provider)
+  end
+  
+  it 'should allow an additional user agent token to be passed at init' do
+    Resourceful::HttpAccessor.new(:user_agent => "Super/3000").tap do |ha|
+      ha.user_agent_string.should match(%r{^Super/3000})
+    end
   end 
+
+  it 'should allow multiple additional user agent tokens to be passed at init' do
+    Resourceful::HttpAccessor.new(:user_agent => ["Super/3000", "Duper/2.1"]).tap do |ha|
+      ha.user_agent_string.should match(%r{^Super/3000 Duper/2\.1 })
+    end
+  end 
+
 end 
 
 describe Resourceful::HttpAccessor do 
@@ -42,7 +55,17 @@ describe Resourceful::HttpAccessor do
     @accessor = Resourceful::HttpAccessor.new(:authentication_info_provider => @authentication_info_provider,
                                                :logger => @logger)
   end
-
+  
+  it 'should have user agent string w/ just resourceful token by default' do
+    @accessor.user_agent_string.should == "Resourceful/#{RESOURCEFUL_VERSION}(Ruby/#{RUBY_VERSION})"
+  end 
+  
+  it 'should add additional user agent tokens to beginning of user agent string' do
+    @accessor.user_agent_tokens << 'FooBar/3000(special-version)'
+    
+    @accessor.user_agent_string.should match(%r{^FooBar\/3000\(special-version\) Resourceful/})
+  end
+  
   it 'should allow a logger to be specified' do
     l = stub('logger')
     
@@ -108,12 +131,12 @@ describe Resourceful::HttpAccessor, "#get_body(uri, options = {})" do
     @resource = stub('resource', :get_body => 'boo!')
     @accessor.stubs(:resource).returns(@resource)
   end
-  
+
   it 'should get the resource specified by uri' do
     @accessor.expects(:resource).with('http://www.example/foo').returns(@resource)
     @accessor.get_body('http://www.example/foo')
   end 
-  
+
   it 'should call get_body on the resource' do
     @resource.expects(:get_body).returns("ha!")
     @accessor.get_body('http://www.example/foo')    

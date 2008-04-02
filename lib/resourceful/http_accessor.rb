@@ -1,7 +1,8 @@
+require 'resourceful/version'
 require 'resourceful/resource'
 require 'resourceful/authentication_manager'
-
 require 'resourceful/stubbed_resource_proxy'
+require 'resourceful/options_interpreter'
 
 module Resourceful
   
@@ -9,6 +10,7 @@ module Resourceful
   # provided by the Resourceful library.  Conceptually this object
   # acts a collection of all the resources available via HTTP.
   class HttpAccessor
+    RESOURCEFUL_USER_AGENT_TOKEN = "Resourceful/#{RESOURCEFUL_VERSION}(Ruby/#{RUBY_VERSION})"
     
     # This is an imitation Logger used when no real logger is
     # registered.  This allows most of the code to assume that there
@@ -38,6 +40,15 @@ module Resourceful
     
     attr_reader :auth_manager
     
+    attr_reader :user_agent_tokens
+
+    
+    INIT_OPTIONS = OptionsInterpreter.new do 
+      option(:logger, :default => BitBucketLogger.new)
+      option(:authentication_info_provider, :default => NoOpAuthenticationInfoProvider.new)
+      option(:user_agent, :default => []) {|ua| [ua].flatten}
+    end
+    
     # Initializes a new HttpAccessor.  Valid options:
     #
     #  +:authentication_info_provider+:: An objects that responds to
@@ -48,16 +59,26 @@ module Resourceful
     #
     #  +:logger+:: A Logger object that the new HTTP accessor should
     #    send log messages
+    #
+    #  +:user_agent+:: One or more additional user agent tokens to
+    #    added to the user agent string.
     def initialize(options = {})
-      options = options.clone
+      @user_agent_tokens = [RESOURCEFUL_USER_AGENT_TOKEN]
       
-      self.logger = options.delete(:logger) || BitBucketLogger.new
-      
-      @auth_manager = AuthenticationManager.new(options.delete(:authentication_info_provider) || NoOpAuthenticationInfoProvider.new)
-      
-      raise ArgumentError, "Unrecognized option(s): #{options.keys.join(', ')}" unless options.empty?
+      INIT_OPTIONS.interpret(options) do |opts|
+        @user_agent_tokens.push(*opts[:user_agent].reverse)
+        self.logger = opts[:logger]
+        @auth_manager = AuthenticationManager.new(opts[:authentication_info_provider])
+      end     
     end
-
+    
+    # Returns the string that identifies this HTTP accessor.  If you
+    # want to add a token to the user agent string simply add the new
+    # token to the end of +#user_agent_tokens+.
+    def user_agent_string
+      user_agent_tokens.reverse.join(' ')
+    end
+    
     # Returns a resource object representing the resource indicated
     # by the specified URI.  A resource object will be created if necessary.
     def resource(uri)

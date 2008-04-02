@@ -292,6 +292,7 @@ module Resourceful
     # makes an HTTP request against the server that hosts this
     # resource and returns the HTTPResponse.
     def do_request(an_http_request, body = nil, is_auth_retry = false)
+      an_http_request['User-Agent'] = owner.user_agent_string
       e_uri = Addressable::URI.parse(effective_uri)
       Net::HTTP.start(e_uri.host, e_uri.port) do |c|
  
