@@ -1,8 +1,10 @@
+require 'net/http'
+
 require 'resourceful/version'
-require 'resourceful/resource'
-require 'resourceful/authentication_manager'
-require 'resourceful/stubbed_resource_proxy'
 require 'resourceful/options_interpreter'
+require 'resourceful/authentication_manager'
+require 'resourceful/resource'
+require 'resourceful/stubbed_resource_proxy'
 
 module Resourceful
   
