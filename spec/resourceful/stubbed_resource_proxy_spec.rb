@@ -36,22 +36,22 @@ describe Resourceful::StubbedResourceProxy do
   end 
   
   it 'should pass #get() through to base resource if no matching canned response is defined' do
-    @resource.expects(:get)
+    @resource.should_receive(:get)
     @stubbed_resource.get(:accept => 'application/unknown')
   end 
 
   it 'should pass #post() through to base resource if no canned response is defined' do
-    @resource.expects(:post)
+    @resource.should_receive(:post)
     @stubbed_resource.post
   end 
 
   it 'should pass #put() through to base resource if no canned response is defined' do
-    @resource.expects(:put)
+    @resource.should_receive(:put)
     @stubbed_resource.put
   end 
   
     it 'should pass #effective_uri() through to base resource if no canned response is defined' do
-    @resource.expects(:effective_uri)
+    @resource.should_receive(:effective_uri)
     @stubbed_resource.effective_uri
   end 
 

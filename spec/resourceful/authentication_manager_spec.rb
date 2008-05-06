@@ -17,7 +17,7 @@ module Resourceful
       @unauth_response = Net::HTTPUnauthorized.new('1.1', '401', 'Unauthorized') 
       @unauth_response['WWW-Authenticate'] = digest_challange_with_domain
       @example_uri = Addressable::URI.parse('http://foo.example/bar')
-      @auth_info_provider = stub('auth_info_provider', :authentication_info => ['me', 'mine'])
+      @auth_info_provider = mock('auth_info_provider', :authentication_info => ['me', 'mine'])
       
       @realm = DigestAuthRealm.new(@unauth_response, @example_uri, @auth_info_provider)
     end
@@ -45,7 +45,7 @@ module Resourceful
     end
     
     it 'should raise error if no credentials are known for this realm' do
-      @auth_info_provider.stubs(:authentication_info).returns(nil)
+      @auth_info_provider.stub!(:authentication_info).and_return(nil)
       
       lambda{
         DigestAuthRealm.new(@unauth_response, @example_uri, @auth_info_provider)
@@ -53,7 +53,7 @@ module Resourceful
     end
     
     it 'should get authentication info' do
-      @auth_info_provider.expects(:authentication_info).with('SystemShepherd').returns(['me', 'mine'])
+      @auth_info_provider.should_receive(:authentication_info).with('SystemShepherd').and_return(['me', 'mine'])
       
       DigestAuthRealm.new(@unauth_response, @example_uri, @auth_info_provider)
     end 
@@ -72,7 +72,7 @@ module Resourceful
       @unauth_response = Net::HTTPUnauthorized.new('1.1', '401', 'Unauthorized') 
       @unauth_response['WWW-Authenticate'] = "Digest opaque=\"f9881f17cd67311b1d79abd587675d6e\", nonce=\"MjAwNy0xMC0wMyAwNDoxMjowMDo1NjcyMDk6NTcxMWZmMTEzMGRlMTI1OTNkNjY2NDdmYzFiOTA0Nj\", realm=\"SystemShepherd\", qop=\"auth\", algorithm=MD5-sess, domain=\"/bar http://baz.example/foo\""
       @example_uri = Addressable::URI.parse('http://foo.example/bar')
-      @auth_info_provider = stub('auth_info_provider', :authentication_info => ['me', 'mine'])
+      @auth_info_provider = mock('auth_info_provider', :authentication_info => ['me', 'mine'])
 
       @realm = DigestAuthRealm.new(@unauth_response, @example_uri, @auth_info_provider)      
     end
@@ -97,7 +97,7 @@ module Resourceful
       @unauth_response = Net::HTTPUnauthorized.new('1.1', '401', 'Unauthorized') 
       @unauth_response['WWW-Authenticate'] = "Digest opaque=\"f9881f17cd67311b1d79abd587675d6e\", nonce=\"MjAwNy0xMC0wMyAwNDoxMjowMDo1NjcyMDk6NTcxMWZmMTEzMGRlMTI1OTNkNjY2NDdmYzFiOTA0Nj\", realm=\"SystemShepherd\", qop=\"auth\", algorithm=MD5-sess, domain=\"/bar http://baz.example/foo\""
       @example_uri = Addressable::URI.parse('http://foo.example/bar')
-      @auth_info_provider = stub('auth_info_provider', :authentication_info => ['me', 'mine'])
+      @auth_info_provider = mock('auth_info_provider', :authentication_info => ['me', 'mine'])
       
       @realm = DigestAuthRealm.new(@unauth_response, @example_uri, @auth_info_provider)      
     end
@@ -114,7 +114,7 @@ end
   
 describe Resourceful::AuthenticationManager, '.new(auth_info_provider)' do 
   it 'should return a new authentication manager' do
-    @auth_info_provider = stub('auth_info_provider')
+    @auth_info_provider = mock('auth_info_provider')
     Resourceful::AuthenticationManager.new(@auth_info_provider).should be_instance_of(Resourceful::AuthenticationManager)
   end 
 end
@@ -123,10 +123,10 @@ end
 describe Resourceful::AuthenticationManager, '#register_challenge(unauthorized_http_response, request_uri)' do
   before do
     @example_uri = Addressable::URI.parse('http://foo.example/bar')
-    @auth_info_provider = stub('auth_info_provider', :authentication_info => ['me', 'mine'])
+    @auth_info_provider = mock('auth_info_provider', :authentication_info => ['me', 'mine'])
     @auth_manager = Resourceful::AuthenticationManager.new(@auth_info_provider)
     
-    @unauth_response = stub('unauth_http_response', :code => '401', :get_fields => ["Digest opaque=\"f9881f17cd67311b1d79abd587675d6e\", nonce=\"MjAwNy0xMC0wMyAwNDoxMjowMDo1NjcyMDk6NTcxMWZmMTEzMGRlMTI1OTNkNjY2NDdmYzFiOTA0Nj\", realm=\"SystemShepherd\", qop=\"auth\", algorithm=MD5-sess, domain=\"/bar http://baz.example/foo\""])
+    @unauth_response = mock('unauth_http_response', :code => '401', :get_fields => ["Digest opaque=\"f9881f17cd67311b1d79abd587675d6e\", nonce=\"MjAwNy0xMC0wMyAwNDoxMjowMDo1NjcyMDk6NTcxMWZmMTEzMGRlMTI1OTNkNjY2NDdmYzFiOTA0Nj\", realm=\"SystemShepherd\", qop=\"auth\", algorithm=MD5-sess, domain=\"/bar http://baz.example/foo\""])
   end
   
   it 'should take an unauthorized http response and canonical URI of the resource that generated the response' do
@@ -143,12 +143,12 @@ end
 describe Resourceful::AuthenticationManager, '#credentials_for(uri)' do
   before do
     @example_uri = Addressable::URI.parse('http://foo.example/bar')
-    @auth_info_provider = stub('auth_info_provider', :authentication_info => ['me', 'mine'])
+    @auth_info_provider = mock('auth_info_provider', :authentication_info => ['me', 'mine'])
     @auth_manager = Resourceful::AuthenticationManager.new(@auth_info_provider)
     
-    @unauth_response = stub('unauth_http_response', :code => '401', :get_fields => ["Digest opaque=\"f9881f17cd67311b1d79abd587675d6e\", nonce=\"MjAwNy0xMC0wMyAwNDoxMjowMDo1NjcyMDk6NTcxMWZmMTEzMGRlMTI1OTNkNjY2NDdmYzFiOTA0Nj\", realm=\"SystemShepherd\", qop=\"auth\", algorithm=MD5-sess, domain=\"/bar http://baz.example/foo\""])
+    @unauth_response = mock('unauth_http_response', :code => '401', :get_fields => ["Digest opaque=\"f9881f17cd67311b1d79abd587675d6e\", nonce=\"MjAwNy0xMC0wMyAwNDoxMjowMDo1NjcyMDk6NTcxMWZmMTEzMGRlMTI1OTNkNjY2NDdmYzFiOTA0Nj\", realm=\"SystemShepherd\", qop=\"auth\", algorithm=MD5-sess, domain=\"/bar http://baz.example/foo\""])
     @auth_manager.register_challenge(@unauth_response, @example_uri)
-    @request = stub('http_request', :method => 'GET', :path => '/bar')
+    @request = mock('http_request', :method => 'GET', :path => '/bar')
   end
   
   it 'should return credentials suitable of setting to WWW-Authenticate header field' do

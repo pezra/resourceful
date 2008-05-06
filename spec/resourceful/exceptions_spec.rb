@@ -15,13 +15,13 @@ describe Resourceful::HttpRequestError, '.new_from()' do
   end 
 
   it 'should create server error when code is 5xx' do
-    @response.stubs(:code).returns('500')
+    @response.stub!(:code).and_return('500')
 
     Resourceful::HttpRequestError.new_from(@request, @response, @resource).should be_instance_of(Resourceful::HttpServerError)
   end 
 
   it 'should create redirection error when code is 3xx' do
-    @response.stubs(:code).returns('300')
+    @response.stub!(:code).and_return('300')
 
     Resourceful::HttpRequestError.new_from(@request, @response, @resource).should be_instance_of(Resourceful::HttpRedirectionError)
   end 
@@ -33,16 +33,16 @@ describe Resourceful::HttpRequestError, '.new_from()' do
   end 
 
   it 'should construct a helpful message for POST failures' do
-    @request.stubs(:method).returns('POST')
-    @response.stubs(:message).returns('Hello There')
+    @request.stub!(:method).and_return('POST')
+    @response.stub!(:message).and_return('Hello There')
                    
     Resourceful::HttpRequestError.new_from(@request, @response, @resource).message.should ==
       'Received Hello There response to POST http://foo.example/bar (404)'
   end 
 
   it 'should construct a helpful message for PUT failures' do
-    @request.stubs(:method).returns('PUT')
-    @response.stubs(:message).returns('Hello There')
+    @request.stub!(:method).and_return('PUT')
+    @response.stub!(:message).and_return('Hello There')
                    
     Resourceful::HttpRequestError.new_from(@request, @response, @resource).message.should ==
       'Received Hello There response to PUT http://foo.example/bar (404)'

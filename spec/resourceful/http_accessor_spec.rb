@@ -10,7 +10,7 @@ describe Resourceful::HttpAccessor, 'init' do
   end 
   
   it 'should accept logger to new' do
-    ha = Resourceful::HttpAccessor.new(:logger => (l = stub('logger', :debug)))
+    ha = Resourceful::HttpAccessor.new(:logger => (l = stub('logger')))
     
     ha.logger.should == l
   end 
@@ -29,7 +29,7 @@ describe Resourceful::HttpAccessor, 'init' do
 
   it 'should create an auth manager with the specified auth_info_provider' do
     auth_info_provider = stub('auth_info_provider')
-    Resourceful::AuthenticationManager.expects(:new).with(auth_info_provider).returns(stub('auth_manager'))
+    Resourceful::AuthenticationManager.should_receive(:new).with(auth_info_provider).and_return(stub('auth_manager'))
     
     Resourceful::HttpAccessor.new(:authentication_info_provider => auth_info_provider)
   end
@@ -86,18 +86,18 @@ describe Resourceful::HttpAccessor do
   end 
 
   it 'should create resource if it does not already exist (#[])' do
-    Resourceful::Resource.expects(:new).returns(stub('resource'))
+    Resourceful::Resource.should_receive(:new).and_return(stub('resource'))
     @accessor['http://www.example/previously-unused-uri']
   end 
 
   it 'should pass uri to resource upon creation (#[])' do
-    Resourceful::Resource.expects(:new).with(anything, 'http://www.example/previously-unused-uri').
-      returns(stub('resource'))
+    Resourceful::Resource.should_receive(:new).with(anything, 'http://www.example/previously-unused-uri').
+      and_return(stub('resource'))
     @accessor['http://www.example/previously-unused-uri']
   end 
   
   it 'should pass owning accessor to resource upon creation (#[])' do
-    Resourceful::Resource.expects(:new).with(@accessor, anything).returns(stub('resource'))
+    Resourceful::Resource.should_receive(:new).with(@accessor, anything).and_return(stub('resource'))
     @accessor['http://www.example/previously-unused-uri']
   end 
 
@@ -106,18 +106,18 @@ describe Resourceful::HttpAccessor do
   end 
 
   it 'should create resource if it does not already exist (#resource)' do
-    Resourceful::Resource.expects(:new).returns(stub('resource'))
+    Resourceful::Resource.should_receive(:new).and_return(stub('resource'))
     @accessor.resource('http://www.example/previously-unused-uri')
   end 
 
   it 'should pass owning accessor to resource upon creation (#[])' do
-    Resourceful::Resource.expects(:new).with(@accessor, anything).returns(stub('resource'))
+    Resourceful::Resource.should_receive(:new).with(@accessor, anything).and_return(stub('resource'))
     @accessor.resource('http://www.example/previously-unused-uri')
   end 
 
   it 'should pass uri to resource upon creation (#resource)' do
-    Resourceful::Resource.expects(:new).with(anything, 'http://www.example/previously-unused-uri').
-      returns(stub('resource'))
+    Resourceful::Resource.should_receive(:new).with(anything, 'http://www.example/previously-unused-uri').
+      and_return(stub('resource'))
     @accessor.resource('http://www.example/previously-unused-uri')
   end 
 end
@@ -129,26 +129,26 @@ describe Resourceful::HttpAccessor, "#get_body(uri, options = {})" do
     @accessor = Resourceful::HttpAccessor.new(:authentication_info_provider => @authentication_info_provider,
                                                :logger => @logger)
     @resource = stub('resource', :get_body => 'boo!')
-    @accessor.stubs(:resource).returns(@resource)
+    @accessor.stub!(:resource).and_return(@resource)
   end
 
   it 'should get the resource specified by uri' do
-    @accessor.expects(:resource).with('http://www.example/foo').returns(@resource)
+    @accessor.should_receive(:resource).with('http://www.example/foo').and_return(@resource)
     @accessor.get_body('http://www.example/foo')
   end 
 
   it 'should call get_body on the resource' do
-    @resource.expects(:get_body).returns("ha!")
+    @resource.should_receive(:get_body).and_return("ha!")
     @accessor.get_body('http://www.example/foo')    
   end 
 
   it 'should pass options to resource.get_body' do
-    @resource.expects(:get_body).with(:marker).returns("ha!")
+    @resource.should_receive(:get_body).with(:marker).and_return("ha!")
     @accessor.get_body('http://www.example/foo', :marker)
   end 
   
   it 'should return what ever resource.get_body() does' do
-    @resource.expects(:get_body).returns(:marker)
+    @resource.should_receive(:get_body).and_return(:marker)
     @accessor.get_body('http://www.example/foo')
   end 
 end

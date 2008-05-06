@@ -90,38 +90,6 @@ module Resourceful
       raise e
     end
 
-    # Gets a representation of the resource this object represents.
-    # This method will follow redirect when appropriate.  If the final
-    # response is not a 200 OK this method will raise an exception.
-    # If successful an HTTPResponse will be returned. 
-    #
-    # Options 
-    #
-    #  +:accept+:: A MIME type, or array of MIME types, that are
-    #    acceptable as the formats for the response.  Anything object
-    #    that responds to +#to_str+ will work as a mime type.
-    #
-    #  +:parse_as+:: Indicates that the return value should be the
-    #    results of parsing the string representation.  The value of
-    #    this option indicates what sort of parser should be used.
-    #    Valid values are: +:json+.
-    def get_body(options = {})
-      options = options.dup
-      parser = options.delete(:parse_as)
-            
-      body = get(options).body
-      
-      case parser
-      when nil
-        body
-      when :json
-        require 'json'
-        JSON.parse(body)
-      else        
-        raise ArgumentError, "Unrecognized parser type #{parser}" unless parser.nil? or parser == :json
-      end
-    end
-    
     # Deprecated.  Use `#get_body(:parse_as => :json)` instead.
     #
     # Returns the representation parses as a JSON document. 
