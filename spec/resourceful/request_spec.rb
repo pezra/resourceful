@@ -33,12 +33,7 @@ describe Resourceful::Request do
   describe 'make' do
     before do
       @net_http = mock('net_http_get')
-      Net::HTTP::Get.stub!(:new).and_return(@net_http)
-
-      @net_http_connection = mock('net_http_connection')
-      Net::HTTP.stub!(:start).and_yield(@net_http_connection)
-      @net_http_response = mock('net_http_response')
-      @net_http_connection.stub!(:request).and_return(@net_http_response)
+      Resourceful::NetHttpAdapter.stub!(:get).and_return(@net_http)
 
       @response = mock('response')
       Resourceful::Response.stub!(:new).and_return(@response)
@@ -49,21 +44,6 @@ describe Resourceful::Request do
     end
 
     it 'should look in the cache'
-
-    it 'should build a Net::Http:: object from its method' do
-      Net::HTTP::Get.should_receive(:new).with(@resource.uri)
-      @request.make
-    end
-
-    it 'should start a Net::HTTP connection with the resource uri' do
-      Net::HTTP.should_receive(:start).with(@uri.host, @uri.path).and_yield(@net_http_connection)
-      @request.make
-    end
-
-    it 'should perform a request on the connection with the net_http object' do
-      @net_http_connection.should_receive(:request).with(@net_http).and_return(@net_http_response)
-      @request.make
-    end
 
     it 'should create a Resourceful::Response object from the Net::HTTP response' do
       Resourceful::Response.should_receive(:new).with(@net_http_response).and_return(@response)

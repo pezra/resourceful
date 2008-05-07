@@ -1,5 +1,5 @@
-require 'net/http'
 require 'resourceful/response'
+require 'resourceful/net_http_adapter'
 
 module Resourceful
 
@@ -13,12 +13,9 @@ module Resourceful
 
     def make
 
-      req = Net::HTTP::Get.new(resource.uri)
-      response = nil
+      reponse = NetHttpAdapter.get(resource.uri)
 
-      Net::HTTP.start(@resource.uri.host, @resource.uri.path) do |conn|
-        response = Resourceful::Response.new(conn.request(req))
-      end
+      response = Resourceful::Response.new(response)
 
       response
 
