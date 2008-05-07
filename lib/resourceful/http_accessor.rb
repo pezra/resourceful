@@ -93,12 +93,6 @@ module Resourceful
     end
     alias [] resource
 
-    # Returns the representation of the resource indicated by +uri+.
-    # This is identical to +resource(uri).get_body(options)+
-    def get_body(uri, options = {})
-      resource(uri).get_body(options)
-    end
-    
     # Sets up a canned response for a particular HTTP request.  Once
     # this stub is configured all matching HTTP requests will return
     # the canned response rather than actual HTTP request. This is
