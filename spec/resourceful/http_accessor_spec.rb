@@ -27,13 +27,6 @@ describe Resourceful::HttpAccessor, 'init' do
     }.should raise_error(ArgumentError, /Unrecognized options: (foo, bar)|(bar, foo)/)
   end 
 
-  it 'should create an auth manager with the specified auth_info_provider' do
-    auth_info_provider = stub('auth_info_provider')
-    Resourceful::AuthenticationManager.should_receive(:new).with(auth_info_provider).and_return(stub('auth_manager'))
-    
-    Resourceful::HttpAccessor.new(:authentication_info_provider => auth_info_provider)
-  end
-  
   it 'should allow an additional user agent token to be passed at init' do
     Resourceful::HttpAccessor.new(:user_agent => "Super/3000").tap do |ha|
       ha.user_agent_string.should match(%r{^Super/3000})
@@ -51,9 +44,7 @@ end
 describe Resourceful::HttpAccessor do 
   before do
     @logger = stub('logger')
-    @authentication_info_provider = stub('authentication_info_provider')
-    @accessor = Resourceful::HttpAccessor.new(:authentication_info_provider => @authentication_info_provider,
-                                               :logger => @logger)
+    @accessor = Resourceful::HttpAccessor.new(:logger => @logger)
     @auth_manager = mock('authentication_manager')
     Resourceful::AuthenticationManager.stub!(:new).and_return(@auth_manager)
 

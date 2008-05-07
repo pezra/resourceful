@@ -23,14 +23,6 @@ module Resourceful
       def info(*args); end
       def debug(*args); end
     end
-
-    # This is an imitation authentication information provider that
-    # always response with nil.  This allows code to assume that there
-    # is always an authentication information provider, which
-    # significantly improves the readability of the code
-    class NoOpAuthenticationInfoProvider
-      def authentication_info(realm); nil; end
-    end
     
     # A logger object to which messages about the activities of this
     # object will be written.  This should be an object that responds
@@ -43,21 +35,13 @@ module Resourceful
     attr_reader :auth_manager
     
     attr_reader :user_agent_tokens
-
     
     INIT_OPTIONS = OptionsInterpreter.new do 
       option(:logger, :default => BitBucketLogger.new)
-      option(:authentication_info_provider, :default => NoOpAuthenticationInfoProvider.new)
       option(:user_agent, :default => []) {|ua| [ua].flatten}
     end
     
     # Initializes a new HttpAccessor.  Valid options:
-    #
-    #  +:authentication_info_provider+:: An objects that responds to
-    #    +authentication_info(realm)+ and returns the account and
-    #    password, as an array +[account, password]+, to use for that
-    #    realm, or nil if it does not have authentication information
-    #    for that realm.
     #
     #  +:logger+:: A Logger object that the new HTTP accessor should
     #    send log messages

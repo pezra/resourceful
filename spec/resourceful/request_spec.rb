@@ -32,8 +32,8 @@ describe Resourceful::Request do
 
   describe 'make' do
     before do
-      @net_http = mock('net_http_get')
-      Resourceful::NetHttpAdapter.stub!(:get).and_return(@net_http)
+      @net_http_adapter_response = mock('net_http_adapter_response')
+      Resourceful::NetHttpAdapter.stub!(:get).and_return(@net_http_adapter_response)
 
       @response = mock('response')
       Resourceful::Response.stub!(:new).and_return(@response)
@@ -45,8 +45,8 @@ describe Resourceful::Request do
 
     it 'should look in the cache'
 
-    it 'should create a Resourceful::Response object from the Net::HTTP response' do
-      Resourceful::Response.should_receive(:new).with(@net_http_response).and_return(@response)
+    it 'should create a Resourceful::Response object from the NetHttpAdapter response' do
+      Resourceful::Response.should_receive(:new).with(@net_http_adapter_response).and_return(@response)
       @request.make
     end
 

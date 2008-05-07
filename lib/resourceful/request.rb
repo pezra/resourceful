@@ -13,9 +13,8 @@ module Resourceful
 
     def make
 
-      reponse = NetHttpAdapter.get(resource.uri)
-
-      response = Resourceful::Response.new(response)
+      response = NetHttpAdapter.get(resource.uri)
+      response = Resourceful::Response.new(*response)
 
       response
 

@@ -9,10 +9,8 @@ describe Resourceful::NetHttpAdapter do
     require 'thin'
 
     app = proc do |env|
-      resp_code = env['PATH_INFO'] =~ /([\d]+)/ ? Integer($1) : 200
       body = ["Hello, world!"]
-
-      [ resp_code, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
+      [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
     end
 
     #spawn the server in a separate thread
@@ -27,12 +25,7 @@ describe Resourceful::NetHttpAdapter do
 
   # this really doesn't have anything to do with the Adapter, it just makes sure the server is behaving as it should
   describe 'http server' do
-
-    it 'should have a response code of whatever the path is' do
-      Resourceful::NetHttpAdapter.get('http://localhost:3000/304')[0].should == 304
-    end
-
-    it 'should have a response code of 200 if the path isnt a code' do
+    it 'should have a response code of 200' do
       Resourceful::NetHttpAdapter.get('http://localhost:3000/index')[0].should == 200
     end
   end
