@@ -1,5 +1,5 @@
   SimpleGet = lambda do |env|
-    body = [env.inspect]
+    body = ["Hello, world!"]
     [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
   end unless defined?(SimpleGet)
 

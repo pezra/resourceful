@@ -16,7 +16,7 @@ describe 'http server' do
   end
 
   it 'should reply with the posted document in the body if the path is /post' do
-    Resourceful::NetHttpAdapter.post('http://localhost:3000/post', 'Hello from POST!')[2].should == 'Hello from POST!'
+    Resourceful::NetHttpAdapter.post('http://localhost:3000/post', 'Hello from POST!')[2].should == 'Hello%20from%20POST%21='
   end
 end
 
