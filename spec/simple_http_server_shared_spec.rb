@@ -1,13 +1,22 @@
   SimpleGet = lambda do |env|
     body = ["Hello, world!"]
     [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
-  end unless defined?(SimpleGet)
+  end unless defined? SimpleGet
 
   SimplePost = lambda do |env|
     body = [env['rack.input'].string]
     [ 201, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
-  end unless defined?(SimplePost)
+  end unless defined? SimplePost
 
+  SimplePut = lambda do |env|
+    body = [env['rack.input'].string]
+    [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
+  end unless defined? SimplePut
+
+  SimpleDel = lambda do |env|
+    body = ["KABOOM!"]
+    [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
+  end unless defined? SimpleDel
 
 describe 'simple http server', :shared => true do
   before(:all) do
@@ -19,16 +28,10 @@ describe 'simple http server', :shared => true do
     app = Rack::Builder.new do |env|
       use Rack::ShowExceptions
 
-      map '/lobster' do
-        run Rack::Lobster::LambdaLobster
-      end
-
-      map '/get' do
-        run SimpleGet
-      end
-      map '/post' do
-        run SimplePost
-      end
+      map( '/get'    ){ run SimpleGet  }
+      map( '/post'   ){ run SimplePost }
+      map( '/put'    ){ run SimplePut  }
+      map( '/delete' ){ run SimpleDel  }
     end
 
     #spawn the server in a separate thread

@@ -6,34 +6,31 @@ require 'resourceful/header'
 module Resourceful
 
   class NetHttpAdapter
-    
-    def self.get(uri)
+    def self.make_request(method, uri, body = nil, header = nil)
       uri = uri.is_a?(String) ? Addressable::URI.parse(uri) : uri
 
-      req = Net::HTTP::Get.new(uri.path)
+      req = net_http_request_class(method).new(uri.path)
       res = Net::HTTP.start(uri.host, uri.port) do |conn|
-        conn.request(req)
+        conn.request(req, body)
       end
 
       [ Integer(res.code),
         Resourceful::Header.new(res.header.to_hash),
         res.body
       ]
+
     end
 
-    def self.post(uri, body)
-      uri = uri.is_a?(String) ? Addressable::URI.parse(uri) : uri
+    private
 
-      req = Net::HTTP::Post.new(uri.path)
-      req.set_form_data(body)
-      res = Net::HTTP.start(uri.host, uri.port) do |conn|
-        conn.request(req)
+    def self.net_http_request_class(method)
+      case method
+      when :get     then Net::HTTP::Get
+      when :post    then Net::HTTP::Post
+      when :put     then Net::HTTP::Put
+      when :delete  then Net::HTTP::Delete
       end
 
-      [ Integer(res.code),
-        Resourceful::Header.new(res.header.to_hash),
-        res.body
-      ]
     end
 
   end

@@ -6,9 +6,9 @@ require 'resourceful/net_http_adapter'
 describe Resourceful::NetHttpAdapter do
   it_should_behave_like 'simple http server'
 
-  describe '#get' do
+  describe '#make_request' do
     before do
-      @response = Resourceful::NetHttpAdapter.get('http://localhost:3000/get')
+      @response = Resourceful::NetHttpAdapter.make_request(:get, 'http://localhost:3000/get')
     end
 
     describe 'response' do
@@ -37,36 +37,26 @@ describe Resourceful::NetHttpAdapter do
 
   end
 
-  describe '#post' do
-    before do
-      @response = Resourceful::NetHttpAdapter.post('http://localhost:3000/post', 'Hello from post!')
+  describe '#net_http_request_class' do
+
+    it 'should provide Net::HTTP::Get for a get method' do
+      Resourceful::NetHttpAdapter.send(:net_http_request_class, :get).should == Net::HTTP::Get
     end
 
-    describe 'response' do
-      it 'should be an array' do
-        @response.should be_instance_of(Array)
-      end
+    it 'should provide Net::HTTP::Post for a post method' do
+      Resourceful::NetHttpAdapter.send(:net_http_request_class, :post).should == Net::HTTP::Post
+    end
 
-      it 'should have the numeric response code as the first element' do
-        code = @response[0]
-        code.should be_instance_of(Fixnum)
-        code.should == 201
-      end
+    it 'should provide Net::HTTP::Put for a put method' do
+      Resourceful::NetHttpAdapter.send(:net_http_request_class, :put).should == Net::HTTP::Put
+    end
 
-      it 'should have the Header as the second element' do
-        header = @response[1]
-        header.should be_instance_of(Resourceful::Header)
-        header['content-type'].should == ['text/plain']
-      end
-
-      it 'should have the body as the third and last element' do
-        body = @response[2]
-        body.should == "Hello%20from%20post%21="
-      end
-
+    it 'should provide Net::HTTP::Delete for a delete method' do
+      Resourceful::NetHttpAdapter.send(:net_http_request_class, :delete).should == Net::HTTP::Delete
     end
 
   end
+
 
 end
 

@@ -5,16 +5,16 @@ module Resourceful
 
   class Request
 
-    attr_accessor :method, :resource
+    attr_accessor :method, :resource, :body, :header
 
-    def initialize(http_method, resource)
-      @method, @resource = http_method, resource
+    def initialize(http_method, resource, body = nil, header = nil)
+      @method, @resource, @body, @header = http_method, resource, body, header
     end
 
     def make
 
-      response = NetHttpAdapter.get(resource.uri)
-      response = Resourceful::Response.new(*response)
+      http_resp = NetHttpAdapter.make_request(@method, @resource.uri, @body, @header)
+      response = Resourceful::Response.new(*http_resp)
 
       response
 

@@ -28,12 +28,20 @@ describe Resourceful::Request do
       @request.resource.should == @resource
     end
 
+    it 'should take an optional body' do
+      req = Resourceful::Request.new(:get, @resource)
+      req.body.should be_nil
+
+      req = Resourceful::Request.new(:post, @resource, 'Hello from post!')
+      req.body.should == 'Hello from post!'
+    end
+
   end
 
   describe 'make' do
     before do
       @net_http_adapter_response = mock('net_http_adapter_response')
-      Resourceful::NetHttpAdapter.stub!(:get).and_return(@net_http_adapter_response)
+      Resourceful::NetHttpAdapter.stub!(:make_request).and_return(@net_http_adapter_response)
 
       @response = mock('response')
       Resourceful::Response.stub!(:new).and_return(@response)
@@ -52,6 +60,33 @@ describe Resourceful::Request do
 
     it 'should return the Response object' do
       @request.make.should == @response
+    end
+
+    describe 'GET' do
+      before do
+        @request = Resourceful::Request.new(:get, @resource)
+      end
+
+      it 'should #get the uri from the NetHttpAdapter' do
+        Resourceful::NetHttpAdapter.should_receive(:make_request).
+          with(:get, @uri, nil, nil).and_return(@net_http_adapter_response)
+        @request.make
+      end
+
+    end
+
+    describe 'POST' do
+      before do
+        @post_data = 'Hello from post!'
+        @request = Resourceful::Request.new(:post, @resource, @post_data)
+      end
+
+      it 'should #get the uri from the NetHttpAdapter' do
+        Resourceful::NetHttpAdapter.should_receive(:make_request).with(:post, @uri, @post_data, nil).and_return(@net_http_adapter_response)
+        @request.make
+      end
+
+
     end
 
   end
