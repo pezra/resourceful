@@ -11,3 +11,6 @@ class Object
     self
   end
 end
+
+
+require Pathname(__FILE__).dirname + 'simple_http_server_shared_spec'
