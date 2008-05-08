@@ -1,20 +1,28 @@
-
-describe 'simple http server', :shared => true do
   SimpleGet = lambda do |env|
-    body = ["Hello, world!"]
+    body = [env.inspect]
     [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
   end unless defined?(SimpleGet)
 
   SimplePost = lambda do |env|
-    body = env.inspect
-    [ 204, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
+    body = [env['rack.input'].string]
+    [ 201, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
   end unless defined?(SimplePost)
 
+
+describe 'simple http server', :shared => true do
   before(:all) do
     #setup a thin http server we can connect to
     require 'thin'
+    require 'rack'
+    require 'rack/lobster'
 
     app = Rack::Builder.new do |env|
+      use Rack::ShowExceptions
+
+      map '/lobster' do
+        run Rack::Lobster::LambdaLobster
+      end
+
       map '/get' do
         run SimpleGet
       end

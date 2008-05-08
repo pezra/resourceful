@@ -39,7 +39,31 @@ describe Resourceful::NetHttpAdapter do
 
   describe '#post' do
     before do
-      @response = Resourceful::NetHttpAdapter.post('http://localhost:3000/post')
+      @response = Resourceful::NetHttpAdapter.post('http://localhost:3000/post', 'Hello from post!')
+    end
+
+    describe 'response' do
+      it 'should be an array' do
+        @response.should be_instance_of(Array)
+      end
+
+      it 'should have the numeric response code as the first element' do
+        code = @response[0]
+        code.should be_instance_of(Fixnum)
+        code.should == 201
+      end
+
+      it 'should have the Header as the second element' do
+        header = @response[1]
+        header.should be_instance_of(Resourceful::Header)
+        header['content-type'].should == ['text/plain']
+      end
+
+      it 'should have the body as the third and last element' do
+        body = @response[2]
+        body.should == "Hello%20from%20post%21="
+      end
+
     end
 
   end

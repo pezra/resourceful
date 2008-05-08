@@ -1,3 +1,7 @@
+require 'pathname'
+require Pathname(__FILE__).dirname + 'spec_helper'
+
+require 'resourceful/net_http_adapter'
 
 describe 'http server' do
   it_should_behave_like 'simple http server'
@@ -12,7 +16,7 @@ describe 'http server' do
   end
 
   it 'should reply with the posted document in the body if the path is /post' do
-    Resourceful::NetHttpAdapter.post('http://localhost:3000/post')[2].should == 'Hello from POST!'
+    Resourceful::NetHttpAdapter.post('http://localhost:3000/post', 'Hello from POST!')[2].should == 'Hello from POST!'
   end
 end
 
