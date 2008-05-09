@@ -54,13 +54,10 @@ spec = Gem::Specification.new do |s|
   s.extra_rdoc_files = %w( README LICENSE )
 
   # Dependencies
-  s.add_dependency "mocha"
   s.add_dependency "addressable"
   s.add_dependency "httpauth"
   s.add_dependency "rspec"
-  s.add_dependency "json"
-  # Requirements
-  s.requirements << "install the json gem to get faster json parsing"
+  s.add_dependency "tiny"
   s.required_ruby_version = ">= 1.8.6"
 end
 
