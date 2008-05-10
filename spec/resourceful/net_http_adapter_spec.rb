@@ -57,6 +57,19 @@ describe Resourceful::NetHttpAdapter do
 
   end
 
-
 end
 
+describe Addressable::URI, '#absolute_path monkey patch' do
+
+  it 'should have the path and any query parameters' do
+    uri = Addressable::URI.parse('http://localhost/foo?bar=baz')
+    uri.absolute_path.should == '/foo?bar=baz'
+  end
+
+  it 'should not have a ? if there are no query params' do
+    uri = Addressable::URI.parse('http://localhost/foo')
+    uri.absolute_path.should_not =~ /\?/
+    uri.absolute_path.should == '/foo'
+  end
+
+end

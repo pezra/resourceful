@@ -18,6 +18,24 @@
     [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
   end unless defined? SimpleDel
 
+  # has a response code of whatever it was given in the url /code/{123}
+  CodeResponder = lambda do |env|
+    code = env['PATH_INFO'] =~ /([\d]+)/ ? Integer($1) : 404
+    body = [code.to_s]
+    
+    [ code, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
+  end unless defined? CodeResponder
+
+  # redirect. /redirect/{301|302}?{url}
+  Redirector = lambda do |env|
+    code = env['PATH_INFO'] =~ /([\d]+)/ ? Integer($1) : 404
+    location = env['QUERY_STRING']
+    body = [location]
+    
+    [ code, {'Content-Type' => 'text/plain', 'Location' => location, 'Content-Length' => body.join.size.to_s}, body ]
+  end unless defined? Redirector
+
+
 describe 'simple http server', :shared => true do
   before(:all) do
     #setup a thin http server we can connect to
@@ -32,11 +50,15 @@ describe 'simple http server', :shared => true do
       map( '/post'   ){ run SimplePost }
       map( '/put'    ){ run SimplePut  }
       map( '/delete' ){ run SimpleDel  }
+
+      map( '/code'     ){ run CodeResponder }
+      map( '/redirect' ){ run Redirector }
     end
 
     #spawn the server in a separate thread
     @httpd = Thread.new do
       Thin::Logging.silent = true
+      #Thin::Logging.debug = true
       Thin::Server.start(app) 
     end
     #give the server a chance to initialize

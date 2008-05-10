@@ -3,13 +3,23 @@ require 'addressable/uri'
 
 require 'resourceful/header'
 
+module Addressable
+  class URI
+    def absolute_path
+      absolute_path = self.path.to_s
+      absolute_path << "?#{self.query}" if self.query != nil
+      return absolute_path
+    end
+  end
+end
+
 module Resourceful
 
   class NetHttpAdapter
     def self.make_request(method, uri, body = nil, header = nil)
       uri = uri.is_a?(String) ? Addressable::URI.parse(uri) : uri
 
-      req = net_http_request_class(method).new(uri.path)
+      req = net_http_request_class(method).new(uri.absolute_path)
       res = Net::HTTP.start(uri.host, uri.port) do |conn|
         conn.request(req, body)
       end

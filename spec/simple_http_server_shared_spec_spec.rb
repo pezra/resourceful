@@ -6,11 +6,6 @@ require 'resourceful/net_http_adapter'
 describe 'http server' do
   it_should_behave_like 'simple http server'
 
-  it 'should have a response code of whatever the path is' do
-    pending
-    Resourceful::NetHttpAdapter.make_request(:get, 'http://localhost:3000/304')[0].should == 304
-  end
-
   it 'should have a response code of 200 if the path is /get' do
     Resourceful::NetHttpAdapter.make_request(:get, 'http://localhost:3000/get')[0].should == 200
   end
@@ -31,6 +26,17 @@ describe 'http server' do
     resp = Resourceful::NetHttpAdapter.make_request(:delete, 'http://localhost:3000/delete')
     resp[2].should == 'KABOOM!'
     resp[0].should == 200
+  end
+
+  it 'should have a response code of whatever the path is' do
+    Resourceful::NetHttpAdapter.make_request(:get, 'http://localhost:3000/code/304')[0].should == 304
+  end
+
+  it 'should redirect to a given url' do
+    resp = Resourceful::NetHttpAdapter.make_request(:get, 'http://localhost:3000/redirect/301?http://localhost:3000/get')
+
+    resp[0].should == 301
+    resp[1]['Location'].should == ['http://localhost:3000/get']
   end
 end
 

@@ -51,8 +51,13 @@ describe Resourceful do
       resp.header['Content-Type'].should == ['text/plain']
     end
 
+    it 'should follow redirects' do
+
+    end
+
     it 'should explode when response code is invalid'
 
   end
 
 end
+
