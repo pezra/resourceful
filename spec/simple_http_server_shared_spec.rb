@@ -1,39 +1,40 @@
-  SimpleGet = lambda do |env|
-    body = ["Hello, world!"]
-    [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
-  end unless defined? SimpleGet
+# this sets up a very simple http server using thin to be used in specs.
+SimpleGet = lambda do |env|
+  body = ["Hello, world!"]
+  [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
+end unless defined? SimpleGet
 
-  SimplePost = lambda do |env|
-    body = [env['rack.input'].string]
-    [ 201, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
-  end unless defined? SimplePost
+SimplePost = lambda do |env|
+  body = [env['rack.input'].string]
+  [ 201, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
+end unless defined? SimplePost
 
-  SimplePut = lambda do |env|
-    body = [env['rack.input'].string]
-    [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
-  end unless defined? SimplePut
+SimplePut = lambda do |env|
+  body = [env['rack.input'].string]
+  [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
+end unless defined? SimplePut
 
-  SimpleDel = lambda do |env|
-    body = ["KABOOM!"]
-    [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
-  end unless defined? SimpleDel
+SimpleDel = lambda do |env|
+  body = ["KABOOM!"]
+  [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
+end unless defined? SimpleDel
 
-  # has a response code of whatever it was given in the url /code/{123}
-  CodeResponder = lambda do |env|
-    code = env['PATH_INFO'] =~ /([\d]+)/ ? Integer($1) : 404
-    body = [code.to_s]
-    
-    [ code, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
-  end unless defined? CodeResponder
+# has a response code of whatever it was given in the url /code/{123}
+CodeResponder = lambda do |env|
+  code = env['PATH_INFO'] =~ /([\d]+)/ ? Integer($1) : 404
+  body = [code.to_s]
 
-  # redirect. /redirect/{301|302}?{url}
-  Redirector = lambda do |env|
-    code = env['PATH_INFO'] =~ /([\d]+)/ ? Integer($1) : 404
-    location = env['QUERY_STRING']
-    body = [location]
-    
-    [ code, {'Content-Type' => 'text/plain', 'Location' => location, 'Content-Length' => body.join.size.to_s}, body ]
-  end unless defined? Redirector
+  [ code, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
+end unless defined? CodeResponder
+
+# redirect. /redirect/{301|302}?{url}
+Redirector = lambda do |env|
+  code = env['PATH_INFO'] =~ /([\d]+)/ ? Integer($1) : 404
+  location = env['QUERY_STRING']
+  body = [location]
+
+  [ code, {'Content-Type' => 'text/plain', 'Location' => location, 'Content-Length' => body.join.size.to_s}, body ]
+end unless defined? Redirector
 
 
 describe 'simple http server', :shared => true do

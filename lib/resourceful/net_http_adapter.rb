@@ -17,7 +17,7 @@ module Resourceful
 
   class NetHttpAdapter
     def self.make_request(method, uri, body = nil, header = nil)
-      uri = uri.is_a?(String) ? Addressable::URI.parse(uri) : uri
+      uri = uri.is_a?(Addressable::URI) ? uri : Addressable::URI.parse(uri)
 
       req = net_http_request_class(method).new(uri.absolute_path)
       res = Net::HTTP.start(uri.host, uri.port) do |conn|
