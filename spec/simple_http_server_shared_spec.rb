@@ -19,6 +19,13 @@ SimpleDel = lambda do |env|
   [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
 end unless defined? SimpleDel
 
+# has the method used in the body of the response
+MethodResponder = lambda do |env|
+  body = [env['REQUEST_METHOD']]
+  puts body
+  [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
+end
+
 # has a response code of whatever it was given in the url /code/{123}
 CodeResponder = lambda do |env|
   code = env['PATH_INFO'] =~ /([\d]+)/ ? Integer($1) : 404
@@ -52,6 +59,7 @@ describe 'simple http server', :shared => true do
       map( '/put'    ){ run SimplePut  }
       map( '/delete' ){ run SimpleDel  }
 
+      map( '/method'   ){ run MethodResponder }
       map( '/code'     ){ run CodeResponder }
       map( '/redirect' ){ run Redirector }
     end

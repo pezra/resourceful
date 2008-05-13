@@ -54,7 +54,6 @@ module Resourceful
       end
 
       return response
-
     end
 
     def do_write_request(method, data = nil)
