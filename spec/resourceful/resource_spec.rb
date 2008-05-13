@@ -41,19 +41,28 @@ describe Resourceful::Resource do
 
   end
 
+  describe '#do_read_request' do
+
+    describe 'with redirection' do
+
+    end
+  end
+
+  describe '#do_write_request' do
+
+    describe 'with redirection' do
+
+    end
+  end
+
   describe '#get' do
 
     it 'should be a method' do
       @resource.should respond_to(:get)
     end
 
-    it 'should create a request object with GET method and itself' do
-      Resourceful::Request.should_receive(:new).with(:get, @resource).and_return(@request)
-      @resource.get
-    end
-
-    it 'should make the request' do
-      @request.should_receive(:response).and_return(@response)
+    it 'should pass :get to the #do_read_request method' do
+      @resource.should_receive(:do_read_request).with(:get)
       @resource.get
     end
 
@@ -137,7 +146,11 @@ describe Resourceful::Resource do
         @resource = Resourceful::Resource.new(@accessor, @uri)
 
         @redirected_uri = 'http://www.example.com/get'
-        @redirect_response = mock('redirect_response', :code => 301, :header => {'Location' => [@redirected_uri]}, :is_redirect? => true)
+        @redirect_response = mock('redirect_response', 
+                                  :code => 301, 
+                                  :header => {'Location' => [@redirected_uri]}, 
+                                  :is_redirect? => true, 
+                                  :is_permanent_redirect? => true)
         @request.stub!(:response).and_return(@redirect_response, @response)
 
         @callback = mock('callback')
@@ -175,7 +188,11 @@ describe Resourceful::Resource do
         @resource = Resourceful::Resource.new(@accessor, @uri)
 
         @redirected_uri = 'http://www.example.com/get'
-        @redirect_response = mock('redirect_response', :code => 301, :header => {'Location' => [@redirected_uri]}, :is_redirect? => true)
+        @redirect_response = mock('redirect_response', 
+                                  :code => 301, 
+                                  :header => {'Location' => [@redirected_uri]}, 
+                                  :is_redirect? => true,
+                                  :is_permanent_redirect? => true)
         @request.stub!(:response).and_return(@redirect_response, @response)
 
         @callback = mock('callback')
@@ -225,7 +242,11 @@ describe Resourceful::Resource do
         @resource = Resourceful::Resource.new(@accessor, @uri)
 
         @redirected_uri = 'http://www.example.com/get'
-        @redirect_response = mock('redirect_response', :code => 302, :header => {'Location' => [@redirected_uri]}, :is_redirect? => true)
+        @redirect_response = mock('redirect_response', 
+                                  :code => 302, 
+                                  :header => {'Location' => [@redirected_uri]}, 
+                                  :is_redirect? => true,
+                                  :is_permanent_redirect? => false)
         @request.stub!(:response).and_return(@redirect_response, @response)
 
         @callback = mock('callback')

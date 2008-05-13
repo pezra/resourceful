@@ -96,18 +96,18 @@ module Resourceful
       response
     end
 
-    protected 
-
     def do_read_request(method)
-      request = Resourceful::Request.new(:get, self)
+      request = Resourceful::Request.new(method, self)
       response = request.response
 
       if response.is_redirect? and request.should_be_redirected?
-        previous_response = response
-        @uris.unshift response.header['Location'].first
-        request = Resourceful::Request.new(:delete, self)
-        response = request.response
-        @uris.shift unless previous_response.code == 301
+        if response.is_permanent_redirect?
+          @uris.unshift response.header['Location'].first
+          response = do_read_request(method)
+        else
+          redirected_resource = Resourceful::Request.new(self.accessor, response.header['Location'].first)
+          response = redirected_resource.do_read_request(method)
+        end
       end
 
       response

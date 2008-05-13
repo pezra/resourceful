@@ -17,6 +17,9 @@ module Resourceful
     end
     alias was_redirect? is_redirect?
 
+    def is_permanent_redirect?
+      @code == 301
+    end
   end
   
 end

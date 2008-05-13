@@ -103,11 +103,29 @@ describe Resourceful do
 
         it_should_behave_like 'redirect'
 
-        it 'should not change the effective uri of the resource'
+        it 'should not change the effective uri of the resource' do
+          @resource.get
+          @resource.effective_uri.should == 'http://localhost:3000/redirect/302?http://localhost:3000/get'
+        end
 
       end
 
       describe '303 Other' do
+        before do
+          @redirect_code = 303
+          @resource = @accessor.resource('http://localhost:3000/redirect/303?http://localhost:3000/get')
+        end
+
+        it_should_behave_like 'redirect'
+
+        it 'should not change the effective uri of the resource' do
+          @resource.get
+          @resource.effective_uri.should == 'http://localhost:3000/redirect/303?http://localhost:3000/get'
+        end
+
+        it 'should GET the redirected resource, regardless of the initial method' do
+
+        end
 
       end
 
