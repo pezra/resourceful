@@ -43,15 +43,203 @@ describe Resourceful::Resource do
 
   describe '#do_read_request' do
 
-    describe 'with redirection' do
-
+    it 'should make a new request object from the method' do
+      Resourceful::Request.should_receive(:new).with(:some_method, @resource).and_return(@request)
+      @resource.do_read_request(:some_method)
     end
+
+    describe 'with redirection' do
+      before do
+        @uri      = 'http://www.example.com/redirect/301?http://www.example.com/get'
+        @resource = Resourceful::Resource.new(@accessor, @uri)
+
+        @redirected_uri = 'http://www.example.com/get'
+        @redirect_response = mock('redirect_response',
+                                  :header                 => {'Location' => [@redirected_uri]},
+                                  :is_redirect?           => true,
+                                  :is_permanent_redirect? => true)
+
+        @request.stub!(:response).and_return(@redirect_response, @response)
+
+      end
+
+      def make_request
+        @resource.do_read_request(:some_method)
+      end
+
+      it 'should check if the response was a redirect' do
+        @redirect_response.should_receive(:is_redirect?).and_return(true)
+        make_request
+      end
+
+      it 'should check if the request should be redirected' do
+        @request.should_receive(:should_be_redirected?).and_return(true)
+        make_request
+      end
+
+      describe 'permanent redirect' do
+        before do
+          @redirect_response.stub!(:is_permanent_redirect?).and_return(true)
+        end
+
+        it 'should check if the response was a permanent redirect' do
+          @redirect_response.should_receive(:is_permanent_redirect?).and_return(true)
+          make_request
+        end
+
+        it 'should add the new location as the effective uri' do
+          make_request
+          @resource.effective_uri.should == @redirected_uri
+        end
+
+        it 'should remake the request with the new uri' do
+          Resourceful::Request.should_receive(:new).twice.and_return(@request)
+          @request.should_receive(:response).twice.and_return(@redirect_response, @response)
+          make_request
+        end
+
+      end
+
+      describe 'temporary redirect' do
+        before do
+          @redirect_response.stub!(:is_permanent_redirect?).and_return(false)
+        end
+
+        it 'should check if the response was not a permanent redirect' do
+          @redirect_response.should_receive(:is_permanent_redirect?).and_return(false)
+          make_request
+        end
+
+        it 'should not add the new location as the effective uri' do
+          make_request
+          @resource.effective_uri.should == @uri
+        end
+        
+        it 'should make a new resource from the new location' do
+          new_resource = mock('resource', :do_read_request => @response)
+          Resourceful::Resource.should_receive(:new).with(@accessor, @redirected_uri).and_return(new_resource)
+          make_request
+        end
+
+      end
+
+    end # read with redirection
+
   end
 
   describe '#do_write_request' do
 
-    describe 'with redirection' do
+    it 'should make a new request object from the method' do
+      Resourceful::Request.should_receive(:new).with(:some_method, @resource, "data").and_return(@request)
+      @resource.do_write_request(:some_method, "data")
+    end
 
+    describe 'with redirection' do
+      before do
+        @uri      = 'http://www.example.com/redirect/301?http://www.example.com/get'
+        @resource = Resourceful::Resource.new(@accessor, @uri)
+
+        @redirected_uri = 'http://www.example.com/get'
+        @redirect_response = mock('redirect_response',
+                                  :header                 => {'Location' => [@redirected_uri]},
+                                  :is_redirect?           => true,
+                                  :is_permanent_redirect? => true)
+
+        @request.stub!(:response).and_return(@redirect_response, @response)
+
+      end
+
+      def make_request
+        @resource.do_write_request(:some_method, "data")
+      end
+
+      it 'should check if the response was a redirect' do
+        @redirect_response.should_receive(:is_redirect?).and_return(true)
+        make_request
+      end
+
+      it 'should check if the request should be redirected' do
+        @request.should_receive(:should_be_redirected?).and_return(true)
+        make_request
+      end
+
+      describe 'permanent redirect' do
+        before do
+          @redirect_response.stub!(:is_permanent_redirect?).and_return(true)
+        end
+
+        it 'should check if the response was a permanent redirect' do
+          @redirect_response.should_receive(:is_permanent_redirect?).and_return(true)
+          make_request
+        end
+
+        it 'should add the new location as the effective uri' do
+          make_request
+          @resource.effective_uri.should == @redirected_uri
+        end
+
+        it 'should remake the request with the new uri' do
+          Resourceful::Request.should_receive(:new).twice.and_return(@request)
+          @request.should_receive(:response).twice.and_return(@redirect_response, @response)
+          make_request
+        end
+
+      end
+
+      describe 'temporary redirect' do
+        before do
+          @redirect_response.stub!(:is_permanent_redirect?).and_return(false)
+        end
+
+        it 'should check if the response was not a permanent redirect' do
+          @redirect_response.should_receive(:is_permanent_redirect?).and_return(false)
+          make_request
+        end
+
+        it 'should not add the new location as the effective uri' do
+          make_request
+          @resource.effective_uri.should == @uri
+        end
+        
+        it 'should make a new resource from the new location' do
+          new_resource = mock('resource', :do_write_request => @response)
+          Resourceful::Resource.should_receive(:new).with(@accessor, @redirected_uri).and_return(new_resource)
+          make_request
+        end
+
+      end
+
+    end # write with redirection
+
+  end
+
+  describe 'callback registration' do
+    before do
+      @callback = mock('callback')
+      @callback.stub!(:call).and_return(true)
+
+      @resource.on_redirect { @callback.call }
+    end
+
+    it 'should store the callback when called with a block' do
+      @resource.on_redirect { true }
+
+      callback = @resource.instance_variable_get(:@on_redirect)
+      callback.should be_kind_of(Proc)
+    end
+
+    it 'should return the callback when called without a block' do
+      @resource.on_redirect { true }
+      @resource.on_redirect.should be_kind_of(Proc)
+    end
+
+    it 'should yield the request,response to the callback' do
+      @resource.on_redirect { |req,resp|
+        req.should == @request
+        resp.should == @redirect_response
+      }
+
+      @resource.get
     end
   end
 
@@ -72,232 +260,30 @@ describe Resourceful::Resource do
 
   end
 
-  describe '#post' do
+  %w{post put}.each do |method|
+    describe "##{method}" do
 
-    it 'should be a method' do
-      @resource.should respond_to(:post)
-    end
-    
-    it 'should create a request object with POST method, itself, and the body' do
-      Resourceful::Request.should_receive(:new).with(:post, @resource, 'Hello from post!').and_return(@request)
-      @resource.post('Hello from post!')
-    end
+      it 'should be a method' do
+        @resource.should respond_to(method.intern)
+      end
+      
+      it 'should return the response of making the request' do
+        @resource.send(method.intern, "Hello from #{method.upcase}!").should == @response
+      end
 
-    it 'should make the request' do
-      @request.should_receive(:response).and_return(@response)
-      @resource.post('Hello from post!')
     end
-
-    it 'should return the response of making the request' do
-      @resource.post('Hello from post!').should == @response
-    end
-
   end
 
-  describe '#put' do
-
-    it 'should be a method' do
-      @resource.should respond_to(:put)
-    end
-    
-    it 'should create a request object with POST method, itself, and the body' do
-      Resourceful::Request.should_receive(:new).with(:put, @resource, 'Hello from put!').and_return(@request)
-      @resource.put('Hello from put!')
-    end
-
-    it 'should make the request' do
-      @request.should_receive(:response).and_return(@response)
-      @resource.put('Hello from put!')
-    end
-
-    it 'should return the response of making the request' do
-      @resource.put('Hello from put!').should == @response
-    end
-
-  end
-
-  describe '#delete' do
+  describe "#delete" do
 
     it 'should be a method' do
       @resource.should respond_to(:delete)
-    end
-    
-    it 'should create a request object with POST method, itself, and the body' do
-      Resourceful::Request.should_receive(:new).with(:delete, @resource).and_return(@request)
-      @resource.delete
-    end
-
-    it 'should make the request' do
-      @request.should_receive(:response).and_return(@response)
-      @resource.delete
     end
 
     it 'should return the response of making the request' do
       @resource.delete.should == @response
     end
 
-  end
-
-  describe 'redirect' do
-
-    describe 'callback registration' do
-      before do
-        @uri      = 'http://www.example.com/redirect/301?http://www.example.com/get'
-        @resource = Resourceful::Resource.new(@accessor, @uri)
-
-        @redirected_uri = 'http://www.example.com/get'
-        @redirect_response = mock('redirect_response', 
-                                  :code => 301, 
-                                  :header => {'Location' => [@redirected_uri]}, 
-                                  :is_redirect? => true, 
-                                  :is_permanent_redirect? => true)
-        @request.stub!(:response).and_return(@redirect_response, @response)
-
-        @callback = mock('callback')
-        @callback.stub!(:call).and_return(true)
-
-        @resource.on_redirect { @callback.call }
-      end
-
-      it 'should store the callback when called with a block' do
-        @resource.on_redirect { true }
-
-        callback = @resource.instance_variable_get(:@on_redirect)
-        callback.should be_kind_of(Proc)
-      end
-
-      it 'should return the callback when called without a block' do
-        @resource.on_redirect { true }
-        @resource.on_redirect.should be_kind_of(Proc)
-      end
-
-      it 'should yield the request,response to the callback' do
-        @resource.on_redirect { |req,resp|
-          req.should == @request
-          resp.should == @redirect_response
-        }
-
-        @resource.get
-      end
-
-    end
-
-    describe '301 Moved Permanently' do
-      before do
-        @uri      = 'http://www.example.com/redirect/301?http://www.example.com/get'
-        @resource = Resourceful::Resource.new(@accessor, @uri)
-
-        @redirected_uri = 'http://www.example.com/get'
-        @redirect_response = mock('redirect_response', 
-                                  :code => 301, 
-                                  :header => {'Location' => [@redirected_uri]}, 
-                                  :is_redirect? => true,
-                                  :is_permanent_redirect? => true)
-        @request.stub!(:response).and_return(@redirect_response, @response)
-
-        @callback = mock('callback')
-        @callback.stub!(:call).and_return(true)
-      end
-
-      it 'should be followed automatically on GET' do
-        @request.should_receive(:response).and_return(@redirect_response, @response)
-        @resource.get.should == @response
-      end
-
-      it 'should add the redirected to uri to the beginning of the uri list' do
-        @resource.instance_variable_get(:@uris).should == [@uri]
-        @resource.get
-        @resource.instance_variable_get(:@uris).should == ['http://www.example.com/get', @uri]
-      end
-
-      it 'should have the redirected to uri as the effective uri' do
-        @resource.get
-        @resource.effective_uri.should == @redirected_uri
-      end
-
-      %w{PUT POST DELETE}.each do |method|
-        it "should not redirect automatically on #{method}" do
-          @request.should_receive(:response).once.and_return(@redirect_response)
-          @resource.send(method.downcase.intern).should == @redirect_response
-        end
-
-        it "should redirect on #{method} if the redirection callback returns true" do
-          @resource.on_redirect { @callback.call }
-          @resource.send(method.downcase.intern).should == @response
-        end
-
-        it "should not redirect on #{method} if the redirection callback returns false" do
-          @callback.stub!(:call).and_return(false)
-          @resource.on_redirect { @callback.call }
-          @request.stub!(:response).once.and_return(@redirect_response)
-          @resource.send(method.downcase.intern).should == @redirect_response
-        end
-      end
-
-    end
-
-    describe '302 Found' do
-      before do
-        @uri      = 'http://www.example.com/redirect/302?http://www.example.com/get'
-        @resource = Resourceful::Resource.new(@accessor, @uri)
-
-        @redirected_uri = 'http://www.example.com/get'
-        @redirect_response = mock('redirect_response', 
-                                  :code => 302, 
-                                  :header => {'Location' => [@redirected_uri]}, 
-                                  :is_redirect? => true,
-                                  :is_permanent_redirect? => false)
-        @request.stub!(:response).and_return(@redirect_response, @response)
-
-        @callback = mock('callback')
-        @callback.stub!(:call).and_return(true)
-      end
-
-      it 'should be followed automatically on GET' do
-        @request.should_receive(:response).and_return(@redirect_response, @response)
-        @resource.get.should == @response
-      end
-
-      it 'should not add the redirected to uri to the beginning of the uri list' do
-        @resource.instance_variable_get(:@uris).should == [@uri]
-        @resource.get
-        @resource.instance_variable_get(:@uris).should == [@uri]
-      end
-
-      it 'should have the original request uri as the effective uri' do
-        @resource.get
-        @resource.effective_uri.should == @uri
-      end
-
-      %w{PUT POST DELETE}.each do |method|
-        it "should not redirect automatically on #{method}" do
-          @request.should_receive(:response).once.and_return(@redirect_response)
-          @resource.send(method.downcase.intern).should == @redirect_response
-        end
-
-        it "should redirect on #{method} if the redirection callback returns true" do
-          @resource.on_redirect { @callback.call }
-          @resource.send(method.downcase.intern).should == @response
-        end
-
-        it "should not redirect on #{method} if the redirection callback returns false" do
-          @callback.stub!(:call).and_return(false)
-          @resource.on_redirect { @callback.call }
-          @request.stub!(:response).once.and_return(@redirect_response)
-          @resource.send(method.downcase.intern).should == @redirect_response
-        end
-      end
-
-    end
-
-    describe '303 See Other' do
-
-    end
-
-    describe '307 Temporary Redirect' do
-
-    end
-    
   end
 
 end
