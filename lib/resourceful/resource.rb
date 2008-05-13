@@ -24,29 +24,26 @@ module Resourceful
     end
 
     def get
-      request = Resourceful::Request.new(:get, self)
-      response = request.make
-
-      if response.code == 301
-        if @on_redirect.nil? or @on_redirect.call(request, response)
-          @uris.unshift response.header['Location'].first
-          request = Resourceful::Request.new(:get, self)
-          response = request.make
-        end
-      end
-
-      response
+      do_read_request(:get)
     end
 
     def post(data = "")
       request = Resourceful::Request.new(:post, self, data)
-      response = request.make
+      response = request.response
 
       if response.code == 301
         if @on_redirect and @on_redirect.call(request, response)
           @uris.unshift response.header['Location'].first
           request = Resourceful::Request.new(:post, self)
-          response = request.make
+          response = request.response
+        end
+      end
+      if response.code == 302
+        if @on_redirect and @on_redirect.call(request, response)
+          @uris.unshift response.header['Location'].first
+          request = Resourceful::Request.new(:get, self)
+          response = request.response
+          @uris.shift # don't remember this new location
         end
       end
 
@@ -55,13 +52,21 @@ module Resourceful
 
     def put(data = "")
       request = Resourceful::Request.new(:put, self, data)
-      response = request.make
+      response = request.response
 
       if response.code == 301
         if @on_redirect and @on_redirect.call(request, response)
           @uris.unshift response.header['Location'].first
           request = Resourceful::Request.new(:put, self)
-          response = request.make
+          response = request.response
+        end
+      end
+      if response.code == 302
+        if @on_redirect and @on_redirect.call(request, response)
+          @uris.unshift response.header['Location'].first
+          request = Resourceful::Request.new(:get, self)
+          response = request.response
+          @uris.shift # don't remember this new location
         end
       end
 
@@ -70,17 +75,47 @@ module Resourceful
 
     def delete
       request = Resourceful::Request.new(:delete, self)
-      response = request.make
+      response = request.response
 
       if response.code == 301
         if @on_redirect and @on_redirect.call(request, response)
           @uris.unshift response.header['Location'].first
           request = Resourceful::Request.new(:delete, self)
-          response = request.make
+          response = request.response
+        end
+      end
+      if response.code == 302
+        if @on_redirect and @on_redirect.call(request, response)
+          @uris.unshift response.header['Location'].first
+          request = Resourceful::Request.new(:get, self)
+          response = request.response
+          @uris.shift # don't remember this new location
         end
       end
 
       response
+    end
+
+    protected 
+
+    def do_read_request(method)
+      request = Resourceful::Request.new(:get, self)
+      response = request.response
+
+      if response.is_redirect? and request.should_be_redirected?
+        previous_response = response
+        @uris.unshift response.header['Location'].first
+        request = Resourceful::Request.new(:delete, self)
+        response = request.response
+        @uris.shift unless previous_response.code == 301
+      end
+
+      response
+
+    end
+
+    def do_write_request(method, data)
+      
     end
 
   end

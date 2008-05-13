@@ -43,5 +43,16 @@ describe Resourceful::Response do
     @response.should respond_to(:body)
   end
 
+  it 'should know if it is a redirect' do
+    Resourceful::Response.new(301, {}, "").is_redirect?.should == true
+    Resourceful::Response.new(302, {}, "").is_redirect?.should == true
+    Resourceful::Response.new(303, {}, "").is_redirect?.should == true
+    Resourceful::Response.new(307, {}, "").is_redirect?.should == true
+
+    #aliased as was_redirect?
+    Resourceful::Response.new(301, {}, "").was_redirect?.should == true
+  end
+
+
 end
 

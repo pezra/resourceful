@@ -1,4 +1,3 @@
 #!/usr/bin/env ruby
 require 'autotest/redgreen'
-require 'autotest/timestamp'
 

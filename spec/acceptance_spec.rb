@@ -1,5 +1,6 @@
 require 'pathname'
 require Pathname(__FILE__).dirname + 'spec_helper'
+require Pathname(__FILE__).dirname + 'acceptance_shared_specs'
 
 require 'resourceful'
 
@@ -51,7 +52,7 @@ describe Resourceful do
       resp.header['Content-Type'].should == ['text/plain']
     end
 
-    describe 'redirects' do
+    describe 'redirecting' do
 
       describe 'registering callback' do
         before do
@@ -81,39 +82,11 @@ describe Resourceful do
 
       describe '301 Moved Permanently' do
         before do
+          @redirect_code = 301
           @resource = @accessor.resource('http://localhost:3000/redirect/301?http://localhost:3000/get')
-
-          @callback = mock('callback')
-          @callback.stub!(:call).and_return(true)
         end
 
-        it 'should be followed by default on GET' do
-          resp = @resource.get
-          resp.should be_instance_of(Resourceful::Response)
-          resp.code.should == 200
-          resp.header['Content-Type'].should == ['text/plain']
-        end
-
-        %w{PUT POST DELETE}.each do |method|
-          it "should not be followed by default on #{method}" do
-            resp = @resource.send(method.downcase.intern)
-            resp.should be_instance_of(Resourceful::Response)
-            resp.code.should == 301
-          end
-
-          it "should redirect on #{method} if the redirection callback returns true" do
-            @resource.on_redirect { @callback.call }
-            resp = @resource.send(method.downcase.intern)
-            resp.code.should == 200
-          end
-
-          it "should not redirect on #{method} if the redirection callback returns false" do
-            @callback.stub!(:call).and_return(false)
-            @resource.on_redirect { @callback.call }
-            resp = @resource.send(method.downcase.intern)
-            resp.code.should == 301
-          end
-        end
+        it_should_behave_like 'redirect'
 
         it 'should change the effective uri of the resource' do
           @resource.get
@@ -123,8 +96,25 @@ describe Resourceful do
       end
 
       describe '302 Found' do
+        before do
+          @redirect_code = 302
+          @resource = @accessor.resource('http://localhost:3000/redirect/302?http://localhost:3000/get')
+        end
+
+        it_should_behave_like 'redirect'
+
+        it 'should not change the effective uri of the resource'
 
       end
+
+      describe '303 Other' do
+
+      end
+
+      describe '307 Temporary Redirect' do
+
+      end
+
 
     end
 
@@ -143,6 +133,18 @@ describe Resourceful do
     describe 'error checking' do
 
       it 'should raise InvalidResponse when response code is invalid'
+
+      describe 'client errors' do
+
+        it 'should raise when there is one'
+
+      end
+
+      describe 'server errors' do
+
+        it 'should raise when there is one'
+
+      end
 
     end
 

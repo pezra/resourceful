@@ -38,7 +38,7 @@ describe Resourceful::Request do
 
   end
 
-  describe 'make' do
+  describe 'response' do
     before do
       @net_http_adapter_response = mock('net_http_adapter_response')
       Resourceful::NetHttpAdapter.stub!(:make_request).and_return(@net_http_adapter_response)
@@ -48,18 +48,22 @@ describe Resourceful::Request do
     end
 
     it 'should be a method' do
-      @request.should respond_to(:make)
+      @request.should respond_to(:response)
     end
 
     it 'should look in the cache'
 
     it 'should create a Resourceful::Response object from the NetHttpAdapter response' do
       Resourceful::Response.should_receive(:new).with(@net_http_adapter_response).and_return(@response)
-      @request.make
+      @request.response
+    end
+
+    it 'should set the response to #response' do
+      @request.response.should == @response
     end
 
     it 'should return the Response object' do
-      @request.make.should == @response
+      @request.response.should == @response
     end
 
     describe 'GET' do
@@ -70,7 +74,7 @@ describe Resourceful::Request do
       it 'should #get the uri from the NetHttpAdapter' do
         Resourceful::NetHttpAdapter.should_receive(:make_request).
           with(:get, @uri, nil, nil).and_return(@net_http_adapter_response)
-        @request.make
+        @request.response
       end
 
     end
@@ -83,10 +87,56 @@ describe Resourceful::Request do
 
       it 'should #get the uri from the NetHttpAdapter' do
         Resourceful::NetHttpAdapter.should_receive(:make_request).with(:post, @uri, @post_data, nil).and_return(@net_http_adapter_response)
-        @request.make
+        @request.response
       end
 
+    end
 
+  end
+
+  describe '#should_be_redirected?' do
+    before do
+      @net_http_adapter_response = mock('net_http_adapter_response')
+      Resourceful::NetHttpAdapter.stub!(:make_request).and_return(@net_http_adapter_response)
+
+      @response = mock('response')
+      Resourceful::Response.stub!(:new).and_return(@response)
+    end
+
+    describe 'with no callback set' do
+      before do
+        @callback = nil
+        @resource.stub!(:on_redirect).and_return(@callback)
+      end
+
+      it 'should be true for GET' do
+        request = Resourceful::Request.new(:get, @resource, @post_data)
+
+        request.should_be_redirected?.should be_true
+      end
+
+      it 'should be false for POST, etc' do
+        request = Resourceful::Request.new(:post, @resource, @post_data)
+
+        request.should_be_redirected?.should be_false
+      end
+
+    end
+
+    it 'should be true when callback returns true' do
+        @callback = lambda { true }
+        @resource.stub!(:on_redirect).and_return(@callback)
+        request = Resourceful::Request.new(:get, @resource, @post_data)
+
+        request.should_be_redirected?.should be_true
+    end
+
+    it 'should be false when callback returns false' do
+        @callback = lambda { false }
+        @resource.stub!(:on_redirect).and_return(@callback)
+        request = Resourceful::Request.new(:get, @resource, @post_data)
+
+        request.should_be_redirected?.should be_false
     end
 
   end

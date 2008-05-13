@@ -4,6 +4,7 @@ require 'spec'
 require 'pp'
 
 $LOAD_PATH << Pathname(__FILE__).dirname + "../lib"
+require 'resourceful/util'
 
 class Object
   def tap
