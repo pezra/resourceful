@@ -189,6 +189,7 @@ describe Resourceful::Resource do
       describe 'temporary redirect' do
         before do
           @redirect_response.stub!(:is_permanent_redirect?).and_return(false)
+            @redirect_response.stub!(:code).and_return(302)
         end
 
         it 'should check if the response was not a permanent redirect' do
@@ -207,7 +208,20 @@ describe Resourceful::Resource do
           make_request
         end
 
+        describe '302 Found' do
+          before do
+            @new_resource = mock('resource')
+            Resourceful::Resource.should_receive(:new).with(@accessor, @redirected_uri).and_return(@new_resource)
+            @redirect_response.stub!(:code).and_return(303)
+          end
+
+          it 'should redirect to the new location with a GET request, regardless of the original method' do
+            @new_resource.should_receive(:do_read_request).with(:get).and_return(@response)
+            make_request
+          end
+        end
       end
+
 
     end # write with redirection
 

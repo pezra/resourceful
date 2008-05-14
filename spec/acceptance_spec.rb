@@ -110,7 +110,7 @@ describe Resourceful do
 
       end
 
-      describe '303 Other' do
+      describe '303 See Other' do
         before do
           @redirect_code = 303
           @resource = @accessor.resource('http://localhost:3000/redirect/303?http://localhost:3000/method')
@@ -124,8 +124,10 @@ describe Resourceful do
         end
 
         it 'should GET the redirected resource, regardless of the initial method' do
-          resp = @resource.post
-          resp.body.should == 'POST'
+          @callback.stub!(:call).and_return(true)
+          resp = @resource.delete
+          resp.code.should == 200
+          resp.body.should == 'GET'
         end
 
       end

@@ -38,5 +38,12 @@ describe 'http server' do
     resp[0].should == 301
     resp[1]['Location'].should == ['http://localhost:3000/get']
   end
+
+  it 'should respond with the request method in the body' do
+    resp = Resourceful::NetHttpAdapter.make_request(:delete, 'http://localhost:3000/method')
+
+    resp[0].should == 200
+    resp[2].should == "DELETE"
+  end
 end
 

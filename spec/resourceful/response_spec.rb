@@ -57,5 +57,9 @@ describe Resourceful::Response do
     Resourceful::Response.new(301, {}, "").is_permanent_redirect?.should == true
   end
 
+  it 'should know if it is a temporary redirect' do
+    Resourceful::Response.new(303, {}, "").is_temporary_redirect?.should == true
+  end
+
 end
 

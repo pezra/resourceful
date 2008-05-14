@@ -20,6 +20,10 @@ module Resourceful
     def is_permanent_redirect?
       @code == 301
     end
+
+    def is_temporary_redirect?
+      is_redirect? and not is_permanent_redirect?
+    end
   end
   
 end

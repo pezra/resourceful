@@ -22,7 +22,6 @@ end unless defined? SimpleDel
 # has the method used in the body of the response
 MethodResponder = lambda do |env|
   body = [env['REQUEST_METHOD']]
-  puts body
   [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
 end
 
