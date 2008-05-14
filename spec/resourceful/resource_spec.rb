@@ -242,19 +242,10 @@ describe Resourceful::Resource do
       callback.should be_kind_of(Proc)
     end
 
-    it 'should return the callback when called without a block' do
-      @resource.on_redirect { true }
-      @resource.on_redirect.should be_kind_of(Proc)
+    it 'should raise an ArgumentError when called without a block' do
+      lambda { @resource.on_redirect }.should raise_error(ArgumentError)
     end
 
-    it 'should yield the request,response to the callback' do
-      @resource.on_redirect { |req,resp|
-        req.should == @request
-        resp.should == @redirect_response
-      }
-
-      @resource.get
-    end
   end
 
   describe '#get' do

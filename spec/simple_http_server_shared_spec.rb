@@ -70,7 +70,7 @@ describe 'simple http server', :shared => true do
       Thin::Server.start(app) 
     end
     #give the server a chance to initialize
-    sleep 0.1
+    sleep 0.05
   end
 
   after(:all) do

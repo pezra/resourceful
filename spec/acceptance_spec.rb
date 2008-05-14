@@ -77,7 +77,6 @@ describe Resourceful do
           resp = @resource.get
           resp.code.should == 301
         end
-
       end
 
       describe 'permanent redirect' do
@@ -119,11 +118,8 @@ describe Resourceful do
             resp.code.should == 200
             resp.body.should == 'GET'
           end
-
         end
-
       end
-
 
     end
 
@@ -136,6 +132,8 @@ describe Resourceful do
       it 'should use the cached version of the representation if it has not expired'
 
       it 'should provide the cached version if the server replies with a 304'
+
+      it 'should track representations by uri and vary header'
 
     end
 
