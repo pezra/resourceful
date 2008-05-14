@@ -3,6 +3,7 @@ require 'net/http'
 require 'resourceful/version'
 require 'resourceful/options_interpreter'
 require 'resourceful/authentication_manager'
+require 'resourceful/cache_manager'
 require 'resourceful/resource'
 require 'resourceful/stubbed_resource_proxy'
 
@@ -32,13 +33,14 @@ module Resourceful
     # and the application code should log it if appropriate.
     attr_accessor :logger
     
-    attr_reader :auth_manager
+    attr_reader :auth_manager, :cache_manager
     
     attr_reader :user_agent_tokens
     
     INIT_OPTIONS = OptionsInterpreter.new do 
       option(:logger, :default => BitBucketLogger.new)
       option(:user_agent, :default => []) {|ua| [ua].flatten}
+      option(:cache_manager, :default => CacheManager.new)
     end
     
     # Initializes a new HttpAccessor.  Valid options:
@@ -55,6 +57,7 @@ module Resourceful
         @user_agent_tokens.push(*opts[:user_agent].reverse)
         self.logger = opts[:logger]
         @auth_manager = AuthenticationManager.new(opts[:authentication_info_provider])
+        @cache_manager = opts[:cache_manager]
       end     
     end
     

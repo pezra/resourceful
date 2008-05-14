@@ -242,8 +242,10 @@ describe Resourceful::Resource do
       callback.should be_kind_of(Proc)
     end
 
-    it 'should raise an ArgumentError when called without a block' do
-      lambda { @resource.on_redirect }.should raise_error(ArgumentError)
+    it 'should return the callback when called without a block' do
+      callback = lambda { "foo" }
+      @resource.on_redirect(&callback)
+      @resource.on_redirect.should == callback
     end
 
   end

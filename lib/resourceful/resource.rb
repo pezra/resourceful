@@ -42,10 +42,13 @@ module Resourceful
     #   The action to be executed when a request results in a redirect. Yields the 
     #   current request and result objects to the callback.
     #
-    # @raise ArgumentError if called without a block    #   
+    # @raise ArgumentError if called without a block 
     def on_redirect(&callback)
-      raise ArgumentError unless block_given?
-      @on_redirect = callback
+      if block_given?
+        @on_redirect = callback
+      else
+        @on_redirect
+      end
     end
 
     # Performs a GET on the resource, following redirects as neccessary, and retriving
