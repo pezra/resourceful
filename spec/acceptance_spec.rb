@@ -80,7 +80,7 @@ describe Resourceful do
 
       end
 
-      describe '301 Moved Permanently' do
+      describe 'permanent redirect' do
         before do
           @redirect_code = 301
           @resource = @accessor.resource('http://localhost:3000/redirect/301?http://localhost:3000/get')
@@ -92,10 +92,9 @@ describe Resourceful do
           @resource.get
           @resource.effective_uri.should == 'http://localhost:3000/get'
         end
-
       end
 
-      describe '302 Found' do
+      describe 'temporary redirect' do
         before do
           @redirect_code = 302
           @resource = @accessor.resource('http://localhost:3000/redirect/302?http://localhost:3000/get')
@@ -108,31 +107,20 @@ describe Resourceful do
           @resource.effective_uri.should == 'http://localhost:3000/redirect/302?http://localhost:3000/get'
         end
 
-      end
+        describe '303 See Other' do
+          before do
+            @redirect_code = 303
+            @resource = @accessor.resource('http://localhost:3000/redirect/303?http://localhost:3000/method')
+            @resource.on_redirect { true }
+          end
 
-      describe '303 See Other' do
-        before do
-          @redirect_code = 303
-          @resource = @accessor.resource('http://localhost:3000/redirect/303?http://localhost:3000/method')
+          it 'should GET the redirected resource, regardless of the initial method' do
+            resp = @resource.delete
+            resp.code.should == 200
+            resp.body.should == 'GET'
+          end
+
         end
-
-        it_should_behave_like 'redirect'
-
-        it 'should not change the effective uri of the resource' do
-          @resource.get
-          @resource.effective_uri.should == 'http://localhost:3000/redirect/303?http://localhost:3000/method'
-        end
-
-        it 'should GET the redirected resource, regardless of the initial method' do
-          @callback.stub!(:call).and_return(true)
-          resp = @resource.delete
-          resp.code.should == 200
-          resp.body.should == 'GET'
-        end
-
-      end
-
-      describe '307 Temporary Redirect' do
 
       end
 

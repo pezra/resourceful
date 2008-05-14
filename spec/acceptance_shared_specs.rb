@@ -1,9 +1,4 @@
 describe 'redirect', :shared => true do
-  before do
-    @callback = mock('callback')
-    @callback.stub!(:call).and_return(true)
-  end
-
   it 'should be followed by default on GET' do
     resp = @resource.get
     resp.should be_instance_of(Resourceful::Response)
@@ -19,14 +14,13 @@ describe 'redirect', :shared => true do
     end
 
     it "should redirect on #{method} if the redirection callback returns true" do
-      @resource.on_redirect { @callback.call }
+      @resource.on_redirect { true }
       resp = @resource.send(method.downcase.intern)
       resp.code.should == 200
     end
 
     it "should not redirect on #{method} if the redirection callback returns false" do
-      @callback.stub!(:call).and_return(false)
-      @resource.on_redirect { @callback.call }
+      @resource.on_redirect { false }
       resp = @resource.send(method.downcase.intern)
       resp.code.should == @redirect_code
     end
