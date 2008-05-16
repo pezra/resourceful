@@ -35,12 +35,12 @@ module Resourceful
     
     attr_reader :auth_manager, :cache_manager
     
-    attr_reader :user_agent_tokens
+    attr_reader :user_agent_tokens  
     
     INIT_OPTIONS = OptionsInterpreter.new do 
       option(:logger, :default => BitBucketLogger.new)
       option(:user_agent, :default => []) {|ua| [ua].flatten}
-      option(:cache_manager, :default => CacheManager.new)
+      option(:cache_manager, :default => MemoryCacheManager.new)
     end
     
     # Initializes a new HttpAccessor.  Valid options:
