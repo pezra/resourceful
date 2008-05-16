@@ -1,5 +1,7 @@
 require 'pathname'
 require Pathname(__FILE__).dirname + 'spec_helper'
+require 'rubygems'
+require 'addressable/uri'
 
 require 'resourceful/net_http_adapter'
 
@@ -44,6 +46,14 @@ describe 'http server' do
 
     resp[0].should == 200
     resp[2].should == "DELETE"
+  end
+
+  it 'should respond with the header set from the query string' do
+    uri = Addressable::URI.parse('http://localhost:3000/header?{Foo:%20bar}')
+    resp = Resourceful::NetHttpAdapter.make_request(:get, uri.to_s)
+
+    resp[1].should have_key('Foo')
+    resp[1]['Foo'].should == ['bar']
   end
 end
 

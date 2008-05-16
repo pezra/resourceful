@@ -61,5 +61,44 @@ describe Resourceful::Response do
     Resourceful::Response.new(303, {}, "").is_temporary_redirect?.should == true
   end
 
+  it 'should know if its authoritative' do
+    @response.should respond_to(:authoritative?)
+  end
+
+  it 'should allow authoritative to be set' do
+    @response.authoritative = true
+    @response.authoritative?.should be_true
+  end
+
+  describe 'caching and expiration' do
+    before do
+      Time.stub!(:now).and_return(Time.utc(2008,5,15,18,0,1), Time.utc(2008,5,15,20,0,0))
+
+      @response = Resourceful::Response.new(0, {'Date' => ['Thu, 15 May 2008 18:00:00 GMT']}, "")
+      @response.request_time = Time.utc(2008,5,15,17,59,59)
+    end
+
+    it 'should know if its #stale?' do
+      @response.should respond_to(:stale?)
+    end
+
+    it 'should know if its #expired?' do
+      @response.should respond_to(:expired?)
+    end
+
+    it 'should alias #expired? as #stale?' do
+      @response.stale?.should == @response.expired?
+    end
+
+    it 'should have a #current_age' do
+      @response.should respond_to(:current_age)
+    end
+
+    it 'should calculate the #current_age' do
+      @response.current_age.should == (2 * 60 * 60 + 2)
+    end
+      
+  end
+
 end
 

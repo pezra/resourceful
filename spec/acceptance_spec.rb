@@ -124,6 +124,15 @@ describe Resourceful do
     end
 
     describe 'caching' do
+
+      it 'should use the cached response' do
+        resource = @accessor.resource('http://localhost:3000/header?{Cache-Control:%20max-age=60}')
+        resp = resource.get
+        resp.authoritative?.should be_true
+
+        resp2 = resource.get
+        resp2.authoritative?.should be_false
+      end
       
       it 'should store a fetched representation'
 

@@ -41,6 +41,10 @@ describe Resourceful::Request do
       req.body.should == 'Hello from post!'
     end
 
+    it 'should have a request_time' do
+      @request.should respond_to(:request_time)
+    end
+
   end
 
   describe '#response' do
@@ -60,9 +64,17 @@ describe Resourceful::Request do
       @request.response.should == @response
     end
 
+    it 'should set the request_time to now' do
+      now = mock('now')
+      Time.stub!(:now).and_return(now)
+
+      @request.response
+      @request.request_time.should == now
+    end
+
     describe 'Caching' do
       before do
-        @cached_response = mock('cached_response')
+        @cached_response = mock('cached_response', :body => "")
         @cached_response.stub!(:dirty?).and_return(false)
 
         @cached_response_header = mock('header', :[] => nil, :has_key? => false)

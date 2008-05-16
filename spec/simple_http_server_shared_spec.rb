@@ -1,3 +1,5 @@
+require 'yaml'
+
 # this sets up a very simple http server using thin to be used in specs.
 SimpleGet = lambda do |env|
   body = ["Hello, world!"]
@@ -33,6 +35,19 @@ CodeResponder = lambda do |env|
   [ code, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
 end unless defined? CodeResponder
 
+# YAML-parses the quesy string (expected hash) and sets the header to that
+HeaderResponder = lambda do |env|
+  header = YAML.load(env['QUERY_STRING'].gsub('%20', ' '))
+  body = [header.inspect]
+
+  header.merge!({
+            'Content-Type' => 'text/plain', 
+            'Content-Length' => body.join.size.to_s
+           })
+
+  [ 200, header, body ]
+end unless defined? HeaderResponder
+
 # redirect. /redirect/{301|302}?{url}
 Redirector = lambda do |env|
   code = env['PATH_INFO'] =~ /([\d]+)/ ? Integer($1) : 404
@@ -61,6 +76,7 @@ describe 'simple http server', :shared => true do
       map( '/method'   ){ run MethodResponder }
       map( '/code'     ){ run CodeResponder }
       map( '/redirect' ){ run Redirector }
+      map( '/header'   ){ run HeaderResponder }
     end
 
     #spawn the server in a separate thread

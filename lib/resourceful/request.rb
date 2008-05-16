@@ -8,6 +8,7 @@ module Resourceful
     REDIRECTABLE_METHODS = [:get, :head]
 
     attr_accessor :method, :resource, :body, :header
+    attr_reader   :request_time
 
     def initialize(http_method, resource, body = nil, header = nil)
       @method, @resource, @body = http_method, resource, body
@@ -16,6 +17,8 @@ module Resourceful
     end
 
     def response
+      @request_time = Time.now
+
       cached_response = resource.accessor.cache_manager.lookup(self)
       return cached_response if cached_response and not cached_response.dirty?
 
@@ -29,7 +32,7 @@ module Resourceful
         response = cached_response
       end
 
-      resource.accessor.cache_manager.store(response)
+      resource.accessor.cache_manager.store(self, response)
 
       response
     end

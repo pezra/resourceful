@@ -10,4 +10,25 @@ module Resourceful
   def self.named_uris
     Resourceful.named_uris
   end
+
+  HOP_BY_HOP_HEADERS = %w{
+    Connection
+    Keep-Alive
+    Proxy-Authenticate
+    Proxy-Authorization
+    TE
+    Trailers
+    Transfer-Encoding
+    Upgrade
+  }
+
+  NON_MODIFIABLE_HEADERS = %w{
+    Content-Location
+    Content-MD5
+    ETag
+    Last-Modified
+    Expires
+  }
+
+
 end
