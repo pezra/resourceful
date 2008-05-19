@@ -25,7 +25,7 @@ end unless defined? SimpleDel
 MethodResponder = lambda do |env|
   body = [env['REQUEST_METHOD']]
   [ 200, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
-end
+end unless defined? MethodResponder
 
 # has a response code of whatever it was given in the url /code/{123}
 CodeResponder = lambda do |env|

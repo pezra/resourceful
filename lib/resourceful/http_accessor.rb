@@ -40,7 +40,7 @@ module Resourceful
     INIT_OPTIONS = OptionsInterpreter.new do 
       option(:logger, :default => BitBucketLogger.new)
       option(:user_agent, :default => []) {|ua| [ua].flatten}
-      option(:cache_manager, :default => MemoryCacheManager.new)
+      option(:cache_manager, :default => InMemoryCacheManager.new)
     end
     
     # Initializes a new HttpAccessor.  Valid options:
