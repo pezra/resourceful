@@ -7,7 +7,44 @@ describe Resourceful::CacheManager do
 
 end
 
+describe Resourceful::NullCacheManager do
+  before do
+    @ncm = Resourceful::NullCacheManager.new
+  end
+
+  it 'should not find anything' do
+    @ncm.lookup(:stuff).should be_nil
+  end
+
+  it 'should not store anything' do
+    @ncm.should respond_to(:store)
+
+    lambda { @ncm.store(:foo, :bar) }.should_not raise_error
+
+  end
+
+end
+
 describe Resourceful::InMemoryCacheManager do
+  before do
+    @request = mock('request')
+
+    @respose = mock('respose')
+
+    @imcm = Resourceful::InMemoryCacheManager.new
+  end
+
+  it 'should have a lookup method'
+
+  it 'should lookup the response by request' 
+
+  it 'should have a store method'
+
+  it 'should store the response by request'
+
+  it 'should not store an entry if the request is not cachable' do
+
+  end
 
 end
 
@@ -47,9 +84,6 @@ describe Resourceful::InMemoryCacheManager::CacheEntryCollection do
     @collection.instance_variable_get("@entries").should include(@new_entry)
     @collection.instance_variable_get("@entries").should_not include(@entry_valid)
   end
-
-  it 'should not store an entry if the request\'s vary header is "*"'
-
 
 end
 

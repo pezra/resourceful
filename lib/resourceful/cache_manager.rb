@@ -17,7 +17,7 @@ module Resourceful
     # Store a response in the cache. 
     #
     # This method is smart enough to not store responses that cannot be 
-    # cached (Vary: *)
+    # cached (Vary: * or Cache-Control: no-cache, private, ...)
     #
     # @param request<Resourceful::Request>
     #   The request used to obtain the response. This is needed so the 
@@ -45,6 +45,8 @@ module Resourceful
   # This is the default cache, and does not do any caching. All lookups
   # result in nil, and all attempts to store a response are a no-op.
   class NullCacheManager < CacheManager
+    def initialize; end
+
     def lookup(request)
       nil
     end
@@ -68,6 +70,8 @@ module Resourceful
     end
 
     def store(request, response)
+      return if response.header['Vary'].include? '*'
+
       entry = CacheEntry.new(request.request_time, 
                              select_request_headers(request, response), 
                              response)
