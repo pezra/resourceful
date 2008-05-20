@@ -20,9 +20,9 @@ module Resourceful
       @request_time = Time.now
 
       cached_response = resource.accessor.cache_manager.lookup(self)
-      return cached_response if cached_response and not cached_response.dirty?
+      return cached_response if cached_response and not cached_response.stale?
 
-      set_validation_headers(cached_response) if cached_response and cached_response.dirty?
+      set_validation_headers(cached_response) if cached_response and cached_response.stale?
 
       http_resp = NetHttpAdapter.make_request(@method, @resource.uri, @body, @header)
       response = Resourceful::Response.new(*http_resp)
@@ -34,6 +34,7 @@ module Resourceful
 
       resource.accessor.cache_manager.store(self, response)
 
+      response.authoritative = true
       response
     end
 

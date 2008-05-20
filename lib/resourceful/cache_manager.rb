@@ -1,3 +1,4 @@
+require 'resourceful/header'
 
 module Resourceful
 
@@ -34,11 +35,13 @@ module Resourceful
     # @param response<Resourceful::Response>
     #   The response obtained from the request.
     def select_request_headers(request, response)
-      returning Resourceful::HttpHeader.new do |header|
-        response.header['Vary'].each do |name|
-          header[name] = request.header[name]
-        end
-      end
+      header = Resourceful::Header.new
+
+      response.header['Vary'].each do |name|
+        header[name] = request.header[name]
+      end if response.header['Vary']
+
+      header
     end
   end
 
@@ -65,12 +68,14 @@ module Resourceful
 
     def lookup(request)
       entry = @collection[request.resource.uri][request]
-      #TODO munge entry into Response
-      entry.response
+      response = entry.response if entry
+      response.authoritative = false if response
+
+      response      
     end
 
     def store(request, response)
-      return if response.header['Vary'].include? '*'
+      return if response.header['Vary'] and response.header['Vary'].include? '*'
 
       entry = CacheEntry.new(request.request_time, 
                              select_request_headers(request, response), 

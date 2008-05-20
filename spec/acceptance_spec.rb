@@ -124,13 +124,18 @@ describe Resourceful do
     end
 
     describe 'caching' do
+      before do
+        @accessor = Resourceful::HttpAccessor.new(:cache_manager => Resourceful::InMemoryCacheManager.new)
+      end
 
       it 'should use the cached response' do
-        resource = @accessor.resource('http://localhost:3000/header?{Cache-Control:%20max-age=60}')
+        resource = @accessor.resource('http://localhost:3000/get')
         resp = resource.get
+        puts resp.inspect
         resp.authoritative?.should be_true
 
         resp2 = resource.get
+        puts resp2.inspect
         resp2.authoritative?.should be_false
       end
       

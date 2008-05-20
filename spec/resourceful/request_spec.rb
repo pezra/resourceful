@@ -52,7 +52,7 @@ describe Resourceful::Request do
       @net_http_adapter_response = mock('net_http_adapter_response')
       Resourceful::NetHttpAdapter.stub!(:make_request).and_return(@net_http_adapter_response)
 
-      @response = mock('response', :code => 200)
+      @response = mock('response', :code => 200, :authoritative= => true)
       Resourceful::Response.stub!(:new).and_return(@response)
     end
 
@@ -74,8 +74,8 @@ describe Resourceful::Request do
 
     describe 'Caching' do
       before do
-        @cached_response = mock('cached_response', :body => "")
-        @cached_response.stub!(:dirty?).and_return(false)
+        @cached_response = mock('cached_response', :body => "", :authoritative= => true)
+        @cached_response.stub!(:stale?).and_return(false)
 
         @cached_response_header = mock('header', :[] => nil, :has_key? => false)
         @cached_response.stub!(:header).and_return(@cached_response_header)
@@ -88,23 +88,23 @@ describe Resourceful::Request do
         @request.response
       end
 
-      it 'should check if the cached response is dirty' do
-        @cached_response.should_receive(:dirty?).and_return(false)
+      it 'should check if the cached response is stale' do
+        @cached_response.should_receive(:stale?).and_return(false)
         @request.response
       end
 
       describe 'cached' do
 
-        it 'should return the cached response if it was found and not dirty' do
-          @cached_response.dirty?.should_not be_true
+        it 'should return the cached response if it was found and not stale' do
+          @cached_response.stale?.should_not be_true
           @request.response.should == @cached_response
         end
 
       end
 
-      describe 'cached but dirty' do
+      describe 'cached but stale' do
         before do
-          @cached_response.stub!(:dirty?).and_return(true)
+          @cached_response.stub!(:stale?).and_return(true)
         end
 
         it 'should add the validation headers from the cached_response to it\'s header' do
@@ -133,7 +133,7 @@ describe Resourceful::Request do
         end
 
         it 'should store the response in the cache manager' do
-          @cachemgr.should_receive(:store).with(@response)
+          @cachemgr.should_receive(:store).with(@request, @response)
           @request.response
         end
 
@@ -156,7 +156,7 @@ describe Resourceful::Request do
         end
 
         it 'should store the response in the cache manager' do
-          @cachemgr.should_receive(:store).with(@response)
+          @cachemgr.should_receive(:store).with(@request, @response)
           @request.response
         end
 
@@ -204,7 +204,7 @@ describe Resourceful::Request do
       @net_http_adapter_response = mock('net_http_adapter_response')
       Resourceful::NetHttpAdapter.stub!(:make_request).and_return(@net_http_adapter_response)
 
-      @response = mock('response', :code => 200)
+      @response = mock('response', :code => 200, :authoritative= => true)
       Resourceful::Response.stub!(:new).and_return(@response)
     end
 

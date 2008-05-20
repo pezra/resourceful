@@ -4,7 +4,21 @@ require Pathname(__FILE__).dirname + '../spec_helper'
 require 'resourceful/cache_manager'
 
 describe Resourceful::CacheManager do
+  before do
+    @cm = Resourceful::InMemoryCacheManager.new #cheat, because I cant new a real one. 
+  end
 
+  it 'should not be initializable' do
+    lambda { Resourceful::CacheManager.new }.should raise_error
+  end
+
+  it 'should have a lookup method' do
+    @cm.should respond_to(:lookup)
+  end
+
+  it 'should have a store method' do
+    @cm.should respond_to(:store)
+  end
 end
 
 describe Resourceful::NullCacheManager do
@@ -34,11 +48,9 @@ describe Resourceful::InMemoryCacheManager do
     @imcm = Resourceful::InMemoryCacheManager.new
   end
 
-  it 'should have a lookup method'
 
   it 'should lookup the response by request' 
 
-  it 'should have a store method'
 
   it 'should store the response by request'
 
