@@ -75,7 +75,7 @@ module Resourceful
     end
 
     def store(request, response)
-      return if response.header['Vary'] and response.header['Vary'].include? '*'
+      return unless response.cacheable?
 
       entry = CacheEntry.new(request.request_time, 
                              select_request_headers(request, response), 

@@ -41,22 +41,28 @@ end
 
 describe Resourceful::InMemoryCacheManager do
   before do
-    @request = mock('request')
+    @request = mock('request', :resource => mock('resource', :uri => 'uri'))
+    @response = mock('response', :authoritative= => nil, :cachable => true)
 
-    @respose = mock('respose')
+    @entry = mock('cache entry', :response => @response)
 
     @imcm = Resourceful::InMemoryCacheManager.new
+    @imcm.instance_variable_set("@collection", {'uri' => {@request => @entry}})
   end
 
 
-  it 'should lookup the response by request' 
+  it 'should lookup the response by request' do
+    @imcm.lookup(@request).should == @response
+  end
 
+  it 'should set the response to non-authoritative' do
+    @response.should_receive(:authoritative=).with(false)
+    @imcm.lookup(@request)
+  end
 
   it 'should store the response by request'
 
-  it 'should not store an entry if the request is not cachable' do
-
-  end
+  it 'should not store an entry if the response is not cachable'
 
 end
 

@@ -131,12 +131,12 @@ describe Resourceful do
       it 'should use the cached response' do
         resource = @accessor.resource('http://localhost:3000/get')
         resp = resource.get
-        puts resp.inspect
         resp.authoritative?.should be_true
 
         resp2 = resource.get
-        puts resp2.inspect
         resp2.authoritative?.should be_false
+
+        resp2.object_id.should == resp.object_id
       end
       
       it 'should store a fetched representation'
