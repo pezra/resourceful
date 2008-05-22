@@ -35,6 +35,12 @@ module Resourceful
     end
     alias stale? expired?
 
+    def cachable?
+      return false if header['Vary'] == ['*']
+
+      true
+    end
+
     # Algorithm taken from RCF2616#13.2.3
     def current_age
       age_value   = Time.httpdate(header['Age'].first) if header['Age']

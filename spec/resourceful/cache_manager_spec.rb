@@ -19,6 +19,36 @@ describe Resourceful::CacheManager do
   it 'should have a store method' do
     @cm.should respond_to(:store)
   end
+
+  describe '#select_request_headers' do
+    before do
+      @req_header = mock('header', :[] => nil)
+      @request = mock('request', :header => @req_header)
+
+      @resp_header = mock('header', :[] => nil)
+      @response = mock('response', :header => @resp_header)
+    end
+
+    it 'should select the request headers from the Vary header' do
+      @resp_header.should_receive(:[]).with('Vary')
+      @cm.select_request_headers(@request, @response)
+    end
+
+    it 'should pull the values from the request that match keys in the vary header' do
+      @resp_header.should_receive(:[]).with('Vary').twice.and_return(['foo', 'bar'])
+      @req_header.should_receive(:[]).with('foo').and_return('oof')
+      @req_header.should_receive(:[]).with('bar').and_return('rab')
+
+      header = @cm.select_request_headers(@request, @response)
+      header['foo'].should == 'oof'
+      header['bar'].should == 'rab'
+    end
+
+    it 'should return a new Header object' do
+      @cm.select_request_headers(@request, @response).should be_kind_of(Resourceful::Header)
+    end
+  end
+
 end
 
 describe Resourceful::NullCacheManager do
@@ -41,28 +71,65 @@ end
 
 describe Resourceful::InMemoryCacheManager do
   before do
-    @request = mock('request', :resource => mock('resource', :uri => 'uri'))
-    @response = mock('response', :authoritative= => nil, :cachable => true)
+    @request = mock('request', :resource => mock('resource', :uri => 'uri'),
+                               :request_time => Time.utc(2008,5,22,15,00))
+    @response = mock('response', :header => {})
 
-    @entry = mock('cache entry', :response => @response)
+    @entry = mock('cache entry', :response => @response, :valid_for? => true)
+    Resourceful::InMemoryCacheManager::CacheEntry.stub!(:new).and_return(@entry)
 
     @imcm = Resourceful::InMemoryCacheManager.new
-    @imcm.instance_variable_set("@collection", {'uri' => {@request => @entry}})
   end
 
+  describe 'finding' do
+    before do
+      @response.stub!(:authoritative=)
+      @imcm.instance_variable_set("@collection", {'uri' => {@request => @entry}})
+    end
 
-  it 'should lookup the response by request' do
-    @imcm.lookup(@request).should == @response
+    it 'should lookup the response by request' do
+      @imcm.lookup(@request).should == @response
+    end
+
+    it 'should set the response to non-authoritative' do
+      @response.should_receive(:authoritative=).with(false)
+      @imcm.lookup(@request)
+    end
   end
 
-  it 'should set the response to non-authoritative' do
-    @response.should_receive(:authoritative=).with(false)
-    @imcm.lookup(@request)
+  describe 'saving' do
+    before do
+      @response.stub!(:cachable?).and_return(true)
+    end
+
+    it 'should make a new cache entry' do
+      Resourceful::InMemoryCacheManager::CacheEntry.should_receive(:new).with(
+        Time.utc(2008,5,22,15,00),
+        {},
+        @response
+      )
+
+      @imcm.store(@request, @response)
+    end
+
+    it 'should store the response entity by request' do
+      @imcm.store(@request, @response)
+      col = @imcm.instance_variable_get("@collection")
+      col['uri'][@request].response.should == @response
+    end
+
+    it 'should check if the response is cachable' do
+      @response.should_receive(:cachable?).and_return(true)
+      @imcm.store(@request, @response)
+    end
+
+    it 'should not store an entry if the response is not cachable' do
+      @response.should_receive(:cachable?).and_return(false)
+      @imcm.store(@request, @response)
+      col = @imcm.instance_variable_get("@collection")
+      col['uri'][@request].should be_nil
+    end
   end
-
-  it 'should store the response by request'
-
-  it 'should not store an entry if the response is not cachable'
 
 end
 

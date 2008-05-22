@@ -98,6 +98,25 @@ describe Resourceful::Response do
       @response.current_age.should == (2 * 60 * 60 + 2)
     end
       
+    it 'should know if its #cachable?' do
+      @response.should respond_to(:cachable?)
+    end
+
+    it 'should normally be cachable' do
+      @response.cachable?.should be_true
+    end
+
+    def response_with_header(header = {})
+      Resourceful::Response.new(200, header, "")
+    end
+
+    it 'should not be cachable if the vary header is "*"' do
+      r = response_with_header('Vary' => ['*'])
+      r.cachable?.should be_false
+    end
+
+
+      
   end
 
 end

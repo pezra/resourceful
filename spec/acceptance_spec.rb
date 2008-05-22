@@ -136,12 +136,20 @@ describe Resourceful do
         resp2 = resource.get
         resp2.authoritative?.should be_false
 
-        resp2.object_id.should == resp.object_id
+        resp2.should == resp
       end
       
       it 'should store a fetched representation'
 
-      it 'should not store the representation if the server says not to'
+      it 'should not store the representation if the server says not to' do
+        resource = @accessor.resource('http://localhost:3000/header?{Vary:%20*}')
+        resp = resource.get
+        resp.authoritative?.should be_true
+        resp.should_not be_cachable
+
+        resp2 = resource.get
+        resp2.should_not == resp
+      end
 
       it 'should use the cached version of the representation if it has not expired'
 
