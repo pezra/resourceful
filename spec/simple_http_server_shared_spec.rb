@@ -57,6 +57,26 @@ Redirector = lambda do |env|
   [ code, {'Content-Type' => 'text/plain', 'Location' => location, 'Content-Length' => body.join.size.to_s}, body ]
 end unless defined? Redirector
 
+# first request is a 200, every one after that is 304
+NotModifiedResponder = lambda do |env|
+  @@been_here_before = 0 unless defined? @@been_here_before
+  @@been_here_before += 1
+
+  header = {'X-Been-Here-Before' => @@been_here_before.to_s}
+  if @@been_here_before > 1
+    [ 304, header, [] ]
+  else
+    body = [header.inspect]
+    header.merge!({
+            'Content-Type' => 'text/plain', 
+            'Content-Length' => body.join.size.to_s
+    })
+
+    [ 200, header, body ]
+  end
+
+end unless defined? NotModifiedResponder
+
 
 describe 'simple http server', :shared => true do
   before(:all) do
@@ -77,6 +97,7 @@ describe 'simple http server', :shared => true do
       map( '/code'     ){ run CodeResponder }
       map( '/redirect' ){ run Redirector }
       map( '/header'   ){ run HeaderResponder }
+      map( '/200_then_304' ){ run NotModifiedResponder }
     end
 
     #spawn the server in a separate thread

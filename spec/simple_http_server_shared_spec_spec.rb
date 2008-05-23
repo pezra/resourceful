@@ -55,5 +55,18 @@ describe 'http server' do
     resp[1].should have_key('Foo')
     resp[1]['Foo'].should == ['bar']
   end
+
+  it 'should respond first with a 200, then a 304 and increment X-Been-Here-Before' do
+    uri = Addressable::URI.parse('http://localhost:3000/200_then_304?{}')
+
+    resp1 = Resourceful::NetHttpAdapter.make_request(:get, uri.to_s)
+    resp1[0].should == 200
+    resp1[1]['X-Been-Here-Before'].should == ['1']
+
+    resp2 = Resourceful::NetHttpAdapter.make_request(:get, uri.to_s)
+    resp2[0].should == 304
+    resp2[1]['X-Been-Here-Before'].should == ['2']
+  end
+
 end
 

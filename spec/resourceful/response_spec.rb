@@ -82,12 +82,17 @@ describe Resourceful::Response do
       @response.should respond_to(:stale?)
     end
 
+    it 'should be stale if it is expired'
+
     it 'should know if its #expired?' do
       @response.should respond_to(:expired?)
     end
 
-    it 'should alias #expired? as #stale?' do
-      @response.stale?.should == @response.expired?
+    it 'should be expired if Now is after the "Expire" header' do
+      Time.stub!(:now).and_return(Time.utc(2008,5,23,18,0))
+      @response.header['Expire'] = (Time.now - 60*60).httpdate
+
+      @response.should be_expired
     end
 
     it 'should have a #current_age' do

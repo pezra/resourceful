@@ -139,8 +139,6 @@ describe Resourceful do
         resp2.should == resp
       end
       
-      it 'should store a fetched representation'
-
       it 'should not store the representation if the server says not to' do
         resource = @accessor.resource('http://localhost:3000/header?{Vary:%20*}')
         resp = resource.get
@@ -151,11 +149,49 @@ describe Resourceful do
         resp2.should_not == resp
       end
 
-      it 'should use the cached version of the representation if it has not expired'
+      it 'should use the cached version of the representation if it has not expired' do
+        Time.stub!(:now).and_return(Time.utc(2008,5,23,12,00))
+        in_an_hour = (Time.now + (60*60)).httpdate
 
-      it 'should provide the cached version if the server replies with a 304'
+        resource = @accessor.resource("http://localhost:3000/header?{Expires:%20#{Addressable::URI.encode(in_an_hour)}}")
+        resp = resource.get
+        resp.should be_authoritative
 
-      it 'should track representations by uri and vary header'
+        resp2 = resource.get
+        resp2.should_not be_authoritative
+        resp2.should == resp
+      end
+
+      it 'should revalidate the cached response if it has expired' do
+        Time.stub!(:now).and_return(Time.utc(2008,5,23,12,00))
+        an_hour_ago = (Time.now - (60*60)).httpdate
+
+        resource = @accessor.resource("http://localhost:3000/200_then_304?{Expires:%20#{Addressable::URI.encode(an_hour_ago)}}")
+        resp = resource.get
+        resp.header['X-Been-Here-Before'].should == ["1"]
+        resp.should be_authoritative
+
+        resp2 = resource.get
+        resp2.header['X-Been-Here-Before'].should == ["2"]
+        resp2.should be_authoritative
+        resp2.should == resp
+      end
+
+      it 'should provide the cached version if the server responds with a 304 not modified'
+
+      describe 'Cache-Control' do
+
+        it 'should cache anything with "Cache-Control: public"'
+
+        it 'should cache anything with "Cache-Control: private"'
+
+        it 'should cache but revalidate anything with "Cache-Control: no-cache"'
+
+        it 'should not cache anything with "Cache-Control: no-store"'
+
+        it 'should add "Cache-Control: max-age=0" to the request when revalidating a response that has "Cache-Control: must-revalidate" set'
+
+      end
 
     end
 

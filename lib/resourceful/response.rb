@@ -31,9 +31,15 @@ module Resourceful
     end
 
     def expired?
+      if header['Expire']
+        return true if Time.httpdate(header['Expire']) < Time.now
+      end
 
     end
-    alias stale? expired?
+
+    def stale?
+
+    end
 
     def cachable?
       return false if header['Vary'] == ['*']
