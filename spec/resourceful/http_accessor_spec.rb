@@ -117,36 +117,4 @@ describe Resourceful::HttpAccessor do
     @accessor.resource('http://www.example/previously-unused-uri')
   end 
 
-  describe 'request stubbing' do
-
-    it 'should allow http request to be stubbed for testing/debugging purposes' do
-      @accessor.stub_request(:get, 'http://www.example/temptation-waits', 'text/plain', "This is a stubbed response")    
-    end 
-    
-    it 'should return request stubbing resource proxy' do
-      @accessor.stub_request(:get, 'http://www.example/temptation-waits', 'text/plain', "This is a stubbed response")
-      
-      @accessor.resource('http://www.example/temptation-waits').should be_kind_of(Resourceful::StubbedResourceProxy)
-    end 
-
-    it 'response to stubbed request should have canned body' do
-      @accessor.stub_request(:get, 'http://www.example/temptation-waits', 'text/plain', "This is a stubbed response")
-      
-      @accessor.resource('http://www.example/temptation-waits').get.body.should == "This is a stubbed response"
-    end
-    
-    it 'response to stubbed request should have canned content_type' do
-      @accessor.stub_request(:get, 'http://www.example/temptation-waits', 'text/plain', "This is a stubbed response")
-      
-      @accessor.resource('http://www.example/temptation-waits').get['content-type'].should == "text/plain"
-    end
-
-    it 'should not allow stubbing of not get requests' do
-      lambda{
-        @accessor.stub_request(:post, 'http://www.example/temptation-waits', 'text/plain', "This is a stubbed response")
-      }.should raise_error(ArgumentError)
-      
-    end 
-  end
-
 end

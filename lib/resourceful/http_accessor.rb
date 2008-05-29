@@ -72,29 +72,8 @@ module Resourceful
     # by the specified URI.  A resource object will be created if necessary.
     def resource(uri)
       resource = Resource.new(self, uri)
-      return resource unless canned_responses[uri]
-      
-      # we have some stubbing todo 
-      s_resource = StubbedResourceProxy.new(resource, canned_responses[uri])
-      return s_resource
     end
     alias [] resource
 
-    # Sets up a canned response for a particular HTTP request.  Once
-    # this stub is configured all matching HTTP requests will return
-    # the canned response rather than actual HTTP request. This is
-    # intended primarily for testing purposes.
-    def stub_request(method, uri, response_mime_type, response_body)
-      raise ArgumentError, "Only GETs can be stubbed" unless method == :get
-      
-      (canned_responses[uri] ||= []) << {:mime_type => response_mime_type, :body => response_body}
-    end
-    
-    protected
-    
-    def canned_responses
-      @canned_responses ||= {}
-    end
-    
   end
 end
