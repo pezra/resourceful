@@ -85,6 +85,23 @@ describe 'http server' do
 
   end
 
+  describe '/auth' do
+
+    it 'should be a 401 if no auth header is set' do
+      uri = 'http://localhost:3000/auth'
+      resp = Resourceful::NetHttpAdapter.make_request(:get, uri)
+
+      resp[0].should == 401
+    end
+
+    it 'should be a 200 if any auth header is set' do
+      uri = 'http://localhost:3000/auth'
+      resp = Resourceful::NetHttpAdapter.make_request(:get, uri, nil, {'Authorization' => 'foobar'})
+
+      resp[0].should == 200
+    end
+  end
+
 
 
 

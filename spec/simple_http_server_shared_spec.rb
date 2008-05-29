@@ -75,6 +75,18 @@ ModifiedResponder = lambda do |env|
   [ code, header, body ]
 end unless defined? ModifiedResponder
 
+AuthorizationResponder = lambda do |env|
+  if env['HTTP_AUTHORIZATION']
+    code = 200
+    body = ["Authenticated"]
+  else 
+    code = 401
+    body = ["Not Authenticated"]
+  end
+
+  [ code, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
+end
+
 describe 'simple http server', :shared => true do
   before(:all) do
     #setup a thin http server we can connect to
@@ -95,6 +107,7 @@ describe 'simple http server', :shared => true do
       map( '/redirect' ){ run Redirector }
       map( '/header'   ){ run HeaderResponder }
       map( '/modified' ){ run ModifiedResponder }
+      map( '/auth'     ){ run AuthorizationResponder }
     end
 
     #spawn the server in a separate thread

@@ -90,7 +90,7 @@ module Resourceful
 
     # Performs a read request (HEAD, GET). Users should use the #get, etc methods instead.
     #
-    # This method handles all the work of looking in the cache and following redirects.
+    # This method handles all the work of following redirects.
     #
     # @param method<Symbol> The method to perform
     #
@@ -117,7 +117,7 @@ module Resourceful
     # Performs a write request (POST, PUT, DELETE). Users should use the #post, etc 
     # methods instead.
     #
-    # This method handles all the work of looking in the cache and following redirects.
+    # This method handles all the work of following redirects.
     #
     # @param method<Symbol> The method to perform
     #

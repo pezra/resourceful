@@ -250,6 +250,11 @@ describe Resourceful do
 
     end
 
+    describe 'authorization' do
+      it 'should automatically add authorization info to the request if its available'
+
+    end
+
     describe 'error checking' do
 
       it 'should raise InvalidResponse when response code is invalid'
