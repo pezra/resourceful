@@ -50,6 +50,7 @@ module Resourceful
     def set_validation_headers(response)
       @header['If-None-Match'] = response.header['ETag'] if response.header.has_key?('ETag')
       @header['If-Modified-Since'] = response.header['Last-Modified'] if response.header.has_key?('Last-Modified')
+      @header['Cache-Control'] = 'max-age=0' if response.header.has_key?('Cache-Control') and response.header['Cache-Control'].include?('must-revalidate')
     end
 
   end

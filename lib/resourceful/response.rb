@@ -40,13 +40,17 @@ module Resourceful
 
     def stale?
       return true if expired?
-      return true if header['Cache-Control'] and header['Cache-Control'].include?('must-revalidate')
+      if header['Cache-Control']
+        return true if header['Cache-Control'].include?('must-revalidate')
+        return true if header['Cache-Control'].include?('no-cache')
+      end
 
       false
     end
 
     def cachable?
-      return false if header['Vary'] == ['*']
+      return false if header['Vary'] and header['Vary'].include?('*')
+      return false if header['Cache-Control'] and header['Cache-Control'].include?('no-store')
 
       true
     end

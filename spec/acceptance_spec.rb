@@ -191,17 +191,60 @@ describe Resourceful do
 
       describe 'Cache-Control' do
 
-        it 'should cache anything with "Cache-Control: public"'
+        it 'should cache anything with "Cache-Control: public"' do
+          uri = URI.escape('http://localhost:3000/header?{Cache-Control: public}')
+          resource = @accessor.resource(uri)
+          resp = resource.get
+          resp.authoritative?.should be_true
 
-        it 'should cache anything with "Cache-Control: private"'
+          resp2 = resource.get
+          resp2.authoritative?.should be_false
 
-        it 'should cache but revalidate anything with "Cache-Control: no-cache"'
+          resp2.should == resp
+        end
 
-        it 'should cache but revalidate anything with "Cache-Control: must-revalidate"'
+        it 'should cache anything with "Cache-Control: private"' do
+          uri = URI.escape('http://localhost:3000/header?{Cache-Control: private}')
+          resource = @accessor.resource(uri)
+          resp = resource.get
+          resp.authoritative?.should be_true
 
-        it 'should not cache anything with "Cache-Control: no-store"'
+          resp2 = resource.get
+          resp2.authoritative?.should be_false
 
-        it 'should add "Cache-Control: max-age=0" to the request when revalidating a response that has "Cache-Control: must-revalidate" set'
+          resp2.should == resp
+        end
+
+        it 'should cache but revalidate anything with "Cache-Control: no-cache"' do
+          uri = URI.escape('http://localhost:3000/header?{Cache-Control: no-cache}')
+          resource = @accessor.resource(uri)
+          resp = resource.get
+          resp.authoritative?.should be_true
+
+          resp2 = resource.get
+          resp2.authoritative?.should be_true
+        end
+
+        it 'should cache but revalidate anything with "Cache-Control: must-revalidate"' do
+          uri = URI.escape('http://localhost:3000/header?{Cache-Control: must-revalidate}')
+          resource = @accessor.resource(uri)
+          resp = resource.get
+          resp.authoritative?.should be_true
+
+          resp2 = resource.get
+          resp2.authoritative?.should be_true
+        end
+
+        it 'should not cache anything with "Cache-Control: no-store"' do
+          uri = URI.escape('http://localhost:3000/header?{Cache-Control: no-store}')
+          resource = @accessor.resource(uri)
+          resp = resource.get
+          resp.authoritative?.should be_true
+
+          resp2 = resource.get
+          resp2.authoritative?.should be_true
+        end
+
 
       end
 

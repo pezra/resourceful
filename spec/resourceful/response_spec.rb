@@ -118,13 +118,23 @@ describe Resourceful::Response do
       Resourceful::Response.new(200, header, "")
     end
 
-    it 'should not be cachable if the vary header is "*"' do
+    it 'should not be cachable if the vary header has "*"' do
       r = response_with_header('Vary' => ['*'])
+      r.cachable?.should be_false
+    end
+
+    it 'should not be cachable if the Cache-Control header is set to no-store' do
+      r = response_with_header('Cache-Control' => ['no-store'])
       r.cachable?.should be_false
     end
 
     it 'should be stale if the Cache-Control header is set to must-revalidate' do
       r = response_with_header('Cache-Control' => ['must-revalidate'])
+      r.should be_stale
+    end
+      
+    it 'should be stale if the Cache-Control header is set to no-cache' do
+      r = response_with_header('Cache-Control' => ['no-cache'])
       r.should be_stale
     end
       

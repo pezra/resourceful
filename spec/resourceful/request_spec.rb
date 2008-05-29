@@ -193,6 +193,13 @@ describe Resourceful::Request do
           @request.header.should_not have_key('If-Modified-Since')
         end
 
+        it 'should add "Cache-Control: max-age=0" to the request when revalidating a response that has "Cache-Control: must-revalidate" set' do
+          @cached_response_header.should_receive(:[]).with('Cache-Control').and_return(['must-revalidate'])
+          @cached_response_header.should_receive(:has_key?).with('Cache-Control').and_return(true)
+          @request.set_validation_headers(@cached_response)
+
+          @request.header['Cache-Control'].should include('max-age=0')
+        end
       end
 
     end

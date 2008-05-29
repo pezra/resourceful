@@ -74,16 +74,7 @@ describe 'http server' do
       resp[0].should == 200
     end
 
-    it 'should be 200 if I-M-S header is before mod time' do
-      now = Time.utc(2008,5,29,12,00)
-      uri = URI.escape("http://localhost:3000/modified?#{(now - 3600).httpdate}")
-
-      resp = Resourceful::NetHttpAdapter.make_request(:get, uri, nil, {'If-Modified-Since' => now.httpdate})
-
-      resp[0].should == 200
-    end
-
-    it 'should be 304 if I-M-S header is before mod time' do
+    it 'should be 304 if I-M-S header is set' do
       now = Time.utc(2008,5,29,12,00)
       uri = URI.escape("http://localhost:3000/modified?#{(now + 3600).httpdate}")
 
