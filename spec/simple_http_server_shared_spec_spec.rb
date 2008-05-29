@@ -49,24 +49,53 @@ describe 'http server' do
   end
 
   it 'should respond with the header set from the query string' do
-    uri = Addressable::URI.parse('http://localhost:3000/header?{Foo:%20bar}')
-    resp = Resourceful::NetHttpAdapter.make_request(:get, uri.to_s)
+    uri = URI.escape('http://localhost:3000/header?{Foo: "bar"}')
+    resp = Resourceful::NetHttpAdapter.make_request(:get, uri)
 
     resp[1].should have_key('Foo')
     resp[1]['Foo'].should == ['bar']
   end
 
-  it 'should respond first with a 200, then a 304 and increment X-Been-Here-Before' do
-    uri = Addressable::URI.parse('http://localhost:3000/200_then_304?{}')
+  it 'should parse escaped uris properly' do
+    uri = URI.escape("http://localhost:3000/header?{Expire: \"#{Time.now.httpdate}\"}")
 
-    resp1 = Resourceful::NetHttpAdapter.make_request(:get, uri.to_s)
-    resp1[0].should == 200
-    resp1[1]['X-Been-Here-Before'].should == ['1']
+    resp = Resourceful::NetHttpAdapter.make_request(:get, uri)
 
-    resp2 = Resourceful::NetHttpAdapter.make_request(:get, uri.to_s)
-    resp2[0].should == 304
-    resp2[1]['X-Been-Here-Before'].should == ['2']
+    resp[1].should have_key('Expire')
+    resp[1]['Expire'].first.should_not =~ /%/
   end
+
+  describe '/modified' do
+    it 'should be 200 if no I-M-S header' do
+      uri = URI.escape("http://localhost:3000/modified?#{(Time.now + 3600).httpdate}")
+
+      resp = Resourceful::NetHttpAdapter.make_request(:get, uri)
+
+      resp[0].should == 200
+    end
+
+    it 'should be 200 if I-M-S header is before mod time' do
+      now = Time.utc(2008,5,29,12,00)
+      uri = URI.escape("http://localhost:3000/modified?#{(now - 3600).httpdate}")
+
+      resp = Resourceful::NetHttpAdapter.make_request(:get, uri, nil, {'If-Modified-Since' => now.httpdate})
+
+      resp[0].should == 200
+    end
+
+    it 'should be 304 if I-M-S header is before mod time' do
+      now = Time.utc(2008,5,29,12,00)
+      uri = URI.escape("http://localhost:3000/modified?#{(now + 3600).httpdate}")
+
+      resp = Resourceful::NetHttpAdapter.make_request(:get, uri, nil, {'If-Modified-Since' => now.httpdate})
+
+      resp[0].should == 304
+    end
+
+  end
+
+
+
 
 end
 

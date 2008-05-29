@@ -150,10 +150,10 @@ describe Resourceful do
       end
 
       it 'should use the cached version of the representation if it has not expired' do
-        Time.stub!(:now).and_return(Time.utc(2008,5,23,12,00))
         in_an_hour = (Time.now + (60*60)).httpdate
+        uri = URI.escape("http://localhost:3000/header?{Expire: \"#{in_an_hour}\"}")
 
-        resource = @accessor.resource("http://localhost:3000/header?{Expires:%20#{Addressable::URI.encode(in_an_hour)}}")
+        resource = @accessor.resource(uri)
         resp = resource.get
         resp.should be_authoritative
 
@@ -163,21 +163,31 @@ describe Resourceful do
       end
 
       it 'should revalidate the cached response if it has expired' do
-        Time.stub!(:now).and_return(Time.utc(2008,5,23,12,00))
         an_hour_ago = (Time.now - (60*60)).httpdate
+        uri = URI.escape("http://localhost:3000/header?{Expire: \"#{an_hour_ago}\"}")
 
-        resource = @accessor.resource("http://localhost:3000/200_then_304?{Expires:%20#{Addressable::URI.encode(an_hour_ago)}}")
+        resource = @accessor.resource(uri)
         resp = resource.get
-        resp.header['X-Been-Here-Before'].should == ["1"]
         resp.should be_authoritative
+        resp.should be_expired
 
         resp2 = resource.get
-        resp2.header['X-Been-Here-Before'].should == ["2"]
+        resp2.should be_authoritative
+      end
+
+      it 'should provide the cached version if the server responds with a 304 not modified' do
+        in_an_hour = (Time.now + (60*60)).httpdate
+        uri = URI.escape("http://localhost:3000/modified?#{in_an_hour}")
+
+        resource = @accessor.resource(uri)
+        resp = resource.get
+        resp.should be_authoritative
+        resp.header['Cache-Control'].should include('must-revalidate')
+
+        resp2 = resource.get
         resp2.should be_authoritative
         resp2.should == resp
       end
-
-      it 'should provide the cached version if the server responds with a 304 not modified'
 
       describe 'Cache-Control' do
 
@@ -186,6 +196,8 @@ describe Resourceful do
         it 'should cache anything with "Cache-Control: private"'
 
         it 'should cache but revalidate anything with "Cache-Control: no-cache"'
+
+        it 'should cache but revalidate anything with "Cache-Control: must-revalidate"'
 
         it 'should not cache anything with "Cache-Control: no-store"'
 

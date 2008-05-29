@@ -32,13 +32,17 @@ module Resourceful
 
     def expired?
       if header['Expire']
-        return true if Time.httpdate(header['Expire']) < Time.now
+        return true if Time.httpdate(header['Expire'].first) < Time.now
       end
 
+      false
     end
 
     def stale?
+      return true if expired?
+      return true if header['Cache-Control'] and header['Cache-Control'].include?('must-revalidate')
 
+      false
     end
 
     def cachable?

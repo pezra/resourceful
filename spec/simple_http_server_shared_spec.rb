@@ -37,7 +37,7 @@ end unless defined? CodeResponder
 
 # YAML-parses the quesy string (expected hash) and sets the header to that
 HeaderResponder = lambda do |env|
-  header = YAML.load(env['QUERY_STRING'].gsub('%20', ' '))
+  header = YAML.load(URI.unescape(env['QUERY_STRING']))
   body = [header.inspect]
 
   header.merge!({
@@ -57,26 +57,23 @@ Redirector = lambda do |env|
   [ code, {'Content-Type' => 'text/plain', 'Location' => location, 'Content-Length' => body.join.size.to_s}, body ]
 end unless defined? Redirector
 
-# first request is a 200, every one after that is 304
-NotModifiedResponder = lambda do |env|
-  @@been_here_before = 0 unless defined? @@been_here_before
-  @@been_here_before += 1
+# Returns 304 if 'If-Modified-Since' is after given mod time
+ModifiedResponder = lambda do |env|
+  modtime = Time.httpdate(URI.unescape(env['QUERY_STRING']))
 
-  header = {'X-Been-Here-Before' => @@been_here_before.to_s}
-  if @@been_here_before > 1
-    [ 304, header, [] ]
-  else
-    body = [header.inspect]
-    header.merge!({
-            'Content-Type' => 'text/plain', 
-            'Content-Length' => body.join.size.to_s
-    })
-
-    [ 200, header, body ]
+  code = 200
+  if env['HTTP_IF_MODIFIED_SINCE']
+    code = 304
   end
+  body = [modtime.to_s]
 
-end unless defined? NotModifiedResponder
+  header = {'Content-Type' => 'text/plain',
+            'Content-Length' => body.join.size.to_s,
+            'Last-Modified' => modtime.httpdate,
+            'Cache-Control' => 'must-revalidate'}
 
+  [ code, header, body ]
+end unless defined? ModifiedResponder
 
 describe 'simple http server', :shared => true do
   before(:all) do
@@ -97,7 +94,7 @@ describe 'simple http server', :shared => true do
       map( '/code'     ){ run CodeResponder }
       map( '/redirect' ){ run Redirector }
       map( '/header'   ){ run HeaderResponder }
-      map( '/200_then_304' ){ run NotModifiedResponder }
+      map( '/modified' ){ run ModifiedResponder }
     end
 
     #spawn the server in a separate thread

@@ -82,7 +82,10 @@ describe Resourceful::Response do
       @response.should respond_to(:stale?)
     end
 
-    it 'should be stale if it is expired'
+    it 'should be stale if it is expired' do
+      @response.should_receive(:expired?).and_return(true)
+      @response.should be_stale
+    end
 
     it 'should know if its #expired?' do
       @response.should respond_to(:expired?)
@@ -90,7 +93,7 @@ describe Resourceful::Response do
 
     it 'should be expired if Now is after the "Expire" header' do
       Time.stub!(:now).and_return(Time.utc(2008,5,23,18,0))
-      @response.header['Expire'] = (Time.now - 60*60).httpdate
+      @response.header['Expire'] = [(Time.now - 60*60).httpdate]
 
       @response.should be_expired
     end
@@ -120,7 +123,10 @@ describe Resourceful::Response do
       r.cachable?.should be_false
     end
 
-
+    it 'should be stale if the Cache-Control header is set to must-revalidate' do
+      r = response_with_header('Cache-Control' => ['must-revalidate'])
+      r.should be_stale
+    end
       
   end
 

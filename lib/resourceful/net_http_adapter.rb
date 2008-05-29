@@ -20,6 +20,7 @@ module Resourceful
       uri = uri.is_a?(Addressable::URI) ? uri : Addressable::URI.parse(uri)
 
       req = net_http_request_class(method).new(uri.absolute_path)
+      header.each { |k,v| req[k] = v } if header
       res = Net::HTTP.start(uri.host, uri.port) do |conn|
         conn.request(req, body)
       end
