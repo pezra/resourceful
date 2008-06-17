@@ -56,7 +56,7 @@ module Resourceful
       INIT_OPTIONS.interpret(options) do |opts|
         @user_agent_tokens.push(*opts[:user_agent].reverse)
         self.logger = opts[:logger]
-        @auth_manager = AuthenticationManager.new(opts[:authentication_info_provider])
+        @auth_manager = AuthenticationManager.new()
         @cache_manager = opts[:cache_manager]
       end     
     end

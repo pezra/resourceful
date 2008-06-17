@@ -85,7 +85,7 @@ AuthorizationResponder = lambda do |env|
   end
 
   [ code, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
-end
+end unless defined? AuthorizationResponder
 
 describe 'simple http server', :shared => true do
   before(:all) do
