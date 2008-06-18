@@ -18,6 +18,10 @@ module Resourceful
       super capitalize(k), v
     end
 
+    def has_key?(k)
+      super capitalize(k)
+    end
+
     def capitalize(k)
       k.to_s.downcase.gsub(/^.|[-_\s]./) { |x| x.upcase }
     end

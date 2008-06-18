@@ -253,6 +253,47 @@ describe Resourceful do
     describe 'authorization' do
       it 'should automatically add authorization info to the request if its available'
 
+      describe 'basic' do
+        before do
+          @uri = 'http://localhost:3000/auth?basic'
+        end
+
+        it 'should be able to authenticate basic auth' do
+          basic_handler = Resourceful::BasicAuthenticator.new('Test Auth', 'admin', 'secret')
+          @accessor.auth_manager.add_auth_handler(basic_handler)
+          resource = @accessor.resource(@uri)
+          resp = resource.get
+
+          resp.code.should == 200
+        end
+
+        it 'should not authenticate if no auth handlers are set' do
+          resource = @accessor.resource(@uri)
+          resp = resource.get
+
+          resp.code.should == 401
+        end
+
+        it 'should not authenticate if no valid auth handlers are available' do
+          basic_handler = Resourceful::BasicAuthenticator.new('Not Test Auth', 'admin', 'secret')
+          @accessor.auth_manager.add_auth_handler(basic_handler)
+          resource = @accessor.resource(@uri)
+          resp = resource.get
+
+          resp.code.should == 401
+        end
+
+        it 'should not keep trying to authenticate with incorrect credentials' do
+          basic_handler = Resourceful::BasicAuthenticator.new('Test Auth', 'admin', 'well-known')
+          @accessor.auth_manager.add_auth_handler(basic_handler)
+          resource = @accessor.resource(@uri)
+          resp = resource.get
+
+          resp.code.should == 401
+        end
+
+      end
+
     end
 
     describe 'error checking' do

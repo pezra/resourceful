@@ -75,16 +75,29 @@ ModifiedResponder = lambda do |env|
   [ code, header, body ]
 end unless defined? ModifiedResponder
 
+require 'rubygems'
+require 'httpauth'
 AuthorizationResponder = lambda do |env|
-  if env['HTTP_AUTHORIZATION']
+  authtype = env['QUERY_STRING']
+  header = {}
+  if auth_string = env['HTTP_AUTHORIZATION']
     code = 200
-    body = ["Authenticated"]
+    body = ["Authorized"]
+    if authtype == "basic"
+      unless ['admin', 'secret'] == HTTPAuth::Basic.unpack_authorization(auth_string)
+        code = 401
+        body = ["Not Authorized"]
+      end
+    end
   else 
     code = 401
-    body = ["Not Authenticated"]
+    body = ["Not Authorized"]
+    if authtype == "basic"
+      header = {'WWW-Authenticate' => HTTPAuth::Basic.pack_challenge('Test Auth')}
+    end
   end
 
-  [ code, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
+  [ code, header.merge({'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}), body ]
 end unless defined? AuthorizationResponder
 
 describe 'simple http server', :shared => true do

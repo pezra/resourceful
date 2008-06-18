@@ -6,14 +6,14 @@ module Resourceful
   class Response
     REDIRECT_RESPONSE_CODES = [301,302,303,307]
 
-    attr_reader :code, :header, :body, :response_time
+    attr_reader :uri, :code, :header, :body, :response_time
     alias headers header
 
     attr_accessor :authoritative, :request_time
     alias authoritative? authoritative
 
-    def initialize(code, header, body)
-      @code, @header, @body = code, header, body
+    def initialize(uri, code, header, body)
+      @uri, @code, @header, @body = uri, code, header, body
       @response_time = Time.now
     end
 
@@ -28,6 +28,10 @@ module Resourceful
 
     def is_temporary_redirect?
       is_redirect? and not is_permanent_redirect?
+    end
+
+    def is_not_authorized?
+      @code == 401
     end
 
     def expired?

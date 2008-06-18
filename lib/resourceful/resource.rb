@@ -99,6 +99,8 @@ module Resourceful
     # @private
     def do_read_request(method)
       request = Resourceful::Request.new(method, self)
+      accessor.auth_manager.add_credentials(request)
+
       response = request.response
 
       if response.is_redirect? and request.should_be_redirected?
@@ -109,6 +111,12 @@ module Resourceful
           redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
           response = redirected_resource.do_read_request(method)
         end
+      end
+
+      if response.is_not_authorized? && !@already_tried_with_auth
+        @already_tried_with_auth = true
+        accessor.auth_manager.associate_auth_info(response)
+        response = do_read_request(method)
       end
 
       return response

@@ -75,3 +75,70 @@ describe Resourceful::AuthenticationManager do
   end
 
 end
+
+describe Resourceful::BasicAuthenticator do
+  before do 
+    @auth = Resourceful::BasicAuthenticator.new('Test Auth', 'admin', 'secret')
+  end
+
+  {:realm => 'Test Auth', :username => 'admin', :password => 'secret'}.each do |meth,val|
+    it "should initialize with a #{meth}" do
+      @auth.instance_variable_get("@#{meth}").should == val
+    end
+  end
+
+  describe "Updating from a challenge response" do
+    before do
+      @header = {'WWW-Authenticate' => 'Basic realm="Test Auth"'}
+      @chal = mock('response', :header => @header, :uri => 'http://example.com/foo/bar')
+    end
+
+    it 'should be valid for a challenge response with scheme "Basic" and the same realm' do
+      @auth.valid_for?(@chal).should be_true
+    end
+
+    it 'should not be valid if the scheme is not "Basic"' do
+      @header['WWW-Authenticate'] = "Digest"
+      @auth.valid_for?(@chal).should be_false
+    end
+
+    it 'should not be valid if the realm does not match' do
+      @header['WWW-Authenticate'] = 'Basic realm="not test auth"'
+      @auth.valid_for?(@chal).should be_false
+    end
+
+    it 'should not be valid if the header is unreadable' do
+      @header['WWW-Authenticate'] = nil
+      @auth.valid_for?(@chal).should be_false
+    end
+
+    it 'should set the valid domain from the host part of the challenge uri' do
+      @auth.update_credentials(@chal)
+      @auth.instance_variable_get("@domain").should == 'example.com'
+    end
+
+  end
+  
+  describe 'updating a request with credentials' do
+    before do
+      @auth.instance_variable_set("@domain", 'example.com')
+      @header = {}
+      @req  = mock('request', :uri => 'http://example.com/bar/foo', :header => @header)
+    end
+
+    it 'should be able to handle a request for the matching domain' do
+      @auth.can_handle?(@req).should be_true
+    end
+
+    it 'should add credentials to a request' do
+      @header.should_receive(:[]=).with('Authorization', 'Basic YWRtaW46c2VjcmV0')
+      @auth.add_credentials_to(@req)
+    end
+
+    it 'should build the credentials string for the header' do
+      @auth.credentials.should == 'Basic YWRtaW46c2VjcmV0'
+    end
+  end
+
+
+end

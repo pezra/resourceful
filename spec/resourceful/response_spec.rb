@@ -7,8 +7,9 @@ describe Resourceful::Response do
   before do
     @net_http = mock('net_http')
     Net::HTTP::Get.stub!(:new).and_return(@net_http)
+    @uri = 'http://www.example.com'
 
-    @response = Resourceful::Response.new(0, {}, "")
+    @response = Resourceful::Response.new(@uri, 0, {}, "")
   end
 
   describe 'init' do
@@ -17,8 +18,8 @@ describe Resourceful::Response do
       @response.should be_instance_of(Resourceful::Response)
     end
 
-    it 'should take a [code, header, body] array' do
-      r = Resourceful::Response.new(200, {}, "")
+    it 'should take a [uri, code, header, body] array' do
+      r = Resourceful::Response.new(@uri, 200, {}, "")
       r.code.should   == 200
       r.header.should == {}
       r.body.should   == ""
@@ -44,21 +45,21 @@ describe Resourceful::Response do
   end
 
   it 'should know if it is a redirect' do
-    Resourceful::Response.new(301, {}, "").is_redirect?.should == true
-    Resourceful::Response.new(302, {}, "").is_redirect?.should == true
-    Resourceful::Response.new(303, {}, "").is_redirect?.should == true
-    Resourceful::Response.new(307, {}, "").is_redirect?.should == true
+    Resourceful::Response.new(@uri, 301, {}, "").is_redirect?.should == true
+    Resourceful::Response.new(@uri, 302, {}, "").is_redirect?.should == true
+    Resourceful::Response.new(@uri, 303, {}, "").is_redirect?.should == true
+    Resourceful::Response.new(@uri, 307, {}, "").is_redirect?.should == true
 
     #aliased as was_redirect?
-    Resourceful::Response.new(301, {}, "").was_redirect?.should == true
+    Resourceful::Response.new(@uri, 301, {}, "").was_redirect?.should == true
   end
 
   it 'should know if it is a permanent redirect' do
-    Resourceful::Response.new(301, {}, "").is_permanent_redirect?.should == true
+    Resourceful::Response.new(@uri, 301, {}, "").is_permanent_redirect?.should == true
   end
 
   it 'should know if it is a temporary redirect' do
-    Resourceful::Response.new(303, {}, "").is_temporary_redirect?.should == true
+    Resourceful::Response.new(@uri, 303, {}, "").is_temporary_redirect?.should == true
   end
 
   it 'should know if its authoritative' do
@@ -70,11 +71,17 @@ describe Resourceful::Response do
     @response.authoritative?.should be_true
   end
 
+  it 'should know if it is authorized' do
+    @response.should respond_to(:is_not_authorized?)
+    Resourceful::Response.new(@uri, 200, {}, "").is_not_authorized?.should == false
+    Resourceful::Response.new(@uri, 401, {}, "").is_not_authorized?.should == true
+  end
+
   describe 'caching and expiration' do
     before do
       Time.stub!(:now).and_return(Time.utc(2008,5,15,18,0,1), Time.utc(2008,5,15,20,0,0))
 
-      @response = Resourceful::Response.new(0, {'Date' => ['Thu, 15 May 2008 18:00:00 GMT']}, "")
+      @response = Resourceful::Response.new(@uri, 0, {'Date' => ['Thu, 15 May 2008 18:00:00 GMT']}, "")
       @response.request_time = Time.utc(2008,5,15,17,59,59)
     end
 
@@ -115,7 +122,7 @@ describe Resourceful::Response do
     end
 
     def response_with_header(header = {})
-      Resourceful::Response.new(200, header, "")
+      Resourceful::Response.new(@uri, 200, header, "")
     end
 
     it 'should not be cachable if the vary header has "*"' do

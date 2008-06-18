@@ -1,4 +1,6 @@
+require 'rubygems'
 require 'httpauth'
+require 'addressable/uri'
 
 module Resourceful
 
@@ -32,8 +34,9 @@ module Resourceful
     end
 
     def valid_for?(challenge_response)
+      return false unless challenge = challenge_response.header['WWW-Authenticate']
       begin
-        realm = HTTPAuth::Basic.unpack_challenge(challenge_response.header['WWW-Authenticate'])
+        realm = HTTPAuth::Basic.unpack_challenge(challenge.first)
       rescue ArgumentError
         return false
       end

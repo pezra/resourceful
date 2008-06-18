@@ -5,11 +5,11 @@ require 'resourceful/resource'
 
 describe Resourceful::Resource do
   before do
-    @accessor = mock('http_accessor')
+    @accessor = mock('http_accessor', :auth_manager => mock('authmgr', :add_credentials => nil))
     @uri      = 'http://www.example.com/'
     @resource = Resourceful::Resource.new(@accessor, @uri)
 
-    @response = mock('response', :code => 200, :is_redirect? => false)
+    @response = mock('response', :code => 200, :is_redirect? => false, :is_not_authorized? => false)
 
     @request = mock('request', :response => @response, :should_be_redirected? => true)
     Resourceful::Request.stub!(:new).and_return(@request)
@@ -43,9 +43,13 @@ describe Resourceful::Resource do
 
   describe '#do_read_request' do
 
+    def make_request
+      @resource.do_read_request(:some_method)
+    end
+
     it 'should make a new request object from the method' do
       Resourceful::Request.should_receive(:new).with(:some_method, @resource).and_return(@request)
-      @resource.do_read_request(:some_method)
+      make_request
     end
 
     describe 'with redirection' do
@@ -61,10 +65,6 @@ describe Resourceful::Resource do
 
         @request.stub!(:response).and_return(@redirect_response, @response)
 
-      end
-
-      def make_request
-        @resource.do_read_request(:some_method)
       end
 
       it 'should check if the response was a redirect' do
@@ -124,6 +124,39 @@ describe Resourceful::Resource do
       end
 
     end # read with redirection
+
+    describe 'with authorization' do
+      before do
+        @authmgr = mock('auth_manager')
+        @authmgr.stub!(:add_credentials)
+        @authmgr.stub!(:associate_auth_info).and_return(true)
+
+        @accessor.stub!(:auth_manager).and_return(@authmgr)
+      end
+
+      it 'should attempt to add credentials to the request' do
+        @authmgr.should_receive(:add_credentials).with(@request)
+        make_request
+      end
+
+      it 'should check if the response was not authorized' do
+        @response.should_receive(:is_not_authorized?).and_return(false)
+        make_request
+      end
+
+      it 'should associate the auth info in the response if it was not authorized' do
+        @authmgr.should_receive(:associate_auth_info).with(@response).and_return(true)
+        @response.stub!(:is_not_authorized?).and_return(true)
+        make_request
+      end
+
+      it 'should re-make the request only once if it was not authorized the first time' do
+        Resourceful::Request.should_receive(:new).with(:some_method, @resource).twice.and_return(@request)
+        @response.stub!(:is_not_authorized?).and_return(true)
+        make_request
+      end
+
+    end
 
   end
 

@@ -120,7 +120,7 @@ describe Resourceful::Request do
         end
 
         it 'should create a Resourceful::Response object from the NetHttpAdapter response' do
-          Resourceful::Response.should_receive(:new).with(@net_http_adapter_response).and_return(@response)
+          Resourceful::Response.should_receive(:new).with(@request.uri, @net_http_adapter_response).and_return(@response)
           @request.response
         end
 
@@ -151,7 +151,7 @@ describe Resourceful::Request do
         end
 
         it 'should create a Resourceful::Response object from the NetHttpAdapter response' do
-          Resourceful::Response.should_receive(:new).with(@net_http_adapter_response).and_return(@response)
+          Resourceful::Response.should_receive(:new).with(@request.uri, @net_http_adapter_response).and_return(@response)
           @request.response
         end
 

@@ -86,24 +86,52 @@ describe 'http server' do
   end
 
   describe '/auth' do
+    
+    describe 'basic' do
+      before do
+        @uri = "http://localhost:3000/auth?basic"
+      end
 
-    it 'should be a 401 if no auth header is set' do
-      uri = 'http://localhost:3000/auth'
-      resp = Resourceful::NetHttpAdapter.make_request(:get, uri)
+      it 'should return a 401 if no auth info is provided' do
+        resp = Resourceful::NetHttpAdapter.make_request(:get, @uri)
+        resp[0].should == 401
+      end
 
-      resp[0].should == 401
+      it 'should provide a WWW-Authenticate header when 401' do
+        resp = Resourceful::NetHttpAdapter.make_request(:get, @uri)
+        header = resp[1]
+        header.should have_key('WWW-Authenticate')
+      end
+
+      it 'should set the scheme to "Basic"' do
+        resp = Resourceful::NetHttpAdapter.make_request(:get, @uri)
+        auth = resp[1]['WWW-Authenticate'].first
+        auth.should =~ /^Basic/
+      end
+
+      it 'should set the realm to "Test Auth"' do
+        resp = Resourceful::NetHttpAdapter.make_request(:get, @uri)
+        auth = resp[1]['WWW-Authenticate'].first
+        auth.should =~ /realm="Test Auth"/
+      end
+
+      it 'should authorize on u/p:admin/secret' do
+        creds = HTTPAuth::Basic.pack_authorization('admin', 'secret')
+        header = {'Authorization' => creds}
+        resp = Resourceful::NetHttpAdapter.make_request(:get, @uri, nil, header)
+        resp[0].should == 200
+      end
+
+      it 'should authorize if u/p is incorrect' do
+        creds = HTTPAuth::Basic.pack_authorization('admin', 'not secret')
+        header = {'Authorization' => creds}
+        resp = Resourceful::NetHttpAdapter.make_request(:get, @uri, nil, header)
+        resp[0].should == 401
+      end
+
     end
 
-    it 'should be a 200 if any auth header is set' do
-      uri = 'http://localhost:3000/auth'
-      resp = Resourceful::NetHttpAdapter.make_request(:get, uri, nil, {'Authorization' => 'foobar'})
-
-      resp[0].should == 200
-    end
   end
-
-
-
 
 end
 
