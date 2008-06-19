@@ -69,6 +69,20 @@ module Resourceful
       corrected_received_age = [apparent_age, age_value || 0].max
       current_age = corrected_received_age + (response_time - request_time) + (now - response_time)
     end
+
+    def body
+      case header['Content-Encoding']
+      when nil
+        # body is identity encoded; just return it
+        @body
+      when /gzip/i
+        gz_in = Zlib::GzipReader.new(StringIO.new(@body, 'r'))
+        @body = gz_in.read
+        gz_in.close
+        header.delete('Content-Encoding')
+        @body
+      end
+    end
   end
   
 end

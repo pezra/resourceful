@@ -40,10 +40,6 @@ describe Resourceful::Response do
     @response.headers.should == @response.header
   end
 
-  it 'should have a body' do
-    @response.should respond_to(:body)
-  end
-
   it 'should know if it is a redirect' do
     Resourceful::Response.new(@uri, 301, {}, "").is_redirect?.should == true
     Resourceful::Response.new(@uri, 302, {}, "").is_redirect?.should == true
@@ -144,7 +140,26 @@ describe Resourceful::Response do
       r = response_with_header('Cache-Control' => ['no-cache'])
       r.should be_stale
     end
-      
+  end
+
+
+  describe '#body' do 
+    it 'should have a body method' do
+      @response.should respond_to(:body)
+    end
+    
+    it 'ungzip the body if content-encoding header field is gzip' do
+      compressed_date = StringIO.new.tap do |out|
+        Zlib::GzipWriter.new(out).tap do |zout|
+          zout << "This is a test"
+          zout.close
+        end
+      end.string
+
+      @response = Resourceful::Response.new(@uri, 0, {'Content-Encoding' => 'gzip'}, compressed_date)
+
+      @response.body.should == "This is a test"
+    end
   end
 
 end
