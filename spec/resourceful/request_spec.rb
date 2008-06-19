@@ -251,8 +251,13 @@ describe Resourceful::Request do
       request.should_be_redirected?.should be_false
     end
 
-  end # #should_be_redirected?
+  end 
 
+  describe "content coding" do 
+    it "should set Accept-Encoding automatically" do
+      @request.header['Accept-Encoding'].should == 'gzip'
+    end
+  end
 
 end
 
