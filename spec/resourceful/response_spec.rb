@@ -156,7 +156,7 @@ describe Resourceful::Response do
         end
       end.string
 
-      @response = Resourceful::Response.new(@uri, 0, {'Content-Encoding' => 'gzip'}, compressed_date)
+      @response = Resourceful::Response.new(@uri, 0, {'Content-Encoding' => ['gzip']}, compressed_date)
 
       @response.body.should == "This is a test"
     end

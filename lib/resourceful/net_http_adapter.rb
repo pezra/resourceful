@@ -1,4 +1,5 @@
 require 'net/http'
+require 'net/https'
 require 'addressable/uri'
 
 require 'resourceful/header'
@@ -21,15 +22,21 @@ module Resourceful
 
       req = net_http_request_class(method).new(uri.absolute_path)
       header.each { |k,v| req[k] = v } if header
-      res = Net::HTTP.start(uri.host, uri.port) do |conn|
-        conn.request(req, body)
+      conn = Net::HTTP.new(uri.host, uri.port)
+      conn.use_ssl = (/https/i === uri.scheme)
+      begin 
+        conn.start
+        res = conn.request(req, body)
+      ensure
+        conn.finish
       end
 
       [ Integer(res.code),
         Resourceful::Header.new(res.header.to_hash),
         res.body
       ]
-
+    ensure
+      
     end
 
     private

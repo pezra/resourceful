@@ -1,5 +1,6 @@
 require 'net/http'
 require 'time'
+require 'facets/kernel/ergo'
 
 module Resourceful
 
@@ -71,7 +72,7 @@ module Resourceful
     end
 
     def body
-      case header['Content-Encoding']
+      case header['Content-Encoding'].ergo.first
       when nil
         # body is identity encoded; just return it
         @body
