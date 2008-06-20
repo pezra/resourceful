@@ -34,13 +34,11 @@ module Resourceful
     end
 
     def valid_for?(challenge_response)
-      return false unless challenge = challenge_response.header['WWW-Authenticate']
-      begin
-        realm = HTTPAuth::Basic.unpack_challenge(challenge.first)
-      rescue ArgumentError
-        return false
-      end
-      realm == @realm
+      return false unless challenge_response.header['WWW-Authenticate']
+
+      !challenge_response.header['WWW-Authenticate'].grep(/^\s*basic/i).find do |a_challenge|
+        @realm.downcase == /realm="([^"]+)"/i.match(a_challenge)[1].downcase
+      end.nil?
     end
 
     def update_credentials(challenge)
