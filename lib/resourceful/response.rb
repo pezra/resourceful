@@ -18,6 +18,10 @@ module Resourceful
       @response_time = Time.now
     end
 
+    def is_success?
+      @code.in? 200..299
+    end
+
     def is_redirect?
       @code.in? REDIRECT_RESPONSE_CODES
     end

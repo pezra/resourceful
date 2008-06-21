@@ -2,6 +2,22 @@ require 'resourceful/request'
 
 module Resourceful
 
+  # This exception used to indicate that the request did not succeed.
+  # The HTTP response is included so that the appropriate actions can
+  # be taken based on the details of that response
+  class UnsuccessfulHttpRequestError < Exception
+    attr_reader :http_response, :http_request
+ 
+    # Initialize new error from the HTTP request and response attributes.
+    #--
+    # @private
+    def initialize(http_request, http_response)
+      super("#{http_request.method} request to <#{http_request.uri}> failed with code #{http_response.code}")
+      @http_request = http_request
+      @http_response = http_response
+    end
+  end
+
   class Resource
     attr_reader :accessor
 
@@ -119,6 +135,8 @@ module Resourceful
         response = do_read_request(method)
       end
 
+      raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
+
       return response
     end
 
@@ -134,6 +152,8 @@ module Resourceful
     # @private
     def do_write_request(method, data = nil)
       request = Resourceful::Request.new(method, self, data)
+      accessor.auth_manager.add_credentials(request)
+
       response = request.response
       
       if response.is_redirect? and request.should_be_redirected?
@@ -149,6 +169,7 @@ module Resourceful
         end
       end
 
+      raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
       return response
     end
 

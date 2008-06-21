@@ -8,9 +8,9 @@ describe 'redirect', :shared => true do
 
   %w{PUT POST DELETE}.each do |method|
     it "should not be followed by default on #{method}" do
-      resp = @resource.send(method.downcase.intern)
-      resp.should be_instance_of(Resourceful::Response)
-      resp.code.should == @redirect_code
+      lambda {
+        @resource.send(method.downcase.intern)
+      }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
     end
 
     it "should redirect on #{method} if the redirection callback returns true" do
@@ -21,8 +21,9 @@ describe 'redirect', :shared => true do
 
     it "should not redirect on #{method} if the redirection callback returns false" do
       @resource.on_redirect { false }
-      resp = @resource.send(method.downcase.intern)
-      resp.code.should == @redirect_code
+      lambda {
+        @resource.send(method.downcase.intern)
+      }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
     end
   end
 

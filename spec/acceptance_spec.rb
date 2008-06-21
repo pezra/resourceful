@@ -74,8 +74,9 @@ describe Resourceful do
 
         it 'should not perform the redirect if the callback returns false' do
           @callback.should_receive(:call).and_return(false)
-          resp = @resource.get
-          resp.code.should == 301
+          lambda {
+            @resource.get
+          }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
         end
       end
 
@@ -269,27 +270,30 @@ describe Resourceful do
 
         it 'should not authenticate if no auth handlers are set' do
           resource = @accessor.resource(@uri)
-          resp = resource.get
 
-          resp.code.should == 401
+          lambda {
+            resource.get
+          }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
         end
 
         it 'should not authenticate if no valid auth handlers are available' do
           basic_handler = Resourceful::BasicAuthenticator.new('Not Test Auth', 'admin', 'secret')
           @accessor.auth_manager.add_auth_handler(basic_handler)
           resource = @accessor.resource(@uri)
-          resp = resource.get
 
-          resp.code.should == 401
+          lambda {
+            resource.get
+          }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
         end
 
         it 'should not keep trying to authenticate with incorrect credentials' do
-          basic_handler = Resourceful::BasicAuthenticator.new('Test Auth', 'admin', 'well-known')
+          basic_handler = Resourceful::BasicAuthenticator.new('Test Auth', 'admin', 'incorrect password')
           @accessor.auth_manager.add_auth_handler(basic_handler)
           resource = @accessor.resource(@uri)
-          resp = resource.get
-
-          resp.code.should == 401
+          
+          lambda {
+            resp = resource.get
+          }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
         end
 
       end

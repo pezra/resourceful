@@ -40,6 +40,24 @@ describe Resourceful::Response do
     @response.headers.should == @response.header
   end
 
+  describe "#is_success?" do
+    it 'should be true for 200' do
+      Resourceful::Response.new(@uri, 200, {}, "").is_success?.should == true
+    end 
+
+    it 'should be true for any 2xx' do
+      Resourceful::Response.new(@uri, 299, {}, "").is_success?.should == true
+    end 
+
+    it 'should not be true for 300' do
+      Resourceful::Response.new(@uri, 300, {}, "").is_success?.should == false
+    end 
+
+    it 'should not be true for 199' do
+      Resourceful::Response.new(@uri, 199, {}, "").is_success?.should == false
+    end 
+  end 
+
   it 'should know if it is a redirect' do
     Resourceful::Response.new(@uri, 301, {}, "").is_redirect?.should == true
     Resourceful::Response.new(@uri, 302, {}, "").is_redirect?.should == true
