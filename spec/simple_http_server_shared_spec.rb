@@ -89,8 +89,6 @@ AuthorizationResponder = lambda do |env|
           credentials = HTTPAuth::Digest::Credentials.from_header(auth_string) &&
           credentials &&
           credentials.validate(:password => 'secret', :method => 'GET')
-          puts auth_string.inspect
-          puts credentials.inspect
       code = 200
       body = ["Authorized"]
     else

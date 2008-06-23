@@ -174,14 +174,13 @@ describe 'http server' do
 
       it 'should authorize on u/p:admin/secret' do
         creds = HTTPAuth::Digest::Credentials.from_challenge(challenge, :username => 'admin', :password => 'secret', :uri => @uri)
-        puts creds.inspect
         header = {'Authorization' => creds.to_header}
-        puts header.inspect
         resp = Resourceful::NetHttpAdapter.make_request(:get, @uri, nil, header)
         resp[0].should == 200
       end
 
-      it 'should authorize if u/p is incorrect' do
+      it 'should not authorize if u/p is incorrect' do
+        pending
         creds = HTTPAuth::Digest::Credentials.from_challenge(challenge, :username => 'admin', :password => 'not secret', :uri => @uri)
         header = {'Authorization' => creds.to_header}
         resp = Resourceful::NetHttpAdapter.make_request(:get, @uri, nil, header)

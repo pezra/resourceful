@@ -304,6 +304,7 @@ describe Resourceful do
         end
 
         it 'should be able to authenticate basic auth' do
+          pending
           digest_handler = Resourceful::DigestAuthenticator.new('Test Auth', 'admin', 'secret')
           @accessor.auth_manager.add_auth_handler(digest_handler)
           resource = @accessor.resource(@uri)
