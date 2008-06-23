@@ -10,9 +10,19 @@ Features:
  * HTTP Caching with pluggable backends
  * Follow redirects based on the results of a callback
 
+More Info
+=========
+ 
+ * Source: [Github](http://github.com/paul/resourceful/tree/master)
+ * Bug Tracking: [Lighthouse](http://resourceful.lighthouseapp.com)
 
-Example
-=======
+Examples
+========
+
+Getting started
+---------------
+
+    gem install resourceful
 
 Simplest example
 ---------------

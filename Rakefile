@@ -53,11 +53,10 @@ spec = Gem::Specification.new do |s|
   s.description  = s.summary
   s.rubyforge_project = 'resourceful'
   s.require_path = "lib"
-  s.files        = %w( MIT-LICENSE README Rakefile ) + Dir["{docs,spec,lib}/**/*"]
+  s.files        = %w( MIT-LICENSE README.markdown Rakefile ) + Dir["{spec,lib}/**/*"]
 
   # rdoc
-  s.has_rdoc         = true
-  s.extra_rdoc_files = %w( README MIT-LICENSE )
+  s.has_rdoc         = false
 
   # Dependencies
   s.add_dependency "addressable"
