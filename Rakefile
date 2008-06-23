@@ -3,7 +3,6 @@ require 'rake'
 require 'rake/gempackagetask'
 require 'rake/rdoctask'
 require 'spec/rake/spectask'
-require 'yard'
 
 desc 'Default: run unit tests.'
 task :default => :spec
@@ -17,9 +16,15 @@ Spec::Rake::SpecTask.new(:spec) do |t|
   t.pattern = 'spec/**/*_spec.rb'
 end
 
-desc 'Generate documentation for Resourceful.'
-YARD::Rake::YardocTask.new do |t|
-  t.files   = ['lib/**/*.rb', 'README']
+begin
+  gem 'yard', '>=0.2.3'
+  require 'yard'
+  desc 'Generate documentation for Resourceful.'
+  YARD::Rake::YardocTask.new do |t|
+    t.files   = ['lib/**/*.rb', 'README']
+  end
+rescue Exception
+  # install YARD to generate documentation
 end
 
 desc 'Removes all temporary files'
