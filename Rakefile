@@ -41,12 +41,11 @@ SUDO = windows ? "" : "sudo"
 task :resourceful => [:clean, :rdoc, :package]
 
 spec = Gem::Specification.new do |s|
-  s.name         = "Resourceful"
+  s.name         = "resourceful"
   s.version      = RESOURCEFUL_VERSION
   s.platform     = Gem::Platform::RUBY
-  s.author       = "Peter Williams"
-  s.email        = "pezra@barelyenough.org"
-  s.homepage     = "https://github.com/pezra/resourceful/tree/master"
+  s.author       = "Paul Sadauskas & Peter Williams"
+  s.homepage     = "https://github.com/paul/resourceful/tree/master"
   s.summary      = "Resourceful provides a convenient Ruby API for making HTTP requests."
   s.description  = s.summary
   s.require_path = "lib"
@@ -60,7 +59,7 @@ spec = Gem::Specification.new do |s|
   s.add_dependency "addressable"
   s.add_dependency "httpauth"
   s.add_dependency "rspec"
-  s.add_dependency "tiny"
+  s.add_dependency "thin"
   s.add_dependency "facets"
 
   s.required_ruby_version = ">= 1.8.6"
@@ -72,12 +71,12 @@ end
 
 desc "Run :package and install the resulting .gem"
 task :install => :package do
-  sh %{#{SUDO} gem install --local pkg/resourceful-#{VERSION}.gem --no-rdoc --no-ri}
+  sh %{#{SUDO} gem install --local pkg/resourceful-#{RESOURCEFUL_VERSION}.gem --no-rdoc --no-ri}
 end
 
 desc "Run :package and install the resulting .gem with jruby"
 task :jinstall => :package do
-  sh %{#{SUDO} jruby -S gem install pkg/resourceful-#{VERSION}.gem --no-rdoc --no-ri}
+  sh %{#{SUDO} jruby -S gem install pkg/resourceful-#{RESOURCEFUL_VERSION}.gem --no-rdoc --no-ri}
 end
 
 desc "Run :clean and uninstall the .gem"
