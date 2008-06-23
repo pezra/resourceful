@@ -54,7 +54,7 @@ module Resourceful
     #     post.author_uri = resp.header['Location']
     #   end
     #
-    # @block callback<request, response>
+    # @yieldparam callback<request, response>
     #   The action to be executed when a request results in a redirect. Yields the 
     #   current request and result objects to the callback.
     #
@@ -70,7 +70,7 @@ module Resourceful
     # Performs a GET on the resource, following redirects as neccessary, and retriving
     # it from the local cache if its available and valid.
     #
-    # @returns <Response>
+    # @return <Response>
     def get
       do_read_request(:get)
     end
@@ -78,10 +78,10 @@ module Resourceful
     # Performs a POST with the given data to the resource, following redirects as 
     # neccessary.
     #
-    # @params data<String> 
+    # @param [String] data
     #   The body of the data to be posted
     #
-    # @returns <Response>
+    # @return <Response>
     def post(data = "")
       do_write_request(:post, data)
     end
@@ -89,17 +89,17 @@ module Resourceful
     # Performs a POST with the given data to the resource, following redirects as 
     # neccessary.
     #
-    # @params data<String> 
+    # @param [String] data
     #   The body of the data to be posted
     #
-    # @returns <Response>
+    # @return <Response>
     def put(data = "")
       do_write_request(:put, data)
     end
 
     # Performs a DELETE on the resource, following redirects as neccessary.
     #
-    # @returns <Response>
+    # @return <Response>
     def delete
       do_write_request(:delete)
     end

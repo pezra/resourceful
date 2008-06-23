@@ -3,6 +3,7 @@ require 'rake'
 require 'rake/gempackagetask'
 require 'rake/rdoctask'
 require 'spec/rake/spectask'
+require 'yard'
 
 desc 'Default: run unit tests.'
 task :default => :spec
@@ -17,12 +18,8 @@ Spec::Rake::SpecTask.new(:spec) do |t|
 end
 
 desc 'Generate documentation for Resourceful.'
-Rake::RDocTask.new(:rdoc) do |rdoc|
-  rdoc.rdoc_dir = 'rdoc'
-  rdoc.title    = 'Resourceful'
-  rdoc.options << '--line-numbers' << '--inline-source'
-  rdoc.rdoc_files.include('README')
-  rdoc.rdoc_files.include('lib/**/*.rb')
+YARD::Rake::YardocTask.new do |t|
+  t.files   = ['lib/**/*.rb', 'README']
 end
 
 desc 'Removes all temporary files'
@@ -45,9 +42,11 @@ spec = Gem::Specification.new do |s|
   s.version      = RESOURCEFUL_VERSION
   s.platform     = Gem::Platform::RUBY
   s.author       = "Paul Sadauskas & Peter Williams"
+  s.email        = "psadauskas@gmail.com"
   s.homepage     = "https://github.com/paul/resourceful/tree/master"
   s.summary      = "Resourceful provides a convenient Ruby API for making HTTP requests."
   s.description  = s.summary
+  s.rubyforge_project = 'resourceful'
   s.require_path = "lib"
   s.files        = %w( MIT-LICENSE README Rakefile ) + Dir["{docs,spec,lib}/**/*"]
 
