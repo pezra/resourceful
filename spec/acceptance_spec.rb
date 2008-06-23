@@ -251,7 +251,27 @@ describe Resourceful do
     end
 
     describe 'authorization' do
+      before do
+        @uri = 'http://localhost:3000/auth?basic'
+      end
+
       it 'should automatically add authorization info to the request if its available'
+
+      it 'should not authenticate if no auth handlers are set' do
+        resource = @accessor.resource(@uri)
+        resp = resource.get
+
+        resp.code.should == 401
+      end
+
+      it 'should not authenticate if no valid auth handlers are available' do
+        basic_handler = Resourceful::BasicAuthenticator.new('Not Test Auth', 'admin', 'secret')
+        @accessor.auth_manager.add_auth_handler(basic_handler)
+        resource = @accessor.resource(@uri)
+        resp = resource.get
+
+        resp.code.should == 401
+      end
 
       describe 'basic' do
         before do
@@ -267,22 +287,6 @@ describe Resourceful do
           resp.code.should == 200
         end
 
-        it 'should not authenticate if no auth handlers are set' do
-          resource = @accessor.resource(@uri)
-          resp = resource.get
-
-          resp.code.should == 401
-        end
-
-        it 'should not authenticate if no valid auth handlers are available' do
-          basic_handler = Resourceful::BasicAuthenticator.new('Not Test Auth', 'admin', 'secret')
-          @accessor.auth_manager.add_auth_handler(basic_handler)
-          resource = @accessor.resource(@uri)
-          resp = resource.get
-
-          resp.code.should == 401
-        end
-
         it 'should not keep trying to authenticate with incorrect credentials' do
           basic_handler = Resourceful::BasicAuthenticator.new('Test Auth', 'admin', 'well-known')
           @accessor.auth_manager.add_auth_handler(basic_handler)
@@ -290,6 +294,22 @@ describe Resourceful do
           resp = resource.get
 
           resp.code.should == 401
+        end
+
+      end
+
+      describe 'digest' do
+        before do
+          @uri = 'http://localhost:3000/auth/digest'
+        end
+
+        it 'should be able to authenticate basic auth' do
+          digest_handler = Resourceful::DigestAuthenticator.new('Test Auth', 'admin', 'secret')
+          @accessor.auth_manager.add_auth_handler(digest_handler)
+          resource = @accessor.resource(@uri)
+          resp = resource.get
+
+          resp.code.should == 200
         end
 
       end

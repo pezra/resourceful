@@ -81,19 +81,30 @@ AuthorizationResponder = lambda do |env|
   authtype = env['QUERY_STRING']
   header = {}
   if auth_string = env['HTTP_AUTHORIZATION']
-    code = 200
-    body = ["Authorized"]
-    if authtype == "basic"
-      unless ['admin', 'secret'] == HTTPAuth::Basic.unpack_authorization(auth_string)
-        code = 401
-        body = ["Not Authorized"]
-      end
+    if authtype == "basic" &&
+       ['admin', 'secret'] == HTTPAuth::Basic.unpack_authorization(auth_string)
+      code = 200
+      body = ["Authorized"]
+    elsif authtype == "digest" #&&
+          credentials = HTTPAuth::Digest::Credentials.from_header(auth_string) &&
+          credentials &&
+          credentials.validate(:password => 'secret', :method => 'GET')
+          puts auth_string.inspect
+          puts credentials.inspect
+      code = 200
+      body = ["Authorized"]
+    else
+      code = 401
+      body = ["Not Authorized"]
     end
   else 
     code = 401
     body = ["Not Authorized"]
     if authtype == "basic"
       header = {'WWW-Authenticate' => HTTPAuth::Basic.pack_challenge('Test Auth')}
+    elsif authtype == "digest"
+      chal = HTTPAuth::Digest::Credentials.new(:realm => 'Test Auth', :qop => 'auth')
+      header = {'WWW-Authenticate' => chal.to_header}
     end
   end
 

@@ -140,5 +140,44 @@ describe Resourceful::BasicAuthenticator do
     end
   end
 
+end
+
+describe Resourceful::DigestAuthenticator do
+
+  before do 
+    @auth = Resourceful::DigestAuthenticator.new('Test Auth', 'admin', 'secret')
+  end
+
+  {:realm => 'Test Auth', :username => 'admin', :password => 'secret'}.each do |meth,val|
+    it "should initialize with a #{meth}" do
+      @auth.instance_variable_get("@#{meth}").should == val
+    end
+  end
+
+  describe "Updating from a challenge response" do
+    before do
+      @header = {'WWW-Authenticate' => 'Digest realm="Test Auth"'}
+      @chal = mock('response', :header => @header, :uri => 'http://example.com/foo/bar')
+    end
+
+    it 'should be valid for a challenge response with scheme "Digest" and the same realm' do
+      @auth.valid_for?(@chal).should be_true
+    end
+
+    it 'should not be valid if the scheme is not "Digest"' do
+      @header['WWW-Authenticate'] = "Basic"
+      @auth.valid_for?(@chal).should be_false
+    end
+
+    it 'should not be valid if the realm does not match' do
+      @header['WWW-Authenticate'] = 'Digest realm="not test auth"'
+      @auth.valid_for?(@chal).should be_false
+    end
+
+    it 'should not be valid if the header is unreadable' do
+      @header['WWW-Authenticate'] = nil
+      @auth.valid_for?(@chal).should be_false
+    end
+  end
 
 end

@@ -63,6 +63,23 @@ module Resourceful
 
   class DigestAuthenticator
 
+    def initialize(realm, username, password)
+      @realm, @username, @password = realm, username, password
+      @domain = nil
+    end
+
+    def valid_for?(challenge_response)
+      return false unless challenge = challenge_response.header['WWW-Authenticate']
+      begin
+        challenge = HTTPAuth::Digest::Challenge.from_header(challenge.first)
+      rescue HTTPAuth::UnwellformedHeader
+        return false
+      end
+      challenge.realm == @realm
+    end
+
+
+
   end
 
 
