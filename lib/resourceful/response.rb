@@ -3,6 +3,10 @@ require 'time'
 require 'facets/kernel/ergo'
 
 module Resourceful
+  # Exception indicating that the server used a content coding scheme
+  # that Resourceful is unable to handle.
+  class UnsupportedContentCoding < Exception
+  end
 
   class Response
     REDIRECT_RESPONSE_CODES = [301,302,303,307]
@@ -80,12 +84,17 @@ module Resourceful
       when nil
         # body is identity encoded; just return it
         @body
-      when /gzip/i
+      when /^\s*identity\s*$/i
+        # body is identity encoded; just return it
+        @body
+      when /^\s*gzip\s*$/i
         gz_in = Zlib::GzipReader.new(StringIO.new(@body, 'r'))
         @body = gz_in.read
         gz_in.close
         header.delete('Content-Encoding')
         @body
+      else
+        raise UnsupportedContentCoding, "Resourceful does not support #{header['Content-Encoding'].ergo.first} content coding" 
       end
     end
   end

@@ -166,18 +166,39 @@ describe Resourceful::Response do
       @response.should respond_to(:body)
     end
     
-    it 'ungzip the body if content-encoding header field is gzip' do
-      compressed_date = StringIO.new.tap do |out|
-        Zlib::GzipWriter.new(out).tap do |zout|
-          zout << "This is a test"
-          zout.close
-        end
-      end.string
+    ['gzip', ' gzip', ' gzip ', 'GZIP', 'gzIP'].each do |gzip|
+      it "ungzip the body if content-encoding header field is #{gzip}" do
+        compressed_date = StringIO.new.tap do |out|
+          Zlib::GzipWriter.new(out).tap do |zout|
+            zout << "This is a test"
+            zout.close
+          end
+        end.string
 
-      @response = Resourceful::Response.new(@uri, 0, {'Content-Encoding' => ['gzip']}, compressed_date)
+        @response = Resourceful::Response.new(@uri, 0, {'Content-Encoding' => [gzip]}, compressed_date)
 
-      @response.body.should == "This is a test"
+        @response.body.should == "This is a test"
+      end
     end
+
+    it 'should leave body unmolested if Content-Encoding missing' do
+      @response = Resourceful::Response.new(@uri, 0, {}, "This is a test")
+      @response.body.should == "This is a test"      
+    end 
+
+    ['identity', ' identity', 'identity ', ' identity ', 'IDENTITY', 'idENTIty'].each do |ident|
+      it "should leave body unmolested if Content-Encoding is #{ident}" do
+        @response = Resourceful::Response.new(@uri, 0, {'Content-Encoding' => [ident]}, "This is a test")
+        @response.body.should == "This is a test"      
+      end
+    end 
+
+    it 'should raise error if Content-Encoding is not supported' do
+      @response = Resourceful::Response.new(@uri, 0, {'Content-Encoding' => ['broken-identity']}, "This is a test")
+      lambda {
+        @response.body 
+      }.should raise_error(Resourceful::UnsupportedContentCoding)
+    end 
   end
 
 end
