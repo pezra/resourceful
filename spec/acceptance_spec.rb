@@ -74,8 +74,9 @@ describe Resourceful do
 
         it 'should not perform the redirect if the callback returns false' do
           @callback.should_receive(:call).and_return(false)
-          resp = @resource.get
-          resp.code.should == 301
+          lambda {
+            @resource.get
+          }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
         end
       end
 
@@ -291,9 +292,10 @@ describe Resourceful do
           basic_handler = Resourceful::BasicAuthenticator.new('Test Auth', 'admin', 'well-known')
           @accessor.auth_manager.add_auth_handler(basic_handler)
           resource = @accessor.resource(@uri)
-          resp = resource.get
 
-          resp.code.should == 401
+          lambda {
+            resource.get
+          }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
         end
 
       end
@@ -303,7 +305,7 @@ describe Resourceful do
           @uri = 'http://localhost:3000/auth/digest'
         end
 
-        it 'should be able to authenticate basic auth' do
+        it 'should be able to authenticate digest auth' do
           pending
           digest_handler = Resourceful::DigestAuthenticator.new('Test Auth', 'admin', 'secret')
           @accessor.auth_manager.add_auth_handler(digest_handler)

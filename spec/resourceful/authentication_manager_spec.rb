@@ -89,7 +89,7 @@ describe Resourceful::BasicAuthenticator do
 
   describe "Updating from a challenge response" do
     before do
-      @header = {'WWW-Authenticate' => 'Basic realm="Test Auth"'}
+      @header = {'WWW-Authenticate' => ['Basic realm="Test Auth"']}
       @chal = mock('response', :header => @header, :uri => 'http://example.com/foo/bar')
     end
 
@@ -97,13 +97,34 @@ describe Resourceful::BasicAuthenticator do
       @auth.valid_for?(@chal).should be_true
     end
 
+    it 'should be valid for a challenge response with multiple schemes including matchin "Basic" challenge' do
+      @header = {'WWW-Authenticate' => ['Digest some other stuff', 'Basic realm="Test Auth"', 'Weird scheme']}
+
+      @auth.valid_for?(@chal).should be_true
+    end
+
+    it 'should not be sensitive to case variances in the scheme' do
+      @header['WWW-Authenticate'] = ['bAsIc realm="Test Auth"']
+      @auth.valid_for?(@chal).should be_true
+    end
+
+    it 'should not be sensitive to case variances in the realm directive' do
+      @header['WWW-Authenticate'] = ['Basic rEaLm="Test Auth"']
+      @auth.valid_for?(@chal).should be_true
+    end
+
+    it 'should not be sensitive to case variances in the realm value' do
+      @header['WWW-Authenticate'] = ['Basic realm="test auth"']
+      @auth.valid_for?(@chal).should be_true
+    end
+ 
     it 'should not be valid if the scheme is not "Basic"' do
-      @header['WWW-Authenticate'] = "Digest"
+      @header['WWW-Authenticate'] = ["Digest"]
       @auth.valid_for?(@chal).should be_false
     end
 
     it 'should not be valid if the realm does not match' do
-      @header['WWW-Authenticate'] = 'Basic realm="not test auth"'
+      @header['WWW-Authenticate'] = ['Basic realm="not test auth"']
       @auth.valid_for?(@chal).should be_false
     end
 

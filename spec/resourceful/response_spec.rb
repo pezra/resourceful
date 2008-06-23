@@ -40,9 +40,23 @@ describe Resourceful::Response do
     @response.headers.should == @response.header
   end
 
-  it 'should have a body' do
-    @response.should respond_to(:body)
-  end
+  describe "#is_success?" do
+    it 'should be true for 200' do
+      Resourceful::Response.new(@uri, 200, {}, "").is_success?.should == true
+    end 
+
+    it 'should be true for any 2xx' do
+      Resourceful::Response.new(@uri, 299, {}, "").is_success?.should == true
+    end 
+
+    it 'should not be true for 300' do
+      Resourceful::Response.new(@uri, 300, {}, "").is_success?.should == false
+    end 
+
+    it 'should not be true for 199' do
+      Resourceful::Response.new(@uri, 199, {}, "").is_success?.should == false
+    end 
+  end 
 
   it 'should know if it is a redirect' do
     Resourceful::Response.new(@uri, 301, {}, "").is_redirect?.should == true
@@ -144,7 +158,47 @@ describe Resourceful::Response do
       r = response_with_header('Cache-Control' => ['no-cache'])
       r.should be_stale
     end
-      
+  end
+
+
+  describe '#body' do 
+    it 'should have a body method' do
+      @response.should respond_to(:body)
+    end
+    
+    ['gzip', ' gzip', ' gzip ', 'GZIP', 'gzIP'].each do |gzip|
+      it "ungzip the body if content-encoding header field is #{gzip}" do
+        compressed_date = StringIO.new.tap do |out|
+          Zlib::GzipWriter.new(out).tap do |zout|
+            zout << "This is a test"
+            zout.close
+          end
+        end.string
+
+        @response = Resourceful::Response.new(@uri, 0, {'Content-Encoding' => [gzip]}, compressed_date)
+
+        @response.body.should == "This is a test"
+      end
+    end
+
+    it 'should leave body unmolested if Content-Encoding missing' do
+      @response = Resourceful::Response.new(@uri, 0, {}, "This is a test")
+      @response.body.should == "This is a test"      
+    end 
+
+    ['identity', ' identity', 'identity ', ' identity ', 'IDENTITY', 'idENTIty'].each do |ident|
+      it "should leave body unmolested if Content-Encoding is #{ident}" do
+        @response = Resourceful::Response.new(@uri, 0, {'Content-Encoding' => [ident]}, "This is a test")
+        @response.body.should == "This is a test"      
+      end
+    end 
+
+    it 'should raise error if Content-Encoding is not supported' do
+      @response = Resourceful::Response.new(@uri, 0, {'Content-Encoding' => ['broken-identity']}, "This is a test")
+      lambda {
+        @response.body 
+      }.should raise_error(Resourceful::UnsupportedContentCoding)
+    end 
   end
 
 end

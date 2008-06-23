@@ -14,6 +14,7 @@ module Resourceful
       @method, @resource, @body = http_method, resource, body
       @header = header.is_a?(Resourceful::Header) ? header : Resourceful::Header.new(header || {})
 
+      @header['Accept-Encoding'] = 'gzip, identity'
     end
 
     def response

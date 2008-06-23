@@ -4,13 +4,28 @@ require Pathname(__FILE__).dirname + '../spec_helper'
 require 'resourceful/net_http_adapter'
 
 describe Resourceful::NetHttpAdapter do
+  describe '#make_request (mocked)' do
+    it 'should enable ssl on the connection' do
+      resp = stub('http_response', :code => 200, :header => {}, :body => "hello")
+      conn = stub('http_conn', :request => resp, :finish => nil)
+      Net::HTTP.should_receive(:new).and_return(conn)
+      conn.should_receive(:use_ssl=).with(true).ordered
+      conn.should_receive(:start).ordered
+
+      Resourceful::NetHttpAdapter.make_request(:get, 'https://localhost:3000/get')
+    end
+  end
+end
+
+describe Resourceful::NetHttpAdapter do
   it_should_behave_like 'simple http server'
+
 
   describe '#make_request' do
     before do
       @response = Resourceful::NetHttpAdapter.make_request(:get, 'http://localhost:3000/get')
     end
-
+    
     describe 'response' do
       it 'should be an array' do
         @response.should be_instance_of(Array)

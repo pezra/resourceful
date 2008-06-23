@@ -9,7 +9,7 @@ describe Resourceful::Resource do
     @uri      = 'http://www.example.com/'
     @resource = Resourceful::Resource.new(@accessor, @uri)
 
-    @response = mock('response', :code => 200, :is_redirect? => false, :is_not_authorized? => false)
+    @response = mock('response', :code => 200, :is_redirect? => false, :is_not_authorized? => false, :is_success? => true)
 
     @request = mock('request', :response => @response, :should_be_redirected? => true)
     Resourceful::Request.stub!(:new).and_return(@request)
@@ -51,6 +51,37 @@ describe Resourceful::Resource do
       Resourceful::Request.should_receive(:new).with(:some_method, @resource).and_return(@request)
       make_request
     end
+
+    describe 'non-success responses' do
+      before do
+        @uri      = 'http://www.example.com/code/404'
+        @resource = Resourceful::Resource.new(@accessor, @uri)
+
+        @redirected_uri = 'http://www.example.com/get'
+        @redirect_response = mock('redirect_response',
+                                  :header                 => {'Location' => [@redirected_uri]},
+                                  :is_redirect?           => false,
+                                  :is_success?            => false,
+                                  :is_not_authorized?     => false,
+                                  :code                   => 404)
+        
+        @request.stub!(:response).and_return(@redirect_response, @response)
+        @request.stub!(:method).and_return(:get)
+        @request.stub!(:uri).and_return('http://www.example.com/code/404')
+      end
+
+      it 'should raise UnsuccessfulHttpRequestError' do
+        lambda {
+          @resource.do_read_request(:get)
+        }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
+      end 
+
+      it 'should give a reasonable error message' do
+        lambda {
+          @resource.do_read_request(:get)
+        }.should raise_error("get request to <http://www.example.com/code/404> failed with code 404")
+      end
+    end 
 
     describe 'with redirection' do
       before do
@@ -166,6 +197,37 @@ describe Resourceful::Resource do
       Resourceful::Request.should_receive(:new).with(:some_method, @resource, "data").and_return(@request)
       @resource.do_write_request(:some_method, "data")
     end
+
+    describe 'non-success responses' do
+      before do
+        @uri      = 'http://www.example.com/code/404'
+        @resource = Resourceful::Resource.new(@accessor, @uri)
+
+        @redirected_uri = 'http://www.example.com/get'
+        @redirect_response = mock('redirect_response',
+                                  :header                 => {'Location' => [@redirected_uri]},
+                                  :is_redirect?           => false,
+                                  :is_success?            => false,
+                                  :is_not_authorized?     => false,
+                                  :code                   => 404)
+        
+        @request.stub!(:response).and_return(@redirect_response, @response)
+        @request.stub!(:method).and_return(:post)
+        @request.stub!(:uri).and_return('http://www.example.com/code/404')
+      end
+
+      it 'should raise UnsuccessfulHttpRequestError' do
+        lambda {
+          @resource.do_write_request(:post, "data")
+        }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
+      end 
+
+      it 'should give a reasonable error message' do
+        lambda {
+          @resource.do_write_request(:post, "data")
+        }.should raise_error("post request to <http://www.example.com/code/404> failed with code 404")
+      end
+    end 
 
     describe 'with redirection' do
       before do

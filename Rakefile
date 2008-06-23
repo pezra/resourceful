@@ -25,11 +25,14 @@ Rake::RDocTask.new(:rdoc) do |rdoc|
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
 
+desc 'Removes all temporary files'
+task :clean
+
 ##############################################################################
 # Packaging & Installation
 ##############################################################################
 
-RESOURCEFUL_VERSION = "0.1"
+RESOURCEFUL_VERSION = "0.2"
 
 windows = (PLATFORM =~ /win32|cygwin/) rescue nil
 
@@ -47,17 +50,19 @@ spec = Gem::Specification.new do |s|
   s.summary      = "Resourceful provides a convenient Ruby API for making HTTP requests."
   s.description  = s.summary
   s.require_path = "lib"
-  s.files        = %w( LICENSE README Rakefile ) + Dir["{docs,spec,lib}/**/*"]
+  s.files        = %w( MIT-LICENSE README Rakefile ) + Dir["{docs,spec,lib}/**/*"]
 
   # rdoc
   s.has_rdoc         = true
-  s.extra_rdoc_files = %w( README LICENSE )
+  s.extra_rdoc_files = %w( README MIT-LICENSE )
 
   # Dependencies
   s.add_dependency "addressable"
   s.add_dependency "httpauth"
   s.add_dependency "rspec"
   s.add_dependency "tiny"
+  s.add_dependency "facets"
+
   s.required_ruby_version = ">= 1.8.6"
 end
 

@@ -1,7 +1,12 @@
 require 'net/http'
 require 'time'
+require 'facets/kernel/ergo'
 
 module Resourceful
+  # Exception indicating that the server used a content coding scheme
+  # that Resourceful is unable to handle.
+  class UnsupportedContentCoding < Exception
+  end
 
   class Response
     REDIRECT_RESPONSE_CODES = [301,302,303,307]
@@ -15,6 +20,10 @@ module Resourceful
     def initialize(uri, code, header, body)
       @uri, @code, @header, @body = uri, code, header, body
       @response_time = Time.now
+    end
+
+    def is_success?
+      @code.in? 200..299
     end
 
     def is_redirect?
@@ -68,6 +77,25 @@ module Resourceful
       apparent_age = [0, response_time - date_value].max
       corrected_received_age = [apparent_age, age_value || 0].max
       current_age = corrected_received_age + (response_time - request_time) + (now - response_time)
+    end
+
+    def body
+      case header['Content-Encoding'].ergo.first
+      when nil
+        # body is identity encoded; just return it
+        @body
+      when /^\s*identity\s*$/i
+        # body is identity encoded; just return it
+        @body
+      when /^\s*gzip\s*$/i
+        gz_in = Zlib::GzipReader.new(StringIO.new(@body, 'r'))
+        @body = gz_in.read
+        gz_in.close
+        header.delete('Content-Encoding')
+        @body
+      else
+        raise UnsupportedContentCoding, "Resourceful does not support #{header['Content-Encoding'].ergo.first} content coding" 
+      end
     end
   end
   
