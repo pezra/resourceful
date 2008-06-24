@@ -1,17 +1,17 @@
-Resourceful
-============
+= Resourceful
 
 Resourceful provides a convenient Ruby API for making HTTP requests.
+Our intent is to produce a library 
 
 Features:
 
-  * GET, PUT and POST HTTP requests
-  * support for  HTTP Basic and Digest authentication
-  * pluggable unmarshallers for parsing response bodies
+  * GET, PUT, POST and DELETE HTTP requests
+  * Basic authentication
+  * response caching
+  * gzip content encoding
 
+== Example
 
-Example
-=======
 
 Get html page
 
@@ -23,16 +23,35 @@ Get html page
 Get page requiring HTTP Authentication
 
     require 'resourceful'
-    class AuthInfoProvider
-      def authenication_info(realm)
-        ['my_account', 'my-super-secert-password']
-      end
-    end
-
-    http = Resourceful::HttpAccessor.new(:authentication_info_provider => AuthInfoProvider.new)
-    resp = http.resource('http://internal-app/').get(:accept => 'text/html')
+    http = Resourceful::HttpAccessor.new
+    http.auth_manager.add_auth_handler(Resourceful::BasicAuthenticator.new('Your Realm', 'login_name', 'password'))
+    resp = http.resource('http://rubyforge.org').get(:accept => 'text/html')
     puts resp.body
 
 
-Copyright (c) 2008 Absolute Performance, Inc, released under the MIT License.
+Post a URL encoded form
 
+     require 'resourceful'
+     http = Resourceful::HttpAccessor.new
+     resp = http.resource('http://mysite.example/service').
+              post('application/x-www-form-urlencoded', 'hostname=test&level=super')
+
+Put an XML document
+
+     require 'resourceful'
+     http = Resourceful::HttpAccessor.new
+     resp = http.resource('http://mysite.example/service').
+              put('application/xml', '<?xml version="1.0"?><test></test>')
+    
+Delete a resource
+
+     require 'resourceful'
+     http = Resourceful::HttpAccessor.new
+     resp = http.resource('http://mysite.example/service').delete
+
+    
+
+== Copyright
+
+This library is made available under the MIT License.  Details can be
+found in the file 'MIT-LICENSE' in the root of the project.
