@@ -35,12 +35,12 @@ describe Resourceful do
 
     it 'should #put a resource, and return the response' do
       resource = @accessor.resource('http://localhost:3000/put')
-#      resp = resource.put('text/plain', 'Hello world from PUT')
-#      resp.should be_instance_of(Resourceful::Response)
-#       resp.code.should == 200
-#       resp.body.should == 'Hello world from PUT'
-#       resp.header.should be_instance_of(Resourceful::Header)
-#       resp.header['Content-Type'].should == ['text/plain']
+      resp = resource.put('text/plain', 'Hello world from PUT')
+      resp.should be_instance_of(Resourceful::Response)
+      resp.code.should == 200
+      resp.body.should == 'Hello world from PUT'
+      resp.header.should be_instance_of(Resourceful::Header)
+      resp.header['Content-Type'].should == ['text/plain']
     end
 
     it 'should #delete a resource, and return a response' do
