@@ -177,7 +177,7 @@ describe Resourceful::DigestAuthenticator do
 
   describe "Updating from a challenge response" do
     before do
-      @header = {'WWW-Authenticate' => 'Digest realm="Test Auth"'}
+      @header = {'WWW-Authenticate' => ['Digest realm="Test Auth"']}
       @chal = mock('response', :header => @header, :uri => 'http://example.com/foo/bar')
     end
 
@@ -186,12 +186,12 @@ describe Resourceful::DigestAuthenticator do
     end
 
     it 'should not be valid if the scheme is not "Digest"' do
-      @header['WWW-Authenticate'] = "Basic"
+      @header['WWW-Authenticate'] = ["Basic"]
       @auth.valid_for?(@chal).should be_false
     end
 
     it 'should not be valid if the realm does not match' do
-      @header['WWW-Authenticate'] = 'Digest realm="not test auth"'
+      @header['WWW-Authenticate'] = ['Digest realm="not test auth"']
       @auth.valid_for?(@chal).should be_false
     end
 

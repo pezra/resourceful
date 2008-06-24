@@ -261,18 +261,18 @@ describe Resourceful do
 
       it 'should not authenticate if no auth handlers are set' do
         resource = @accessor.resource(@uri)
-        resp = resource.get
-
-        resp.code.should == 401
+        lambda {
+          resource.get
+        }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
       end
 
       it 'should not authenticate if no valid auth handlers are available' do
         basic_handler = Resourceful::BasicAuthenticator.new('Not Test Auth', 'admin', 'secret')
         @accessor.auth_manager.add_auth_handler(basic_handler)
         resource = @accessor.resource(@uri)
-        resp = resource.get
-
-        resp.code.should == 401
+        lambda {
+          resource.get
+        }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
       end
 
       describe 'basic' do
