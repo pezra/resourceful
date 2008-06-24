@@ -5,10 +5,10 @@ module Resourceful
   # hash.
   #
   #     OptionsInterpreter.new do 
-  #       option(:accept) {|accept| [accept].flatten.map{|m| m.to_str}}
+  #       option(:accept) { |accept| [accept].flatten.map{|m| m.to_str} }
   #       option(:http_header_fields, :default => {})
   #     end.interpret(:accept => 'this/that')
-  #     # => {:accept => ['this/that'], :http_header_fields => {}}
+  #     # => {:accept => ['this/that'], :http_header_fields => { } }
   #
   # The returned hash contains :accept with the pass accept option
   # value transformed into an array and :http_header_fields with its

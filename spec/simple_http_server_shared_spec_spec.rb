@@ -86,7 +86,15 @@ describe 'http server' do
   end
 
   describe '/auth' do
-    
+    before do
+      @uri = "http://localhost:3000/auth?basic"
+    end
+
+    it 'should return a 401 if no auth info is provided' do
+      resp = Resourceful::NetHttpAdapter.make_request(:get, @uri)
+      resp[0].should == 401
+    end
+
     describe 'basic' do
       before do
         @uri = "http://localhost:3000/auth?basic"
@@ -125,6 +133,56 @@ describe 'http server' do
       it 'should authorize if u/p is incorrect' do
         creds = HTTPAuth::Basic.pack_authorization('admin', 'not secret')
         header = {'Authorization' => creds}
+        resp = Resourceful::NetHttpAdapter.make_request(:get, @uri, nil, header)
+        resp[0].should == 401
+      end
+
+    end
+
+    describe 'digest' do
+      before do
+        @uri = "http://localhost:3000/auth?digest"
+      end
+
+      it 'should return a 401 if no auth info is provided' do
+        resp = Resourceful::NetHttpAdapter.make_request(:get, @uri)
+        resp[0].should == 401
+      end
+
+      it 'should provide a WWW-Authenticate header when 401' do
+        resp = Resourceful::NetHttpAdapter.make_request(:get, @uri)
+        header = resp[1]
+        header.should have_key('WWW-Authenticate')
+      end
+
+      it 'should set the scheme to "Digest"' do
+        resp = Resourceful::NetHttpAdapter.make_request(:get, @uri)
+        auth = resp[1]['WWW-Authenticate'].first
+        auth.should =~ /^Digest/
+      end
+
+      it 'should set the realm to "Test Auth"' do
+        resp = Resourceful::NetHttpAdapter.make_request(:get, @uri)
+        auth = resp[1]['WWW-Authenticate'].first
+        auth.should =~ /realm="Test Auth"/
+      end
+
+      def challenge
+        resp = Resourceful::NetHttpAdapter.make_request(:get, @uri)
+        HTTPAuth::Digest::Challenge.from_header(resp[1]['WWW-Authenticate'].first)
+      end
+
+      it 'should authorize on u/p:admin/secret' do
+        creds = HTTPAuth::Digest::Credentials.from_challenge(challenge, :username => 'admin', :password => 'secret', :uri => @uri)
+        header = {'Authorization' => creds.to_header}
+        resp = Resourceful::NetHttpAdapter.make_request(:get, @uri, nil, header)
+        resp[0].should == 200
+      end
+
+      it 'should not authorize if u/p is incorrect' do
+        pending
+        creds = HTTPAuth::Digest::Credentials.from_challenge(challenge, :username => 'admin', :password => 'not secret', :uri => @uri)
+        header = {'Authorization' => creds.to_header}
         resp = Resourceful::NetHttpAdapter.make_request(:get, @uri, nil, header)
         resp[0].should == 401
       end

@@ -55,7 +55,7 @@ module Resourceful
     #     post.author_uri = resp.header['Location']
     #   end
     #
-    # @block callback<request, response>
+    # @yieldparam callback<request, response>
     #   The action to be executed when a request results in a redirect. Yields the 
     #   current request and result objects to the callback.
     #
@@ -71,7 +71,7 @@ module Resourceful
     # Performs a GET on the resource, following redirects as neccessary, and retriving
     # it from the local cache if its available and valid.
     #
-    # @returns <Response>
+    # @return <Response>
     def get
       do_read_request(:get)
     end
@@ -79,12 +79,12 @@ module Resourceful
     # Performs a POST with the given data to the resource, following redirects as 
     # neccessary.
     #
-    # @param content_type<String>
+    # @param [String] content_type
     #   The MIME type of the data to be posted.
-    # @param data<String> 
+    # @param [String] data
     #   The body of the data to be posted
     #
-    # @returns <Response>
+    # @return <Response>
     def post(content_type, data = "")
       do_write_request(:post, {'Content-Type' => content_type}, data)
     end
@@ -92,19 +92,19 @@ module Resourceful
     # Performs a PUT with the given data to the resource, following redirects as 
     # neccessary.
     #
-    # @param content_type<String>
+    # @param [String] content_type
     #   The MIME type of the data to be posted.
-    # @param data<String> 
+    # @param [String] data
     #   The body of the data to be posted
     #
-    # @returns <Response>
+    # @return <Response>
     def put(content_type, data = "")
       do_write_request(:put, {'Content-Type' => content_type}, data)
     end
 
     # Performs a DELETE on the resource, following redirects as neccessary.
     #
-    # @returns <Response>
+    # @return <Response>
     def delete
       do_write_request(:delete, {}, nil)
     end

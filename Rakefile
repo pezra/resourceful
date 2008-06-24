@@ -16,13 +16,15 @@ Spec::Rake::SpecTask.new(:spec) do |t|
   t.pattern = 'spec/**/*_spec.rb'
 end
 
-desc 'Generate documentation for Resourceful.'
-Rake::RDocTask.new(:rdoc) do |rdoc|
-  rdoc.rdoc_dir = 'rdoc'
-  rdoc.title    = 'Resourceful'
-  rdoc.options << '--line-numbers' << '--inline-source'
-  rdoc.rdoc_files.include('README')
-  rdoc.rdoc_files.include('lib/**/*.rb')
+begin
+  gem 'yard', '>=0.2.3'
+  require 'yard'
+  desc 'Generate documentation for Resourceful.'
+  YARD::Rake::YardocTask.new do |t|
+    t.files   = ['lib/**/*.rb', 'README']
+  end
+rescue Exception
+  # install YARD to generate documentation
 end
 
 desc 'Removes all temporary files'
@@ -41,26 +43,26 @@ SUDO = windows ? "" : "sudo"
 task :resourceful => [:clean, :rdoc, :package]
 
 spec = Gem::Specification.new do |s|
-  s.name         = "Resourceful"
+  s.name         = "resourceful"
   s.version      = RESOURCEFUL_VERSION
   s.platform     = Gem::Platform::RUBY
-  s.author       = "Peter Williams"
-  s.email        = "pezra@barelyenough.org"
-  s.homepage     = "https://github.com/pezra/resourceful/tree/master"
+  s.author       = "Paul Sadauskas & Peter Williams"
+  s.email        = "psadauskas@gmail.com"
+  s.homepage     = "https://github.com/paul/resourceful/tree/master"
   s.summary      = "Resourceful provides a convenient Ruby API for making HTTP requests."
   s.description  = s.summary
+  s.rubyforge_project = 'resourceful'
   s.require_path = "lib"
-  s.files        = %w( MIT-LICENSE README Rakefile ) + Dir["{docs,spec,lib}/**/*"]
+  s.files        = %w( MIT-LICENSE README.markdown Rakefile ) + Dir["{spec,lib}/**/*"]
 
   # rdoc
-  s.has_rdoc         = true
-  s.extra_rdoc_files = %w( README MIT-LICENSE )
+  s.has_rdoc         = false
 
   # Dependencies
   s.add_dependency "addressable"
   s.add_dependency "httpauth"
   s.add_dependency "rspec"
-  s.add_dependency "tiny"
+  s.add_dependency "thin"
   s.add_dependency "facets"
 
   s.required_ruby_version = ">= 1.8.6"
@@ -72,12 +74,12 @@ end
 
 desc "Run :package and install the resulting .gem"
 task :install => :package do
-  sh %{#{SUDO} gem install --local pkg/resourceful-#{VERSION}.gem --no-rdoc --no-ri}
+  sh %{#{SUDO} gem install --local pkg/resourceful-#{RESOURCEFUL_VERSION}.gem --no-rdoc --no-ri}
 end
 
 desc "Run :package and install the resulting .gem with jruby"
 task :jinstall => :package do
-  sh %{#{SUDO} jruby -S gem install pkg/resourceful-#{VERSION}.gem --no-rdoc --no-ri}
+  sh %{#{SUDO} jruby -S gem install pkg/resourceful-#{RESOURCEFUL_VERSION}.gem --no-rdoc --no-ri}
 end
 
 desc "Run :clean and uninstall the .gem"
