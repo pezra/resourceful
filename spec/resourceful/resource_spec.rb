@@ -194,8 +194,8 @@ describe Resourceful::Resource do
   describe '#do_write_request' do
 
     it 'should make a new request object from the method' do
-      Resourceful::Request.should_receive(:new).with(:some_method, @resource, "data").and_return(@request)
-      @resource.do_write_request(:some_method, "data")
+      Resourceful::Request.should_receive(:new).with(:some_method, @resource, "data", anything).and_return(@request)
+      @resource.do_write_request(:some_method, {}, "data")
     end
 
     describe 'non-success responses' do
@@ -218,13 +218,13 @@ describe Resourceful::Resource do
 
       it 'should raise UnsuccessfulHttpRequestError' do
         lambda {
-          @resource.do_write_request(:post, "data")
+          @resource.do_write_request(:post, "data", anything)
         }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
       end 
 
       it 'should give a reasonable error message' do
         lambda {
-          @resource.do_write_request(:post, "data")
+          @resource.do_write_request(:post, "data", anything)
         }.should raise_error("post request to <http://www.example.com/code/404> failed with code 404")
       end
     end 
@@ -245,7 +245,7 @@ describe Resourceful::Resource do
       end
 
       def make_request
-        @resource.do_write_request(:some_method, "data")
+        @resource.do_write_request(:some_method, "data", {})
       end
 
       it 'should check if the response was a redirect' do
@@ -319,7 +319,7 @@ describe Resourceful::Resource do
 
 
     end # write with redirection
-
+    
   end
 
   describe 'callback registration' do
@@ -362,19 +362,6 @@ describe Resourceful::Resource do
 
   end
 
-  %w{post put}.each do |method|
-    describe "##{method}" do
-
-      it 'should be a method' do
-        @resource.should respond_to(method.intern)
-      end
-      
-      it 'should return the response of making the request' do
-        @resource.send(method.intern, "Hello from #{method.upcase}!").should == @response
-      end
-
-    end
-  end
 
   describe "#delete" do
 
@@ -390,3 +377,106 @@ describe Resourceful::Resource do
 
 end
 
+describe Resourceful::Resource do
+
+  describe "#post(content_type, body_data)" do
+    before do
+      @auth_manager = mock('auth_manager', :add_credentials => nil)
+      @cache_manager = mock('cache_manager', :lookup => nil, :store => nil)
+      @accessor = mock('accessor', :auth_manager => @auth_manager, :cache_manager => @cache_manager)
+      @resource = Resourceful::Resource.new(@accessor, 'http://foo.invalid/')
+      @response = mock('response', :is_redirect? => false, :is_success? => true)
+      @request = mock('request', :response => @response)
+      Resourceful::Request.stub!(:new).and_return(@request)
+    end
+    
+    it "should get the response from the request" do 
+      @request.should_receive(:response).and_return(@response)
+
+      @resource.post('text/plain', "a body")
+    end
+
+    it 'should put the content type in the header' do
+      Resourceful::Request.should_receive(:new).
+        with(anything,anything, anything, hash_including('Content-Type' =>'text/plain')).
+        and_return(@request)
+
+      @resource.post('text/plain', "a body") 
+    end 
+
+    it 'should create a post request' do
+      Resourceful::Request.should_receive(:new).
+        with(:post, anything, anything, anything).
+        and_return(@request)
+
+      @resource.post('text/plain', "a body") 
+    end 
+
+    it 'should pass body to the request object' do
+      Resourceful::Request.should_receive(:new).
+        with(anything, anything, "a body", anything).
+        and_return(@request)
+
+      @resource.post('text/plain', "a body") 
+    end 
+
+    it 'should pass self to the request object' do
+      Resourceful::Request.should_receive(:new).
+        with(anything, @resource, anything, anything).
+        and_return(@request)
+
+      @resource.post('text/plain', "a body") 
+    end 
+  end
+
+  describe "#put(content_type, body_data)" do
+    before do
+      @auth_manager = mock('auth_manager', :add_credentials => nil)
+      @cache_manager = mock('cache_manager', :lookup => nil, :store => nil)
+      @accessor = mock('accessor', :auth_manager => @auth_manager, :cache_manager => @cache_manager)
+      @resource = Resourceful::Resource.new(@accessor, 'http://foo.invalid/')
+      @response = mock('response', :is_redirect? => false, :is_success? => true)
+      @request = mock('request', :response => @response)
+      Resourceful::Request.stub!(:new).and_return(@request)
+    end
+    
+    it "should get the response from the request" do 
+      @request.should_receive(:response).and_return(@response)
+
+      @resource.put('text/plain', "a body")
+    end
+
+    it 'should put the content type in the header' do
+      Resourceful::Request.should_receive(:new).
+        with(anything,anything, anything, hash_including('Content-Type' =>'text/plain')).
+        and_return(@request)
+
+      @resource.put('text/plain', "a body") 
+    end 
+
+    it 'should create a put request' do
+      Resourceful::Request.should_receive(:new).
+        with(:put, anything, anything, anything).
+        and_return(@request)
+
+      @resource.put('text/plain', "a body") 
+    end 
+
+    it 'should pass body to the request object' do
+      Resourceful::Request.should_receive(:new).
+        with(anything, anything, "a body", anything).
+        and_return(@request)
+
+      @resource.put('text/plain', "a body") 
+    end 
+
+    it 'should pass self to the request object' do
+      Resourceful::Request.should_receive(:new).
+        with(anything, @resource, anything, anything).
+        and_return(@request)
+
+      @resource.put('text/plain', "a body") 
+    end 
+  end
+
+end 

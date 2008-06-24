@@ -84,9 +84,6 @@ module Resourceful
       when nil
         # body is identity encoded; just return it
         @body
-      when /^\s*identity\s*$/i
-        # body is identity encoded; just return it
-        @body
       when /^\s*gzip\s*$/i
         gz_in = Zlib::GzipReader.new(StringIO.new(@body, 'r'))
         @body = gz_in.read

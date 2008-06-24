@@ -186,13 +186,6 @@ describe Resourceful::Response do
       @response.body.should == "This is a test"      
     end 
 
-    ['identity', ' identity', 'identity ', ' identity ', 'IDENTITY', 'idENTIty'].each do |ident|
-      it "should leave body unmolested if Content-Encoding is #{ident}" do
-        @response = Resourceful::Response.new(@uri, 0, {'Content-Encoding' => [ident]}, "This is a test")
-        @response.body.should == "This is a test"      
-      end
-    end 
-
     it 'should raise error if Content-Encoding is not supported' do
       @response = Resourceful::Response.new(@uri, 0, {'Content-Encoding' => ['broken-identity']}, "This is a test")
       lambda {

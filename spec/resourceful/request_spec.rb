@@ -255,7 +255,7 @@ describe Resourceful::Request do
 
   describe "content coding" do 
     it "should set Accept-Encoding automatically" do
-      @request.header['Accept-Encoding'].should == 'gzip'
+      @request.header['Accept-Encoding'].should == 'gzip, identity'
     end
   end
 

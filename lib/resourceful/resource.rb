@@ -1,4 +1,5 @@
 require 'resourceful/request'
+require 'resourceful/header'
 
 module Resourceful
 
@@ -78,30 +79,34 @@ module Resourceful
     # Performs a POST with the given data to the resource, following redirects as 
     # neccessary.
     #
-    # @params data<String> 
+    # @param content_type<String>
+    #   The MIME type of the data to be posted.
+    # @param data<String> 
     #   The body of the data to be posted
     #
     # @returns <Response>
-    def post(data = "")
-      do_write_request(:post, data)
+    def post(content_type, data = "")
+      do_write_request(:post, {'Content-Type' => content_type}, data)
     end
 
-    # Performs a POST with the given data to the resource, following redirects as 
+    # Performs a PUT with the given data to the resource, following redirects as 
     # neccessary.
     #
-    # @params data<String> 
+    # @param content_type<String>
+    #   The MIME type of the data to be posted.
+    # @param data<String> 
     #   The body of the data to be posted
     #
     # @returns <Response>
-    def put(data = "")
-      do_write_request(:put, data)
+    def put(content_type, data = "")
+      do_write_request(:put, {'Content-Type' => content_type}, data)
     end
 
     # Performs a DELETE on the resource, following redirects as neccessary.
     #
     # @returns <Response>
     def delete
-      do_write_request(:delete)
+      do_write_request(:delete, {}, nil)
     end
 
     # Performs a read request (HEAD, GET). Users should use the #get, etc methods instead.
@@ -146,12 +151,14 @@ module Resourceful
     # This method handles all the work of following redirects.
     #
     # @param method<Symbol> The method to perform
+    # @param header<Header> Header for the HTTP resquest.
+    # @param data<String>   Body of the http request.
     #
     # @return <Response>
     # --
     # @private
-    def do_write_request(method, data = nil)
-      request = Resourceful::Request.new(method, self, data)
+    def do_write_request(method, header, data)
+      request = Resourceful::Request.new(method, self, data, header)
       accessor.auth_manager.add_credentials(request)
 
       response = request.response
@@ -159,13 +166,13 @@ module Resourceful
       if response.is_redirect? and request.should_be_redirected?
         if response.is_permanent_redirect?
           @uris.unshift response.header['Location'].first
-          response = do_write_request(method)
+          response = do_write_request(method, header, data)
         elsif response.code == 303 # see other, must use GET for new location
           redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
           response = redirected_resource.do_read_request(:get)
         else
           redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
-          response = redirected_resource.do_write_request(method, data)
+          response = redirected_resource.do_write_request(method, header, data)
         end
       end
 
