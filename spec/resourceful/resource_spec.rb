@@ -194,7 +194,7 @@ describe Resourceful::Resource do
   describe '#do_write_request' do
 
     it 'should make a new request object from the method' do
-      Resourceful::Request.should_receive(:new).with(:some_method, @resource, "data").and_return(@request)
+      Resourceful::Request.should_receive(:new).with(:some_method, @resource, "data", {}).and_return(@request)
       @resource.do_write_request(:some_method, "data")
     end
 
@@ -370,7 +370,13 @@ describe Resourceful::Resource do
       end
       
       it 'should return the response of making the request' do
-        @resource.send(method.intern, "Hello from #{method.upcase}!").should == @response
+        @resource.send(method.intern, "Hello from #{method.upcase}!", :'content-type' => 'text/plain').should == @response
+      end
+
+      it 'should require the content-type to be specified' do
+        lambda {
+          @resource.send(method.intern, "Hello")
+        }.should raise_error(ArgumentError)
       end
 
     end

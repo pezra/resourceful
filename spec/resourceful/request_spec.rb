@@ -3,8 +3,6 @@ require Pathname(__FILE__).dirname + '../spec_helper'
 require 'rubygems'
 require 'addressable/uri'
 
-require 'resourceful/request'
-
 describe Resourceful::Request do
   before do
     @uri = Addressable::URI.parse('http://www.example.com')
@@ -255,7 +253,7 @@ describe Resourceful::Request do
 
   describe "content coding" do 
     it "should set Accept-Encoding automatically" do
-      @request.header['Accept-Encoding'].should == 'gzip'
+      @request.header['Accept-Encoding'].should == 'gzip, identity'
     end
   end
 

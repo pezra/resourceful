@@ -1,5 +1,6 @@
 require 'net/http'
 require 'time'
+require 'rubygems'
 require 'facets/kernel/ergo'
 
 module Resourceful

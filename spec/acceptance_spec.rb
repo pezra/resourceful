@@ -24,7 +24,7 @@ describe Resourceful do
 
     it 'should #post a resource, and return the response' do
       resource = @accessor.resource('http://localhost:3000/post')
-      resp = resource.post('Hello world from POST')
+      resp = resource.post('Hello world from POST', :'content-type' => 'text/plain')
       resp.should be_instance_of(Resourceful::Response)
       resp.code.should == 201
       resp.body.should == 'Hello world from POST'
@@ -34,7 +34,7 @@ describe Resourceful do
 
     it 'should #put a resource, and return the response' do
       resource = @accessor.resource('http://localhost:3000/put')
-      resp = resource.put('Hello world from PUT')
+      resp = resource.put('Hello world from PUT', :'content-type' => 'text/plain')
       resp.should be_instance_of(Resourceful::Response)
       resp.code.should == 200
       resp.body.should == 'Hello world from PUT'
@@ -260,18 +260,21 @@ describe Resourceful do
 
       it 'should not authenticate if no auth handlers are set' do
         resource = @accessor.resource(@uri)
-        resp = resource.get
-
-        resp.code.should == 401
+        lambda {
+          resp = resource.get
+          resp.code.should == 401
+        }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
       end
 
       it 'should not authenticate if no valid auth handlers are available' do
         basic_handler = Resourceful::BasicAuthenticator.new('Not Test Auth', 'admin', 'secret')
         @accessor.auth_manager.add_auth_handler(basic_handler)
         resource = @accessor.resource(@uri)
-        resp = resource.get
+        lambda {
+          resp = resource.get
+          resp.code.should == 401
+        }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
 
-        resp.code.should == 401
       end
 
       describe 'basic' do

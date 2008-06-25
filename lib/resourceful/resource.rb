@@ -1,4 +1,5 @@
-require 'resourceful/request'
+require 'pathname'
+require Pathname(__FILE__).dirname + 'request'
 
 module Resourceful
 
@@ -80,10 +81,14 @@ module Resourceful
     #
     # @param [String] data
     #   The body of the data to be posted
+    # @param [Hash] options
+    #   Options to pass into the request header. At the least, :content-type is required.
     #
     # @return <Response>
-    def post(data = "")
-      do_write_request(:post, data)
+    # @raise [ArgumentError] unless :content-type is specified in options
+    def post(data = "", options = {})
+      raise ArgumentError, ":content-type must be specified" unless options.has_key?(:'content-type')
+      do_write_request(:post, data, options)
     end
 
     # Performs a POST with the given data to the resource, following redirects as 
@@ -91,10 +96,14 @@ module Resourceful
     #
     # @param [String] data
     #   The body of the data to be posted
+    # @param [Hash] options
+    #   Options to pass into the request header. At the least, :content-type is required.
     #
     # @return <Response>
-    def put(data = "")
-      do_write_request(:put, data)
+    # @raise [ArgumentError] unless :content-type is specified in options
+    def put(data = "", options = {})
+      raise ArgumentError, ":content-type must be specified" unless options.has_key?(:'content-type')
+      do_write_request(:put, data, options)
     end
 
     # Performs a DELETE on the resource, following redirects as neccessary.
@@ -150,8 +159,8 @@ module Resourceful
     # @return <Response>
     # --
     # @private
-    def do_write_request(method, data = nil)
-      request = Resourceful::Request.new(method, self, data)
+    def do_write_request(method, data = nil, options = {})
+      request = Resourceful::Request.new(method, self, data, options)
       accessor.auth_manager.add_credentials(request)
 
       response = request.response
