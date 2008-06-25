@@ -15,6 +15,8 @@ More Info
  
  * Source: [Github](http://github.com/paul/resourceful/tree/master)
  * Bug Tracking: [Lighthouse](http://resourceful.lighthouseapp.com)
+ * Project Page: [Rubyforge](http://rubyforge.org/projects/resourceful/)
+ * Documentation: [API Docs](http://resourceful.rubyforge.org)
 
 Examples
 ========
