@@ -76,36 +76,44 @@ module Resourceful
       do_read_request(:get)
     end
 
+    # :call-seq:
+    #   post(data = "", :content_type => mime_type)
+    #
     # Performs a POST with the given data to the resource, following redirects as 
     # neccessary.
     #
     # @param [String] data
     #   The body of the data to be posted
     # @param [Hash] options
-    #   Options to pass into the request header. At the least, :content-type is required.
+    #   Options to pass into the request header. At the least, :content_type is required.
     #
     # @return <Response>
     #
     # @raise [ArgumentError] unless :content-type is specified in options
     def post(data = "", options = {})
-      raise ArgumentError, ":content-type must be specified" unless options.has_key?(:'content-type')
-      do_write_request(:post, data, options)
+      raise ArgumentError, ":content_type must be specified" unless options.has_key?(:content_type)
+
+      do_write_request(:post, data, {'Content-Type' => options[:content_type]})
     end
 
+    # :call-seq:
+    #   put(data = "", :content_type => mime_type)
+    #
     # Performs a PUT with the given data to the resource, following redirects as 
     # neccessary.
     #
     # @param [String] data
     #   The body of the data to be posted
     # @param [Hash] options
-    #   Options to pass into the request header. At the least, :content-type is required.
+    #   Options to pass into the request header. At the least, :content_type is required.
     #
     # @return <Response>
     #
     # @raise [ArgumentError] unless :content-type is specified in options
     def put(data = "", options = {})
-      raise ArgumentError, ":content-type must be specified" unless options.has_key?(:'content-type')
-      do_write_request(:put, data, options)
+      raise ArgumentError, ":content_type must be specified" unless options.has_key?(:content_type)
+
+      do_write_request(:put, data, {'Content-Type' => options[:content_type]})
     end
 
     # Performs a DELETE on the resource, following redirects as neccessary.
@@ -156,15 +164,15 @@ module Resourceful
     #
     # This method handles all the work of following redirects.
     #
-    # @param method<Symbol> The method to perform
-    # @param header<Header> Header for the HTTP resquest.
-    # @param data<String>   Body of the http request.
+    # @param [Symbol] method  The method to perform
+    # @param [String] data    Body of the http request.
+    # @param [Hash]   header  Header for the HTTP resquest.
     #
-    # @return <Response>
+    # @return [Response]
     # --
     # @private
-    def do_write_request(method, data = nil, options = {})
-      request = Resourceful::Request.new(method, self, data, options)
+    def do_write_request(method, data = nil, header = {})
+      request = Resourceful::Request.new(method, self, data, header)
       accessor.auth_manager.add_credentials(request)
 
       response = request.response
@@ -172,13 +180,13 @@ module Resourceful
       if response.is_redirect? and request.should_be_redirected?
         if response.is_permanent_redirect?
           @uris.unshift response.header['Location'].first
-          response = do_write_request(method, data, options)
+          response = do_write_request(method, data, header)
         elsif response.code == 303 # see other, must use GET for new location
           redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
           response = redirected_resource.do_read_request(:get)
         else
           redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
-          response = redirected_resource.do_write_request(method, data, options)
+          response = redirected_resource.do_write_request(method, data, header)
         end
       end
 

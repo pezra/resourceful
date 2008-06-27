@@ -9,20 +9,20 @@ describe 'redirect', :shared => true do
   %w{PUT POST}.each do |method|
     it "should not be followed by default on #{method}" do
       lambda {
-        @resource.send(method.downcase.intern, nil, :'content-type' => 'text/plain' )
+        @resource.send(method.downcase.intern, nil, :content_type => 'text/plain' )
       }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
     end
 
     it "should redirect on #{method.to_s.upcase} if the redirection callback returns true" do
       @resource.on_redirect { true }
-      resp = @resource.send(method.downcase.intern, nil, :'content-type' => 'text/plain' )
+      resp = @resource.send(method.downcase.intern, nil, :content_type => 'text/plain' )
       resp.code.should == 200
     end
 
     it "should not redirect on #{method.to_s.upcase} if the redirection callback returns false" do
       @resource.on_redirect { false }
       lambda {
-        @resource.send(method.downcase.intern, nil, :'content-type' => 'text/plain' )
+        @resource.send(method.downcase.intern, nil, :content_type => 'text/plain' )
       }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
     end
   end
