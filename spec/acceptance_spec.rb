@@ -25,7 +25,7 @@ describe Resourceful do
 
     it 'should #post a resource, and return the response' do
       resource = @accessor.resource('http://localhost:3000/post')
-      resp = resource.post('text/plain','Hello world from POST')
+      resp = resource.post('Hello world from POST', :'content-type' => 'text/plain')
       resp.should be_instance_of(Resourceful::Response)
       resp.code.should == 201
       resp.body.should == 'Hello world from POST'
@@ -35,7 +35,7 @@ describe Resourceful do
 
     it 'should #put a resource, and return the response' do
       resource = @accessor.resource('http://localhost:3000/put')
-      resp = resource.put('text/plain', 'Hello world from PUT')
+      resp = resource.put('Hello world from PUT', :'content-type' => 'text/plain')
       resp.should be_instance_of(Resourceful::Response)
       resp.code.should == 200
       resp.body.should == 'Hello world from PUT'

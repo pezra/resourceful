@@ -166,6 +166,7 @@ describe Resourceful::Response do
       @response.should respond_to(:body)
     end
     
+    require 'zlib'
     ['gzip', ' gzip', ' gzip ', 'GZIP', 'gzIP'].each do |gzip|
       it "ungzip the body if content-encoding header field is #{gzip}" do
         compressed_date = StringIO.new.tap do |out|

@@ -3,8 +3,6 @@ require Pathname(__FILE__).dirname + '../spec_helper'
 require 'rubygems'
 require 'addressable/uri'
 
-require 'resourceful/request'
-
 describe Resourceful::Request do
   before do
     @uri = Addressable::URI.parse('http://www.example.com')

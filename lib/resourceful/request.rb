@@ -1,5 +1,6 @@
-require 'resourceful/response'
-require 'resourceful/net_http_adapter'
+require 'pathname'
+require Pathname(__FILE__).dirname + 'response'
+require Pathname(__FILE__).dirname + 'net_http_adapter'
 
 module Resourceful
 

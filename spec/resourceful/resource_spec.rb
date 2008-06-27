@@ -195,7 +195,7 @@ describe Resourceful::Resource do
 
     it 'should make a new request object from the method' do
       Resourceful::Request.should_receive(:new).with(:some_method, @resource, "data", anything).and_return(@request)
-      @resource.do_write_request(:some_method, {}, "data")
+      @resource.do_write_request(:some_method, "data")
     end
 
     describe 'non-success responses' do
@@ -362,7 +362,6 @@ describe Resourceful::Resource do
 
   end
 
-
   describe "#delete" do
 
     it 'should be a method' do
@@ -379,7 +378,7 @@ end
 
 describe Resourceful::Resource do
 
-  describe "#post(content_type, body_data)" do
+  describe "#post(body_data, :'content-type' => content-type)" do
     before do
       @auth_manager = mock('auth_manager', :add_credentials => nil)
       @cache_manager = mock('cache_manager', :lookup => nil, :store => nil)
@@ -393,15 +392,15 @@ describe Resourceful::Resource do
     it "should get the response from the request" do 
       @request.should_receive(:response).and_return(@response)
 
-      @resource.post('text/plain', "a body")
+      @resource.post("a body", :'content-type' => 'text/plain')
     end
 
     it 'should put the content type in the header' do
       Resourceful::Request.should_receive(:new).
-        with(anything,anything, anything, hash_including('Content-Type' =>'text/plain')).
+        with(anything,anything, anything, hash_including(:'content-type' =>'text/plain')).
         and_return(@request)
 
-      @resource.post('text/plain', "a body") 
+      @resource.post("a body", :'content-type' => 'text/plain') 
     end 
 
     it 'should create a post request' do
@@ -409,7 +408,7 @@ describe Resourceful::Resource do
         with(:post, anything, anything, anything).
         and_return(@request)
 
-      @resource.post('text/plain', "a body") 
+      @resource.post("a body", :'content-type' => 'text/plain') 
     end 
 
     it 'should pass body to the request object' do
@@ -417,7 +416,7 @@ describe Resourceful::Resource do
         with(anything, anything, "a body", anything).
         and_return(@request)
 
-      @resource.post('text/plain', "a body") 
+      @resource.post("a body", :'content-type' => 'text/plain') 
     end 
 
     it 'should pass self to the request object' do
@@ -425,11 +424,11 @@ describe Resourceful::Resource do
         with(anything, @resource, anything, anything).
         and_return(@request)
 
-      @resource.post('text/plain', "a body") 
+      @resource.post("a body", :'content-type' => 'text/plain') 
     end 
   end
 
-  describe "#put(content_type, body_data)" do
+  describe "#put(body_data, :'content-type' => content_type)" do
     before do
       @auth_manager = mock('auth_manager', :add_credentials => nil)
       @cache_manager = mock('cache_manager', :lookup => nil, :store => nil)
@@ -443,15 +442,15 @@ describe Resourceful::Resource do
     it "should get the response from the request" do 
       @request.should_receive(:response).and_return(@response)
 
-      @resource.put('text/plain', "a body")
+      @resource.put("a body", :'content-type' => 'text/plain')
     end
 
     it 'should put the content type in the header' do
       Resourceful::Request.should_receive(:new).
-        with(anything,anything, anything, hash_including('Content-Type' =>'text/plain')).
+        with(anything,anything, anything, hash_including(:'content-type' =>'text/plain')).
         and_return(@request)
 
-      @resource.put('text/plain', "a body") 
+      @resource.put("a body", :'content-type' => 'text/plain') 
     end 
 
     it 'should create a put request' do
@@ -459,7 +458,7 @@ describe Resourceful::Resource do
         with(:put, anything, anything, anything).
         and_return(@request)
 
-      @resource.put('text/plain', "a body") 
+      @resource.put("a body", :'content-type' => 'text/plain') 
     end 
 
     it 'should pass body to the request object' do
@@ -467,7 +466,7 @@ describe Resourceful::Resource do
         with(anything, anything, "a body", anything).
         and_return(@request)
 
-      @resource.put('text/plain', "a body") 
+      @resource.put("a body", :'content-type' => 'text/plain') 
     end 
 
     it 'should pass self to the request object' do
@@ -475,7 +474,7 @@ describe Resourceful::Resource do
         with(anything, @resource, anything, anything).
         and_return(@request)
 
-      @resource.put('text/plain', "a body") 
+      @resource.put("a body", :'content-type' => 'text/plain') 
     end 
   end
 
