@@ -54,5 +54,33 @@ callback. If the callback evaluates to true, it will follow the redirect.
     resource.get  # Will only follow the redirect if the new location is example.com
 
 
-Copyright (c) 2008 Absolute Performance, Inc, released under the MIT License.
+
+Post a URL encoded form
+-----------------------
+
+     require 'resourceful'
+     http = Resourceful::HttpAccessor.new
+     resp = http.resource('http://mysite.example/service').
+              post('hostname=test&level=super', :content_type => 'application/x-www-form-urlencoded')
+
+Put an XML document
+-------------------
+
+     require 'resourceful'
+     http = Resourceful::HttpAccessor.new
+     resp = http.resource('http://mysite.example/service').
+              put('<?xml version="1.0"?><test/>', :content_type => 'application/xml')
+    
+Delete a resource
+-----------------
+
+     require 'resourceful'
+     http = Resourceful::HttpAccessor.new
+     resp = http.resource('http://mysite.example/service').delete
+
+
+Copyright
+---------
+
+Copyright (c) 2008 Absolute Performance, Inc, Peter Williams; released under the MIT License.
 

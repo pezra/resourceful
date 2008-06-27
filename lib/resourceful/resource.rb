@@ -71,7 +71,10 @@ module Resourceful
     # Performs a GET on the resource, following redirects as neccessary, and retriving
     # it from the local cache if its available and valid.
     #
-    # @return <Response>
+    # @return [Response] The Response to the final request made.
+    #
+    # @raise [UnsuccessfulHttpRequestError] unless the request is a
+    #   success, ie the final request returned a 2xx response code
     def get
       do_read_request(:get)
     end
@@ -87,9 +90,11 @@ module Resourceful
     # @param [Hash] options
     #   Options to pass into the request header. At the least, :content_type is required.
     #
-    # @return <Response>
+    # @return [Response]  The Response to the final request that was made.
     #
     # @raise [ArgumentError] unless :content-type is specified in options
+    # @raise [UnsuccessfulHttpRequestError] unless the request is a
+    #   success, ie the final request returned a 2xx response code
     def post(data = "", options = {})
       raise ArgumentError, ":content_type must be specified" unless options.has_key?(:content_type)
 
@@ -107,9 +112,11 @@ module Resourceful
     # @param [Hash] options
     #   Options to pass into the request header. At the least, :content_type is required.
     #
-    # @return <Response>
+    # @return [Response] The response to the final request made.
     #
     # @raise [ArgumentError] unless :content-type is specified in options
+    # @raise [UnsuccessfulHttpRequestError] unless the request is a
+    #   success, ie the final request returned a 2xx response code
     def put(data = "", options = {})
       raise ArgumentError, ":content_type must be specified" unless options.has_key?(:content_type)
 
@@ -119,6 +126,9 @@ module Resourceful
     # Performs a DELETE on the resource, following redirects as neccessary.
     #
     # @return <Response>
+    #
+    # @raise [UnsuccessfulHttpRequestError] unless the request is a
+    #   success, ie the final request returned a 2xx response code
     def delete
       do_write_request(:delete, {}, nil)
     end
@@ -130,6 +140,10 @@ module Resourceful
     # @param method<Symbol> The method to perform
     #
     # @return <Response>
+    #
+    # @raise [UnsuccessfulHttpRequestError] unless the request is a
+    #   success, ie the final request returned a 2xx response code
+    #
     # --
     # @private
     def do_read_request(method)
@@ -169,6 +183,9 @@ module Resourceful
     # @param [Hash]   header  Header for the HTTP resquest.
     #
     # @return [Response]
+    #
+    # @raise [UnsuccessfulHttpRequestError] unless the request is a
+    #   success, ie the final request returned a 2xx response code
     # --
     # @private
     def do_write_request(method, data = nil, header = {})
