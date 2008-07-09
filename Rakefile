@@ -62,7 +62,6 @@ spec = Gem::Specification.new do |s|
   s.add_dependency "addressable"
   s.add_dependency "httpauth"
   s.add_dependency "rspec"
-  s.add_dependency "thin"
   s.add_dependency "facets"
 
   s.required_ruby_version = ">= 1.8.6"

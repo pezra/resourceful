@@ -114,7 +114,6 @@ describe 'simple http server', :shared => true do
     #setup a thin http server we can connect to
     require 'thin'
     require 'rack'
-    require 'rack/lobster'
 
     app = Rack::Builder.new do |env|
       use Rack::ShowExceptions
