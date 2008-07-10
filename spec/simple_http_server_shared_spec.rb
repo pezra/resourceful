@@ -35,7 +35,7 @@ CodeResponder = lambda do |env|
   [ code, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
 end unless defined? CodeResponder
 
-# YAML-parses the quesy string (expected hash) and sets the header to that
+# YAML-parses the query string (expected hash) and sets the header to that
 HeaderResponder = lambda do |env|
   header = YAML.load(URI.unescape(env['QUERY_STRING']))
   body = [header.inspect]
@@ -47,6 +47,18 @@ HeaderResponder = lambda do |env|
 
   [ 200, header, body ]
 end unless defined? HeaderResponder
+
+# Echos the request header in the response body
+EchoHeaderResponder = lambda do |env|
+  body = [env.inspect]
+
+  header = {
+            'Content-Type' => 'text/plain', 
+            'Content-Length' => body.join.size.to_s
+           }
+
+  [ 200, header, body ]
+end unless defined? EchoHeaderResponder
 
 # redirect. /redirect/{301|302}?{url}
 Redirector = lambda do |env|
@@ -127,6 +139,7 @@ describe 'simple http server', :shared => true do
       map( '/code'     ){ run CodeResponder }
       map( '/redirect' ){ run Redirector }
       map( '/header'   ){ run HeaderResponder }
+      map( '/echo_header' ){ run EchoHeaderResponder }
       map( '/modified' ){ run ModifiedResponder }
       map( '/auth'     ){ run AuthorizationResponder }
     end

@@ -75,8 +75,8 @@ module Resourceful
     #
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
-    def get
-      do_read_request(:get)
+    def get(header = {})
+      do_read_request(:get, header)
     end
 
     # :call-seq:
@@ -146,8 +146,8 @@ module Resourceful
     #
     # --
     # @private
-    def do_read_request(method)
-      request = Resourceful::Request.new(method, self)
+    def do_read_request(method, header = {})
+      request = Resourceful::Request.new(method, self, nil, header)
       accessor.auth_manager.add_credentials(request)
 
       response = request.response

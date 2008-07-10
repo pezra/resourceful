@@ -48,8 +48,13 @@ describe Resourceful::Resource do
     end
 
     it 'should make a new request object from the method' do
-      Resourceful::Request.should_receive(:new).with(:some_method, @resource).and_return(@request)
+      Resourceful::Request.should_receive(:new).with(:some_method, @resource, nil, {}).and_return(@request)
       make_request
+    end
+
+    it 'should set the header of the request from the header arg' do
+      Resourceful::Request.should_receive(:new).with(:some_method, @resource, nil, :foo => :bar).and_return(@request)
+      @resource.do_read_request(:some_method, :foo => :bar)
     end
 
     describe 'non-success responses' do
@@ -182,7 +187,7 @@ describe Resourceful::Resource do
       end
 
       it 'should re-make the request only once if it was not authorized the first time' do
-        Resourceful::Request.should_receive(:new).with(:some_method, @resource).twice.and_return(@request)
+        Resourceful::Request.should_receive(:new).with(:some_method, @resource, nil, {}).twice.and_return(@request)
         @response.stub!(:is_not_authorized?).and_return(true)
         make_request
       end
@@ -352,7 +357,7 @@ describe Resourceful::Resource do
     end
 
     it 'should pass :get to the #do_read_request method' do
-      @resource.should_receive(:do_read_request).with(:get)
+      @resource.should_receive(:do_read_request).with(:get, {})
       @resource.get
     end
 

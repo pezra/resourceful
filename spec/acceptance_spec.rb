@@ -23,6 +23,14 @@ describe Resourceful do
       resp.header['Content-Type'].should == ['text/plain']
     end
 
+    it 'should set additional headers on the #get' do
+      resource = @accessor.resource('http://localhost:3000/echo_header')
+      resp = resource.get(:foo => :bar)
+      resp.should be_instance_of(Resourceful::Response)
+      resp.code.should == 200
+      resp.body.should =~ /"HTTP_FOO"=>"bar"/
+    end
+
     it 'should #post a resource, and return the response' do
       resource = @accessor.resource('http://localhost:3000/post')
       resp = resource.post('Hello world from POST', :content_type => 'text/plain')

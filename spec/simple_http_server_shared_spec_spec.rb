@@ -65,6 +65,14 @@ describe 'http server' do
     resp[1]['Expire'].first.should_not =~ /%/
   end
 
+  it 'should echo the request header in the response body' do
+    uri = URI.escape("http://localhost:3000/echo_header")
+
+    resp = Resourceful::NetHttpAdapter.make_request(:get, uri)
+
+    resp[2].should =~ /HTTP_HOST/
+  end
+
   describe '/modified' do
     it 'should be 200 if no I-M-S header' do
       uri = URI.escape("http://localhost:3000/modified?#{(Time.now + 3600).httpdate}")
