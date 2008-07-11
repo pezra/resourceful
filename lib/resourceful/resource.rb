@@ -155,17 +155,17 @@ module Resourceful
       if response.is_redirect? and request.should_be_redirected?
         if response.is_permanent_redirect?
           @uris.unshift response.header['Location'].first
-          response = do_read_request(method)
+          response = do_read_request(method, header)
         else
           redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
-          response = redirected_resource.do_read_request(method)
+          response = redirected_resource.do_read_request(method, header)
         end
       end
 
       if response.is_not_authorized? && !@already_tried_with_auth
         @already_tried_with_auth = true
         accessor.auth_manager.associate_auth_info(response)
-        response = do_read_request(method)
+        response = do_read_request(method, header)
       end
 
       raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
@@ -200,11 +200,17 @@ module Resourceful
           response = do_write_request(method, data, header)
         elsif response.code == 303 # see other, must use GET for new location
           redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
-          response = redirected_resource.do_read_request(:get)
+          response = redirected_resource.do_read_request(:get, header)
         else
           redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
           response = redirected_resource.do_write_request(method, data, header)
         end
+      end
+
+      if response.is_not_authorized? && !@already_tried_with_auth
+        @already_tried_with_auth = true
+        accessor.auth_manager.associate_auth_info(response)
+        response = do_write_request(method, data, header)
       end
 
       raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?

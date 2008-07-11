@@ -198,6 +198,10 @@ describe Resourceful::Resource do
 
   describe '#do_write_request' do
 
+    def make_request
+      @resource.do_write_request(:some_method, "data", {})
+    end
+
     it 'should make a new request object from the method' do
       Resourceful::Request.should_receive(:new).with(:some_method, @resource, "data", anything).and_return(@request)
       @resource.do_write_request(:some_method, "data")
@@ -247,10 +251,6 @@ describe Resourceful::Resource do
 
         @request.stub!(:response).and_return(@redirect_response, @response)
 
-      end
-
-      def make_request
-        @resource.do_write_request(:some_method, "data", {})
       end
 
       it 'should check if the response was a redirect' do
@@ -316,15 +316,47 @@ describe Resourceful::Resource do
           end
 
           it 'should redirect to the new location with a GET request, regardless of the original method' do
-            @new_resource.should_receive(:do_read_request).with(:get).and_return(@response)
+            @new_resource.should_receive(:do_read_request).with(:get, {}).and_return(@response)
             make_request
           end
         end
-      end
 
+      end
 
     end # write with redirection
     
+    describe 'with authorization' do
+      before do
+        @authmgr = mock('auth_manager')
+        @authmgr.stub!(:add_credentials)
+        @authmgr.stub!(:associate_auth_info).and_return(true)
+
+        @accessor.stub!(:auth_manager).and_return(@authmgr)
+      end
+
+      it 'should attempt to add credentials to the request' do
+        @authmgr.should_receive(:add_credentials).with(@request)
+        make_request
+      end
+
+      it 'should check if the response was not authorized' do
+        @response.should_receive(:is_not_authorized?).and_return(false)
+        make_request
+      end
+
+      it 'should associate the auth info in the response if it was not authorized' do
+        @authmgr.should_receive(:associate_auth_info).with(@response).and_return(true)
+        @response.stub!(:is_not_authorized?).and_return(true)
+        make_request
+      end
+
+      it 'should re-make the request only once if it was not authorized the first time' do
+        Resourceful::Request.should_receive(:new).with(:some_method, @resource, "data", {}).twice.and_return(@request)
+        @response.stub!(:is_not_authorized?).and_return(true)
+        make_request
+      end
+    end
+
   end
 
   describe 'callback registration' do
@@ -389,7 +421,7 @@ describe Resourceful::Resource do
       @cache_manager = mock('cache_manager', :lookup => nil, :store => nil)
       @accessor = mock('accessor', :auth_manager => @auth_manager, :cache_manager => @cache_manager)
       @resource = Resourceful::Resource.new(@accessor, 'http://foo.invalid/')
-      @response = mock('response', :is_redirect? => false, :is_success? => true)
+      @response = mock('response', :is_redirect? => false, :is_success? => true, :is_not_authorized? => false)
       @request = mock('request', :response => @response)
       Resourceful::Request.stub!(:new).and_return(@request)
     end
@@ -439,7 +471,7 @@ describe Resourceful::Resource do
       @cache_manager = mock('cache_manager', :lookup => nil, :store => nil)
       @accessor = mock('accessor', :auth_manager => @auth_manager, :cache_manager => @cache_manager)
       @resource = Resourceful::Resource.new(@accessor, 'http://foo.invalid/')
-      @response = mock('response', :is_redirect? => false, :is_success? => true)
+      @response = mock('response', :is_redirect? => false, :is_success? => true, :is_not_authorized? => false)
       @request = mock('request', :response => @response)
       Resourceful::Request.stub!(:new).and_return(@request)
     end
