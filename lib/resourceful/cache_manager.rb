@@ -63,11 +63,11 @@ module Resourceful
   class InMemoryCacheManager < CacheManager
 
     def initialize
-      @collection = Hash.new(CacheEntryCollection.new)
+      @collection = Hash.new{ |h,k| h[k] = CacheEntryCollection.new}
     end
 
     def lookup(request)
-      entry = @collection[request.resource.uri][request]
+      entry = @collection[request.uri][request]
       response = entry.response if entry
       response.authoritative = false if response
 
@@ -81,7 +81,7 @@ module Resourceful
                              select_request_headers(request, response), 
                              response)
       
-      @collection[request.resource.uri][request] = entry
+      @collection[request.uri][request] = entry
     end
 
     # The collection of all cached entries for a single resource (uri). 

@@ -22,7 +22,11 @@ module Resourceful
       @request_time = Time.now
 
       cached_response = resource.accessor.cache_manager.lookup(self)
-      return cached_response if cached_response and not cached_response.stale?
+      if cached_response and not cached_response.stale?
+        logger.debug("Found #{uri} in cache")
+        logger.info("[#{uri}] Retrieved from cache #{"%.4fs" % (Time.now - @request_time)}")
+        return cached_response
+      end
 
       set_validation_headers(cached_response) if cached_response and cached_response.stale?
 
@@ -57,6 +61,10 @@ module Resourceful
 
     def uri
       resource.uri
+    end
+    
+    def logger
+      resource.accessor.logger
     end
 
   end
