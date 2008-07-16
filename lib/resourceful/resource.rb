@@ -217,6 +217,10 @@ module Resourceful
       return response
     end
 
+    def logger
+      accessor.logger
+    end
+
   end
 
 end

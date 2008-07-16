@@ -6,7 +6,7 @@ require 'addressable/uri'
 describe Resourceful::Request do
   before do
     @uri = Addressable::URI.parse('http://www.example.com')
-    @resource = mock('resource')
+    @resource = mock('resource', :logger => Resourceful::HttpAccessor::BitBucketLogger.new)
     @resource.stub!(:uri).and_return(@uri)
 
     @request = Resourceful::Request.new(:get, @resource)

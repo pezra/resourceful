@@ -64,7 +64,7 @@ module Resourceful
     end
     
     def logger
-      resource.accessor.logger
+      resource.logger
     end
 
   end
