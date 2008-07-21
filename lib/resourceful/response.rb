@@ -26,9 +26,25 @@ module Resourceful
     def is_success?
       @code.in? 200..299
     end
+    alias was_successful? is_success?
+
+    def is_server_error?
+      @code.in? 500..599
+    end
+    alias was_server_error? is_server_error?
+
+    def is_client_error?
+      @code.in? 400..499
+    end
+    alias was_client_error? is_client_error?
+
+    def is_error?
+      is_server_error? || is_client_error?
+    end
+    alias was_error? is_error?
 
     def is_unsuccesful?
-      @code.in? 400..599
+      is_error? || is_redirect?
     end
     alias was_unsuccessful? is_unsuccesful?
 
@@ -52,6 +68,9 @@ module Resourceful
     def expired?
       if header['Expire']
         return true if Time.httpdate(header['Expire'].first) < Time.now
+      end
+      if header['Cache-Control'] and header['Cache-Control'].include?('max-age')
+        return true if current_age > max_age
       end
 
       false

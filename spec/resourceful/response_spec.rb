@@ -58,6 +58,45 @@ describe Resourceful::Response do
     end 
   end 
 
+  describe '#is_unsuccesful?' do
+    it 'should be true for a 4xx series response code' do
+      Resourceful::Response.new(@uri, 404, {}, "").is_unsuccesful?.should == true
+    end
+
+    it 'should be true for a 5xx series response code' do
+      Resourceful::Response.new(@uri, 500, {}, "").is_unsuccesful?.should == true
+    end
+
+    it 'should be not true for a 2xx series response code' do
+      Resourceful::Response.new(@uri, 200, {}, "").is_unsuccesful?.should == false
+    end
+
+    it 'should be true for a 3xx series response code' do
+      Resourceful::Response.new(@uri, 302, {}, "").is_unsuccesful?.should == true
+    end
+  end
+
+  describe '#is_client_error?' do
+    it 'be true for a 4xx series response code' do
+      Resourceful::Response.new(@uri, 404, {}, "").is_client_error?.should == true
+    end
+
+    it 'be false for anything else' do
+      Resourceful::Response.new(@uri, 200, {}, "").is_client_error?.should == false
+    end
+  end
+
+  describe '#is_server_error?' do
+    it 'be true for a 5xx series response code' do
+      Resourceful::Response.new(@uri, 500, {}, "").is_server_error?.should == true
+    end
+
+    it 'be false for anything else' do
+      Resourceful::Response.new(@uri, 200, {}, "").is_server_error?.should == false
+    end
+  end
+
+
   it 'should know if it is a redirect' do
     Resourceful::Response.new(@uri, 301, {}, "").is_redirect?.should == true
     Resourceful::Response.new(@uri, 302, {}, "").is_redirect?.should == true
