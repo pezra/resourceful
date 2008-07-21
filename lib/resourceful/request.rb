@@ -1,4 +1,5 @@
 require 'pathname'
+require 'benchmark'
 require Pathname(__FILE__).dirname + 'response'
 require Pathname(__FILE__).dirname + 'net_http_adapter'
 
@@ -22,23 +23,32 @@ module Resourceful
       @request_time = Time.now
 
       cached_response = resource.accessor.cache_manager.lookup(self)
-      if cached_response and not cached_response.stale?
-        logger.debug("Found #{uri} in cache")
-        logger.info("[#{uri}] Retrieved from cache #{"%.4fs" % (Time.now - @request_time)}")
-        return cached_response
+      if cached_response
+        logger.debug("    Found in cache")
+        if cached_response.stale?
+          logger.info("    Revalidation needed")
+          set_validation_headers(cached_response)
+        else
+          logger.info("    Retrieved fresh from cache #{"%.4fs" % (Time.now - @request_time)}")
+          return cached_response
+        end
       end
 
-      set_validation_headers(cached_response) if cached_response and cached_response.stale?
+      logger.debug("    Requesting from server...")
+      response = nil
+      time = Benchmark.measure do
+        http_resp = NetHttpAdapter.make_request(@method, @resource.uri, @body, @header)
+        response = Resourceful::Response.new(uri, *http_resp)
+      end
+      logger.debug("    Request took %.4fs" % time.real)
 
-      http_resp = NetHttpAdapter.make_request(@method, @resource.uri, @body, @header)
-      response = Resourceful::Response.new(uri, *http_resp)
 
       if response.code == 304
         cached_response.header.merge(response.header)
         response = cached_response
       end
 
-      resource.accessor.cache_manager.store(self, response)
+      resource.accessor.cache_manager.store(self, response) unless response.was_unsuccessful?
 
       response.authoritative = true
       response

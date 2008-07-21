@@ -71,8 +71,9 @@ end
 
 describe Resourceful::InMemoryCacheManager do
   before do
-    @request = mock('request', :resource => mock('resource', :uri => 'uri'),
-                               :request_time => Time.utc(2008,5,22,15,00))
+    @request = mock('request', :resource => mock('resource'),
+                               :request_time => Time.utc(2008,5,22,15,00),
+                               :uri => 'uri')
     @response = mock('response', :header => {})
 
     @entry = mock('cache entry', :response => @response, :valid_for? => true)

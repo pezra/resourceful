@@ -27,6 +27,11 @@ module Resourceful
       @code.in? 200..299
     end
 
+    def is_unsuccesful?
+      @code.in? 400..599
+    end
+    alias was_unsuccessful? is_unsuccesful?
+
     def is_redirect?
       @code.in? REDIRECT_RESPONSE_CODES
     end

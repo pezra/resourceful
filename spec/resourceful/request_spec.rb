@@ -14,7 +14,7 @@ describe Resourceful::Request do
     @cachemgr = mock('cache_mgr')
     @cachemgr.stub!(:lookup).and_return(nil)
     @cachemgr.stub!(:store)
-    @resource.stub!(:accessor).and_return(mock('accessor', :cache_manager => @cachemgr))
+    @resource.stub!(:accessor).and_return(mock('accessor', :cache_manager => @cachemgr, :logger => Resourceful::HttpAccessor::BitBucketLogger.new))
   end
 
   describe 'init' do
@@ -50,7 +50,7 @@ describe Resourceful::Request do
       @net_http_adapter_response = mock('net_http_adapter_response')
       Resourceful::NetHttpAdapter.stub!(:make_request).and_return(@net_http_adapter_response)
 
-      @response = mock('response', :code => 200, :authoritative= => true)
+      @response = mock('response', :code => 200, :authoritative= => true, :was_unsuccessful? => false)
       Resourceful::Response.stub!(:new).and_return(@response)
     end
 
@@ -63,7 +63,7 @@ describe Resourceful::Request do
     end
 
     it 'should set the request_time to now' do
-      now = mock('now')
+      now = Time.now
       Time.stub!(:now).and_return(now)
 
       @request.response
@@ -72,7 +72,7 @@ describe Resourceful::Request do
 
     describe 'Caching' do
       before do
-        @cached_response = mock('cached_response', :body => "", :authoritative= => true)
+        @cached_response = mock('cached_response', :body => "", :authoritative= => true, :was_unsuccessful? => false)
         @cached_response.stub!(:stale?).and_return(false)
 
         @cached_response_header = mock('header', :[] => nil, :has_key? => false)
@@ -209,7 +209,7 @@ describe Resourceful::Request do
       @net_http_adapter_response = mock('net_http_adapter_response')
       Resourceful::NetHttpAdapter.stub!(:make_request).and_return(@net_http_adapter_response)
 
-      @response = mock('response', :code => 200, :authoritative= => true)
+      @response = mock('response', :code => 200, :authoritative= => true, :was_unsuccessful? => false)
       Resourceful::Response.stub!(:new).and_return(@response)
     end
 

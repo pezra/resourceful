@@ -147,6 +147,8 @@ module Resourceful
     # --
     # @private
     def do_read_request(method, header = {})
+      response = nil
+      log_with_time "GET [#{uri}]" do
       request = Resourceful::Request.new(method, self, nil, header)
       accessor.auth_manager.add_credentials(request)
 
@@ -170,6 +172,7 @@ module Resourceful
 
       raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
 
+      end
       return response
     end
 
@@ -215,6 +218,18 @@ module Resourceful
 
       raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
       return response
+    end
+
+    def log_with_time(msg, indent = 2)
+      logger.info(" " * indent + msg)
+      result = nil
+      time = Benchmark.measure { result = yield }
+      logger.info(" " * indent + "-> %.4fs" % time.real)
+      result
+    end
+
+    def logger
+      accessor.logger
     end
 
   end

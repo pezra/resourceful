@@ -5,7 +5,7 @@ require 'resourceful/resource'
 
 describe Resourceful::Resource do
   before do
-    @accessor = mock('http_accessor', :auth_manager => mock('authmgr', :add_credentials => nil))
+    @accessor = mock('http_accessor', :auth_manager => mock('authmgr', :add_credentials => nil), :logger => Resourceful::HttpAccessor::BitBucketLogger.new)
     @uri      = 'http://www.example.com/'
     @resource = Resourceful::Resource.new(@accessor, @uri)
 
