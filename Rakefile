@@ -86,3 +86,7 @@ task :uninstall => :clean do
   sh %{#{SUDO} gem uninstall resourceful}
 end
 
+desc "Update rubyforge documentation"
+task :update_docs do
+  puts %x{rsync -aPz doc/* psadauskas@resourceful.rubyforge.org:/var/www/gforge-projects/resourceful/}
+end
