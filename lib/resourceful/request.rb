@@ -22,33 +22,8 @@ module Resourceful
     def response
       @request_time = Time.now
 
-      cached_response = resource.accessor.cache_manager.lookup(self)
-      if cached_response
-        logger.debug("    Found in cache")
-        if cached_response.stale?
-          logger.info("    Revalidation needed")
-          set_validation_headers(cached_response)
-        else
-          logger.info("    Retrieved fresh from cache #{"%.4fs" % (Time.now - @request_time)}")
-          return cached_response
-        end
-      end
-
-      logger.debug("    Requesting from server...")
-      response = nil
-      time = Benchmark.measure do
-        http_resp = NetHttpAdapter.make_request(@method, @resource.uri, @body, @header)
-        response = Resourceful::Response.new(uri, *http_resp)
-      end
-      logger.debug("    Request took %.4fs" % time.real)
-
-
-      if response.code == 304
-        cached_response.header.merge(response.header)
-        response = cached_response
-      end
-
-      resource.accessor.cache_manager.store(self, response) unless response.was_unsuccessful?
+      http_resp = NetHttpAdapter.make_request(@method, @resource.uri, @body, @header)
+      response = Resourceful::Response.new(uri, *http_resp)
 
       response.authoritative = true
       response

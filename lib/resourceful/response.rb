@@ -97,6 +97,13 @@ module Resourceful
     def is_not_authorized?
       @code == 401
     end
+
+    # Is the response not modified (304) ?
+    #
+    # @return true|false
+    def is_not_modified?
+      @code == 304
+    end
   
     # Is this a cached response that has expired?
     #

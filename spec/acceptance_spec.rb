@@ -199,6 +199,17 @@ describe Resourceful do
         resp2.should == resp
       end
 
+      it 'should not use a cached document for a resource that has been posted to' do
+        resource = @accessor.resource('http://localhost:3000/get')
+        resp = resource.get
+        resp.authoritative?.should be_true
+
+        resource.post("foo", :content_type => 'text/plain')
+
+        resp2 = resource.get
+        resp2.should_not == resp
+      end
+
       describe 'Cache-Control' do
 
         it 'should cache anything with "Cache-Control: public"' do

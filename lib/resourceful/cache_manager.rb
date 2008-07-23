@@ -27,6 +27,15 @@ module Resourceful
     #   The response to be stored.
     def store(request, response); end
 
+    # Invalidates a all cached entries for a uri. 
+    #
+    # This is used, for example, to invalidate the cache for a resource 
+    # that gets POSTed to.
+    #
+    # @param uri<String>
+    #   The uri of the resource to be invalidated
+    def invalidate(uri); end
+
     # Selects the headers from the request named by the response's Vary header
     # http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html#sec13.5.6
     #
@@ -82,6 +91,10 @@ module Resourceful
                              response)
       
       @collection[request.uri][request] = entry
+    end
+
+    def invalidate(uri)
+      @collection.delete(uri)
     end
 
     # The collection of all cached entries for a single resource (uri). 

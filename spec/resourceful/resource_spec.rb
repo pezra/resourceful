@@ -5,13 +5,23 @@ require 'resourceful/resource'
 
 describe Resourceful::Resource do
   before do
-    @accessor = mock('http_accessor', :auth_manager => mock('authmgr', :add_credentials => nil), :logger => Resourceful::HttpAccessor::BitBucketLogger.new)
+    @auth_manager = mock('auth_manager', :add_credentials => nil)
+    @cache_manager = mock('cache_manager', :lookup => nil, :store => nil, :invalidate => nil)
+    @logger = mock('logger', :debug => nil, :info => nil)
+    @accessor = mock('accessor', :auth_manager => @auth_manager, 
+                                 :cache_manager => @cache_manager, 
+                                 :logger => @logger)
+
     @uri      = 'http://www.example.com/'
     @resource = Resourceful::Resource.new(@accessor, @uri)
 
-    @response = mock('response', :code => 200, :is_redirect? => false, :is_not_authorized? => false, :is_success? => true)
+    @response = mock('response', :code => 200, 
+                                 :is_redirect? => false, 
+                                 :is_not_authorized? => false, 
+                                 :is_success? => true,
+                                 :is_not_modified? => false)
 
-    @request = mock('request', :response => @response, :should_be_redirected? => true)
+    @request = mock('request', :response => @response, :should_be_redirected? => true, :uri => @uri)
     Resourceful::Request.stub!(:new).and_return(@request)
   end
 
@@ -68,6 +78,7 @@ describe Resourceful::Resource do
                                   :is_redirect?           => false,
                                   :is_success?            => false,
                                   :is_not_authorized?     => false,
+                                  :is_not_modified?       => false,
                                   :code                   => 404)
         
         @request.stub!(:response).and_return(@redirect_response, @response)
@@ -97,7 +108,8 @@ describe Resourceful::Resource do
         @redirect_response = mock('redirect_response',
                                   :header                 => {'Location' => [@redirected_uri]},
                                   :is_redirect?           => true,
-                                  :is_permanent_redirect? => true)
+                                  :is_permanent_redirect? => true,
+                                  :is_not_modified?       => false)
 
         @request.stub!(:response).and_return(@redirect_response, @response)
 
@@ -190,6 +202,39 @@ describe Resourceful::Resource do
         Resourceful::Request.should_receive(:new).with(:some_method, @resource, nil, {}).twice.and_return(@request)
         @response.stub!(:is_not_authorized?).and_return(true)
         make_request
+      end
+
+    end
+
+    describe 'with caching' do
+      before do
+        @cached_response = mock('cached response', :is_redirect? => false,
+                                                   :is_not_authorized? => false,
+                                                   :is_success? => true,
+                                                   :stale? => false)
+        @cache_manager.stub!(:lookup).and_return(@cached_response)
+      end
+
+      it 'should lookup the request in the cache' do
+        @cache_manager.should_receive(:lookup).with(@request)
+        make_request
+      end
+
+      it 'should check if the cached response is stale' do
+        @cached_response.should_receive(:stale?).and_return(false)
+        make_request
+      end
+
+      describe 'in cache' do
+
+      end
+
+      describe 'in cache but stale' do
+
+      end
+
+      describe 'not in cache' do
+
       end
 
     end
@@ -411,15 +456,8 @@ describe Resourceful::Resource do
 
   end
 
-end
-
-describe Resourceful::Resource do
-
   describe "#post(body_data, :content_type => content-type)" do
     before do
-      @auth_manager = mock('auth_manager', :add_credentials => nil)
-      @cache_manager = mock('cache_manager', :lookup => nil, :store => nil)
-      @accessor = mock('accessor', :auth_manager => @auth_manager, :cache_manager => @cache_manager)
       @resource = Resourceful::Resource.new(@accessor, 'http://foo.invalid/')
       @response = mock('response', :is_redirect? => false, :is_success? => true, :is_not_authorized? => false)
       @request = mock('request', :response => @response)
@@ -434,7 +472,10 @@ describe Resourceful::Resource do
 
     it 'should put the content type in the header' do
       Resourceful::Request.should_receive(:new).
-        with(anything,anything, anything, hash_including('Content-Type' =>'text/plain')).
+        with(anything,
+             anything, 
+             anything, 
+             hash_including(:content_type =>'text/plain')).
         and_return(@request)
 
       @resource.post("a body", :content_type => 'text/plain') 
@@ -467,9 +508,6 @@ describe Resourceful::Resource do
 
   describe "#put(body_data, :content_type => content_type)" do
     before do
-      @auth_manager = mock('auth_manager', :add_credentials => nil)
-      @cache_manager = mock('cache_manager', :lookup => nil, :store => nil)
-      @accessor = mock('accessor', :auth_manager => @auth_manager, :cache_manager => @cache_manager)
       @resource = Resourceful::Resource.new(@accessor, 'http://foo.invalid/')
       @response = mock('response', :is_redirect? => false, :is_success? => true, :is_not_authorized? => false)
       @request = mock('request', :response => @response)
@@ -484,7 +522,10 @@ describe Resourceful::Resource do
 
     it 'should put the content type in the header' do
       Resourceful::Request.should_receive(:new).
-        with(anything,anything, anything, hash_including('Content-Type' =>'text/plain')).
+        with(anything,
+             anything, 
+             anything, 
+             hash_including(:content_type =>'text/plain')).
         and_return(@request)
 
       @resource.put("a body", :content_type => 'text/plain') 

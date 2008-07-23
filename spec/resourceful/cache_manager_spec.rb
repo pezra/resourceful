@@ -20,6 +20,10 @@ describe Resourceful::CacheManager do
     @cm.should respond_to(:store)
   end
 
+  it 'should have a invalidate method' do
+    @cm.should respond_to(:invalidate)
+  end
+
   describe '#select_request_headers' do
     before do
       @req_header = mock('header', :[] => nil)
@@ -64,7 +68,6 @@ describe Resourceful::NullCacheManager do
     @ncm.should respond_to(:store)
 
     lambda { @ncm.store(:foo, :bar) }.should_not raise_error
-
   end
 
 end
@@ -74,7 +77,7 @@ describe Resourceful::InMemoryCacheManager do
     @request = mock('request', :resource => mock('resource'),
                                :request_time => Time.utc(2008,5,22,15,00),
                                :uri => 'uri')
-    @response = mock('response', :header => {})
+    @response = mock('response', :header => {}, :cachable? => true)
 
     @entry = mock('cache entry', :response => @response, :valid_for? => true)
     Resourceful::InMemoryCacheManager::CacheEntry.stub!(:new).and_return(@entry)
@@ -99,10 +102,6 @@ describe Resourceful::InMemoryCacheManager do
   end
 
   describe 'saving' do
-    before do
-      @response.stub!(:cachable?).and_return(true)
-    end
-
     it 'should make a new cache entry' do
       Resourceful::InMemoryCacheManager::CacheEntry.should_receive(:new).with(
         Time.utc(2008,5,22,15,00),
@@ -129,6 +128,15 @@ describe Resourceful::InMemoryCacheManager do
       @imcm.store(@request, @response)
       col = @imcm.instance_variable_get("@collection")
       col['uri'][@request].should be_nil
+    end
+  end
+
+  describe 'invalidating' do
+    it 'should remove an entry from the cache by uri' do
+      @imcm.store(@request, @response)
+      @imcm.invalidate('uri')
+      col = @imcm.instance_variable_get("@collection")
+      col.should_not have_key('uri')
     end
   end
 

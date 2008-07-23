@@ -98,7 +98,7 @@ module Resourceful
     def post(data = "", options = {})
       raise ArgumentError, ":content_type must be specified" unless options.has_key?(:content_type)
 
-      do_write_request(:post, data, {'Content-Type' => options[:content_type]})
+      do_write_request(:post, data, options)
     end
 
     # :call-seq:
@@ -120,7 +120,7 @@ module Resourceful
     def put(data = "", options = {})
       raise ArgumentError, ":content_type must be specified" unless options.has_key?(:content_type)
 
-      do_write_request(:put, data, {'Content-Type' => options[:content_type]})
+      do_write_request(:put, data, options)
     end
 
     # Performs a DELETE on the resource, following redirects as neccessary.
@@ -129,8 +129,8 @@ module Resourceful
     #
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
-    def delete
-      do_write_request(:delete, {}, nil)
+    def delete(options = {})
+      do_write_request(:delete, {}, options)
     end
 
     # Performs a read request (HEAD, GET). Users should use the #get, etc methods instead.
@@ -144,35 +144,54 @@ module Resourceful
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
     #
-    # --
-    # @private
     def do_read_request(method, header = {})
       response = nil
-      log_with_time "GET [#{uri}]" do
-      request = Resourceful::Request.new(method, self, nil, header)
-      accessor.auth_manager.add_credentials(request)
+      log_with_time "#{method.to_s.upcase} [#{uri}]" do
+        request = Resourceful::Request.new(method, self, nil, header)
+        accessor.auth_manager.add_credentials(request)
 
-      response = request.response
-
-      if response.is_redirect? and request.should_be_redirected?
-        if response.is_permanent_redirect?
-          @uris.unshift response.header['Location'].first
-          response = do_read_request(method, header)
-        else
-          redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
-          response = redirected_resource.do_read_request(method, header)
+        cached_response = accessor.cache_manager.lookup(request)
+        if cached_response
+          logger.debug("    Retrieved from cache")
+          if not cached_response.stale?
+            # We're done!
+            return cached_response
+          else
+            logger.debug("    Cache entry is stale")
+            request.set_validation_headers(cached_response)
+          end
         end
+
+        response = request.response
+
+        if response.is_not_modified?
+          cached_response.header.merge(response.header)
+          response = cached_response
+          response.authoritative = true
+        end
+
+        if response.is_redirect? and request.should_be_redirected?
+          if response.is_permanent_redirect?
+            @uris.unshift response.header['Location'].first
+            response = do_read_request(method, header)
+          else
+            redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
+            response = redirected_resource.do_read_request(method, header)
+          end
+        end
+
+        if response.is_not_authorized? && !@already_tried_with_auth
+          @already_tried_with_auth = true
+          accessor.auth_manager.associate_auth_info(response)
+          logger.debug("Authentication Required. Retrying with auth info")
+          response = do_read_request(method, header)
+        end
+
+        raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
+
+        accessor.cache_manager.store(request, response) if response.is_success?
       end
 
-      if response.is_not_authorized? && !@already_tried_with_auth
-        @already_tried_with_auth = true
-        accessor.auth_manager.associate_auth_info(response)
-        response = do_read_request(method, header)
-      end
-
-      raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
-
-      end
       return response
     end
 
@@ -189,34 +208,38 @@ module Resourceful
     #
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
-    # --
-    # @private
     def do_write_request(method, data = nil, header = {})
-      request = Resourceful::Request.new(method, self, data, header)
-      accessor.auth_manager.add_credentials(request)
+      response = nil
+      log_with_time "#{method.to_s.upcase} [#{uri}]" do
+        request = Resourceful::Request.new(method, self, data, header)
+        accessor.auth_manager.add_credentials(request)
 
-      response = request.response
-      
-      if response.is_redirect? and request.should_be_redirected?
-        if response.is_permanent_redirect?
-          @uris.unshift response.header['Location'].first
-          response = do_write_request(method, data, header)
-        elsif response.code == 303 # see other, must use GET for new location
-          redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
-          response = redirected_resource.do_read_request(:get, header)
-        else
-          redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
-          response = redirected_resource.do_write_request(method, data, header)
+        response = request.response
+        
+        if response.is_redirect? and request.should_be_redirected?
+          if response.is_permanent_redirect?
+            @uris.unshift response.header['Location'].first
+            response = do_write_request(method, data, header)
+          elsif response.code == 303 # see other, must use GET for new location
+            redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
+            response = redirected_resource.do_read_request(:get, header)
+          else
+            redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
+            response = redirected_resource.do_write_request(method, data, header)
+          end
         end
+
+        if response.is_not_authorized? && !@already_tried_with_auth
+          @already_tried_with_auth = true
+          accessor.auth_manager.associate_auth_info(response)
+          logger.debug("Authentication Required. Retrying with auth info")
+          response = do_write_request(method, data, header)
+        end
+
+        raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
       end
 
-      if response.is_not_authorized? && !@already_tried_with_auth
-        @already_tried_with_auth = true
-        accessor.auth_manager.associate_auth_info(response)
-        response = do_write_request(method, data, header)
-      end
-
-      raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
+      accessor.cache_manager.invalidate(uri)
       return response
     end
 
