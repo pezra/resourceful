@@ -6,7 +6,7 @@ require 'addressable/uri'
 describe Resourceful::Request do
   before do
     @uri = Addressable::URI.parse('http://www.example.com')
-    @resource = mock('resource', :logger => Resourceful::HttpAccessor::BitBucketLogger.new)
+    @resource = mock('resource', :logger => Resourceful::BitBucketLogger.new)
     @resource.stub!(:uri).and_return(@uri)
 
     @request = Resourceful::Request.new(:get, @resource)
@@ -14,7 +14,7 @@ describe Resourceful::Request do
     @cachemgr = mock('cache_mgr')
     @cachemgr.stub!(:lookup).and_return(nil)
     @cachemgr.stub!(:store)
-    @resource.stub!(:accessor).and_return(mock('accessor', :cache_manager => @cachemgr, :logger => Resourceful::HttpAccessor::BitBucketLogger.new))
+    @resource.stub!(:accessor).and_return(mock('accessor', :cache_manager => @cachemgr, :logger => Resourceful::BitBucketLogger.new))
   end
 
   describe 'init' do

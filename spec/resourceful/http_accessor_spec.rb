@@ -18,7 +18,7 @@ describe Resourceful::HttpAccessor, 'init' do
   it 'should provide logger object even when no logger is specified' do
     ha = Resourceful::HttpAccessor.new()
     
-    ha.logger.should be_instance_of(Resourceful::HttpAccessor::BitBucketLogger)
+    ha.logger.should be_instance_of(Resourceful::BitBucketLogger)
   end 
 
   it 'should raise arg error if unrecognized options are passed' do
