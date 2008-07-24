@@ -23,7 +23,7 @@ describe Resourceful::Header do
 
     h.capitalize("foo").should == "Foo"
     h.capitalize("foo-bar").should == "Foo-Bar"
-    h.capitalize("foo_bar").should == "Foo_Bar"
+    h.capitalize("foo_bar").should == "Foo-Bar"
     h.capitalize("foo bar").should == "Foo Bar"
     h.capitalize("foo-bar-quux").should == "Foo-Bar-Quux"
     h.capitalize("foo-bar-2quux").should == "Foo-Bar-2quux"

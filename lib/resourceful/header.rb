@@ -23,7 +23,7 @@ module Resourceful
     end
 
     def capitalize(k)
-      k.to_s.downcase.gsub(/^.|[-_\s]./) { |x| x.upcase }
+      k.to_s.downcase.gsub(/^.|[-_\s]./) { |x| x.upcase }.gsub('_', '-')
     end
   end
 end
