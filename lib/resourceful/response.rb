@@ -2,6 +2,7 @@ require 'net/http'
 require 'time'
 require 'rubygems'
 require 'facets/kernel/ergo'
+require 'zlib'
 
 module Resourceful
   # Exception indicating that the server used a content coding scheme
@@ -159,7 +160,7 @@ module Resourceful
         # body is identity encoded; just return it
         @body
       when /^\s*gzip\s*$/i
-        gz_in = Zlib::GzipReader.new(StringIO.new(@body, 'r'))
+        gz_in = ::Zlib::GzipReader.new(StringIO.new(@body, 'r'))
         @body = gz_in.read
         gz_in.close
         header.delete('Content-Encoding')
