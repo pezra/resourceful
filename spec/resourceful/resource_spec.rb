@@ -434,7 +434,7 @@ describe Resourceful::Resource do
     end
 
     it 'should pass :get to the #do_read_request method' do
-      @resource.should_receive(:do_read_request).with(:get, {})
+      @resource.should_receive(:do_read_request).with(:get, {}).and_return(@response)
       @resource.get
     end
 
@@ -459,7 +459,7 @@ describe Resourceful::Resource do
   describe "#post(body_data, :content_type => content-type)" do
     before do
       @resource = Resourceful::Resource.new(@accessor, 'http://foo.invalid/')
-      @response = mock('response', :is_redirect? => false, :is_success? => true, :is_not_authorized? => false)
+      @response = mock('response', :is_redirect? => false, :is_success? => true, :is_not_authorized? => false, :code => 200)
       @request = mock('request', :response => @response)
       Resourceful::Request.stub!(:new).and_return(@request)
     end
@@ -509,7 +509,7 @@ describe Resourceful::Resource do
   describe "#put(body_data, :content_type => content_type)" do
     before do
       @resource = Resourceful::Resource.new(@accessor, 'http://foo.invalid/')
-      @response = mock('response', :is_redirect? => false, :is_success? => true, :is_not_authorized? => false)
+      @response = mock('response', :is_redirect? => false, :is_success? => true, :is_not_authorized? => false, :code => 200)
       @request = mock('request', :response => @response)
       Resourceful::Request.stub!(:new).and_return(@request)
     end

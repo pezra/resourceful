@@ -12,6 +12,7 @@ task :test => :spec
 
 desc "Verify Resourceful against it's specs"
 Spec::Rake::SpecTask.new(:spec) do |t|
+  t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
   t.libs << 'lib'
   t.pattern = 'spec/**/*_spec.rb'
 end

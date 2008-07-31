@@ -39,7 +39,7 @@ describe Resourceful::CacheManager do
     end
 
     it 'should pull the values from the request that match keys in the vary header' do
-      @resp_header.should_receive(:[]).with('Vary').twice.and_return(['foo', 'bar'])
+      @resp_header.should_receive(:[]).with('Vary').twice.and_return(['foo, bar'])
       @req_header.should_receive(:[]).with('foo').and_return('oof')
       @req_header.should_receive(:[]).with('bar').and_return('rab')
 

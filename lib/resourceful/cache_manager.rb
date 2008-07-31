@@ -46,7 +46,8 @@ module Resourceful
     def select_request_headers(request, response)
       header = Resourceful::Header.new
 
-      response.header['Vary'].each do |name|
+      response.header['Vary'].first.split(',').each do |name|
+        name.strip!
         header[name] = request.header[name]
       end if response.header['Vary']
 
@@ -76,7 +77,7 @@ module Resourceful
     end
 
     def lookup(request)
-      entry = @collection[request.uri][request]
+      entry = @collection[request.uri.to_s][request]
       response = entry.response if entry
       response.authoritative = false if response
 
@@ -90,7 +91,7 @@ module Resourceful
                              select_request_headers(request, response), 
                              response)
       
-      @collection[request.uri][request] = entry
+      @collection[request.uri.to_s][request] = entry
     end
 
     def invalidate(uri)

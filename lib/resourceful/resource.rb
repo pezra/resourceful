@@ -76,7 +76,9 @@ module Resourceful
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
     def get(header = {})
-      do_read_request(:get, header)
+      log_request_with_time "GET [#{uri}]" do
+        do_read_request(:get, header)
+      end
     end
 
     # :call-seq:
@@ -98,7 +100,9 @@ module Resourceful
     def post(data = "", options = {})
       raise ArgumentError, ":content_type must be specified" unless options.has_key?(:content_type)
 
-      do_write_request(:post, data, options)
+      log_request_with_time "POST [#{uri}]" do
+        do_write_request(:post, data, options)
+      end
     end
 
     # :call-seq:
@@ -120,7 +124,9 @@ module Resourceful
     def put(data = "", options = {})
       raise ArgumentError, ":content_type must be specified" unless options.has_key?(:content_type)
 
-      do_write_request(:put, data, options)
+      log_request_with_time "PUT [#{uri}]" do
+        do_write_request(:put, data, options)
+      end
     end
 
     # Performs a DELETE on the resource, following redirects as neccessary.
@@ -130,7 +136,9 @@ module Resourceful
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
     def delete(options = {})
-      do_write_request(:delete, {}, options)
+      log_request_with_time "DELETE [#{uri}]" do
+        do_write_request(:delete, {}, options)
+      end
     end
 
     # Performs a read request (HEAD, GET). Users should use the #get, etc methods instead.
@@ -145,52 +153,49 @@ module Resourceful
     #   success, ie the final request returned a 2xx response code
     #
     def do_read_request(method, header = {})
-      response = nil
-      log_with_time "#{method.to_s.upcase} [#{uri}]" do
-        request = Resourceful::Request.new(method, self, nil, header)
-        accessor.auth_manager.add_credentials(request)
+      request = Resourceful::Request.new(method, self, nil, header)
+      accessor.auth_manager.add_credentials(request)
 
-        cached_response = accessor.cache_manager.lookup(request)
-        if cached_response
-          logger.debug("    Retrieved from cache")
-          if not cached_response.stale?
-            # We're done!
-            return cached_response
-          else
-            logger.debug("    Cache entry is stale")
-            request.set_validation_headers(cached_response)
-          end
+      cached_response = accessor.cache_manager.lookup(request)
+      if cached_response
+        logger.debug("    Retrieved from cache")
+        if not cached_response.stale?
+          # We're done!
+          return cached_response
+        else
+          logger.debug("    Cache entry is stale")
+          request.set_validation_headers(cached_response)
         end
-
-        response = request.response
-
-        if response.is_not_modified?
-          cached_response.header.merge(response.header)
-          response = cached_response
-          response.authoritative = true
-        end
-
-        if response.is_redirect? and request.should_be_redirected?
-          if response.is_permanent_redirect?
-            @uris.unshift response.header['Location'].first
-            response = do_read_request(method, header)
-          else
-            redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
-            response = redirected_resource.do_read_request(method, header)
-          end
-        end
-
-        if response.is_not_authorized? && !@already_tried_with_auth
-          @already_tried_with_auth = true
-          accessor.auth_manager.associate_auth_info(response)
-          logger.debug("Authentication Required. Retrying with auth info")
-          response = do_read_request(method, header)
-        end
-
-        raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
-
-        accessor.cache_manager.store(request, response) if response.is_success?
       end
+
+      response = request.response
+
+      if response.is_not_modified?
+        cached_response.header.merge(response.header)
+        response = cached_response
+        response.authoritative = true
+      end
+
+      if response.is_redirect? and request.should_be_redirected?
+        if response.is_permanent_redirect?
+          @uris.unshift response.header['Location'].first
+          response = do_read_request(method, header)
+        else
+          redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
+          response = redirected_resource.do_read_request(method, header)
+        end
+      end
+
+      if response.is_not_authorized? && !@already_tried_with_auth
+        @already_tried_with_auth = true
+        accessor.auth_manager.associate_auth_info(response)
+        logger.debug("Authentication Required. Retrying with auth info")
+        response = do_read_request(method, header)
+      end
+
+      raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
+
+      accessor.cache_manager.store(request, response) if response.is_success?
 
       return response
     end
@@ -209,45 +214,42 @@ module Resourceful
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
     def do_write_request(method, data = nil, header = {})
-      response = nil
-      log_with_time "#{method.to_s.upcase} [#{uri}]" do
-        request = Resourceful::Request.new(method, self, data, header)
-        accessor.auth_manager.add_credentials(request)
+      request = Resourceful::Request.new(method, self, data, header)
+      accessor.auth_manager.add_credentials(request)
 
-        response = request.response
-        
-        if response.is_redirect? and request.should_be_redirected?
-          if response.is_permanent_redirect?
-            @uris.unshift response.header['Location'].first
-            response = do_write_request(method, data, header)
-          elsif response.code == 303 # see other, must use GET for new location
-            redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
-            response = redirected_resource.do_read_request(:get, header)
-          else
-            redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
-            response = redirected_resource.do_write_request(method, data, header)
-          end
-        end
+      response = request.response
 
-        if response.is_not_authorized? && !@already_tried_with_auth
-          @already_tried_with_auth = true
-          accessor.auth_manager.associate_auth_info(response)
-          logger.debug("Authentication Required. Retrying with auth info")
+      if response.is_redirect? and request.should_be_redirected?
+        if response.is_permanent_redirect?
+          @uris.unshift response.header['Location'].first
           response = do_write_request(method, data, header)
+        elsif response.code == 303 # see other, must use GET for new location
+          redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
+          response = redirected_resource.do_read_request(:get, header)
+        else
+          redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
+          response = redirected_resource.do_write_request(method, data, header)
         end
-
-        raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
       end
+
+      if response.is_not_authorized? && !@already_tried_with_auth
+        @already_tried_with_auth = true
+        accessor.auth_manager.associate_auth_info(response)
+        logger.debug("Authentication Required. Retrying with auth info")
+        response = do_write_request(method, data, header)
+      end
+
+      raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
 
       accessor.cache_manager.invalidate(uri)
       return response
     end
 
-    def log_with_time(msg, indent = 2)
+    def log_request_with_time(msg, indent = 2)
       logger.info(" " * indent + msg)
       result = nil
       time = Benchmark.measure { result = yield }
-      logger.info(" " * indent + "-> %.4fs" % time.real)
+      logger.info(" " * indent + "-> Returned #{result.code} in %.4fs" % time.real)
       result
     end
 

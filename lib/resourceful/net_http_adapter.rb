@@ -8,8 +8,10 @@ require Pathname(__FILE__).dirname + 'header'
 module Addressable
   class URI
     def absolute_path
-      absolute_path = self.path.to_s
+      absolute_path = ""
+      absolute_path << self.path.to_s
       absolute_path << "?#{self.query}" if self.query != nil
+      absolute_path << "##{self.fragment}" if self.fragment != nil
       return absolute_path
     end
   end
