@@ -10,8 +10,6 @@ module Resourceful
     attr_reader :http_response, :http_request
  
     # Initialize new error from the HTTP request and response attributes.
-    #--
-    # @private
     def initialize(http_request, http_response)
       super("#{http_request.method} request to <#{http_request.uri}> failed with code #{http_response.code}")
       @http_request = http_request
@@ -21,6 +19,7 @@ module Resourceful
 
   class Resource
     attr_reader :accessor
+    attr_accessor :default_options
 
     # Build a new resource for a uri
     #
@@ -28,8 +27,9 @@ module Resourceful
     #   The parent http accessor
     # @param uri<String, Addressable::URI> 
     #   The uri for the location of the resource
-    def initialize(accessor, uri)
+    def initialize(accessor, uri, options = {})
       @accessor, @uris = accessor, [uri]
+      @default_options = options
       @on_redirect = nil
     end
 
@@ -153,7 +153,7 @@ module Resourceful
     #   success, ie the final request returned a 2xx response code
     #
     def do_read_request(method, header = {})
-      request = Resourceful::Request.new(method, self, nil, header)
+      request = Resourceful::Request.new(method, self, nil, default_options.merge(header))
       accessor.auth_manager.add_credentials(request)
 
       cached_response = accessor.cache_manager.lookup(request)
@@ -214,7 +214,7 @@ module Resourceful
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
     def do_write_request(method, data = nil, header = {})
-      request = Resourceful::Request.new(method, self, data, header)
+      request = Resourceful::Request.new(method, self, data, default_options.merge(header))
       accessor.auth_manager.add_credentials(request)
 
       response = request.response

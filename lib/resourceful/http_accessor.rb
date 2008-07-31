@@ -76,8 +76,8 @@ module Resourceful
     
     # Returns a resource object representing the resource indicated
     # by the specified URI.  A resource object will be created if necessary.
-    def resource(uri)
-      resource = Resource.new(self, uri)
+    def resource(uri, opts = {})
+      resource = Resource.new(self, uri, opts)
     end
     alias [] resource
 

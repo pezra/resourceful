@@ -8,7 +8,7 @@ require Pathname(__FILE__).dirname + 'acceptance_shared_specs'
 describe Resourceful do
   it_should_behave_like 'simple http server'
 
-  describe 'getting a resource' do
+  describe 'working with a resource' do
     before do
       @accessor = Resourceful::HttpAccessor.new
     end
@@ -59,6 +59,38 @@ describe Resourceful do
       resp.body.should == 'KABOOM!'
       resp.header.should be_instance_of(Resourceful::Header)
       resp.header['Content-Type'].should == ['text/plain']
+    end
+
+    it 'should take an optional default header for reads' do
+      resource = @accessor.resource('http://localhost:3000/echo_header', :foo => :bar)
+      resp = resource.get
+      resp.should be_instance_of(Resourceful::Response)
+      resp.code.should == 200
+      resp.body.should =~ /"HTTP_FOO"=>"bar"/
+    end
+
+    it 'should take an optional default header for writes' do
+      resource = @accessor.resource('http://localhost:3000/echo_header', :foo => :bar)
+      resp = resource.post("data", :content_type => 'text/plain')
+      resp.should be_instance_of(Resourceful::Response)
+      resp.code.should == 200
+      resp.body.should =~ /"HTTP_FOO"=>"bar"/
+    end
+
+    it 'should override the default header with any set on a read action' do
+      resource = @accessor.resource('http://localhost:3000/echo_header', :foo => :bar)
+      resp = resource.get(:foo => :baz)
+      resp.should be_instance_of(Resourceful::Response)
+      resp.code.should == 200
+      resp.body.should =~ /"HTTP_FOO"=>"baz"/
+    end
+
+    it 'should override the default header with any set on a write action' do
+      resource = @accessor.resource('http://localhost:3000/echo_header', :foo => :bar)
+      resp = resource.post("data", :foo => :baz, :content_type => 'text/plain')
+      resp.should be_instance_of(Resourceful::Response)
+      resp.code.should == 200
+      resp.body.should =~ /"HTTP_FOO"=>"baz"/
     end
 
     describe 'redirecting' do

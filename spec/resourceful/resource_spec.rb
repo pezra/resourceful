@@ -37,6 +37,15 @@ describe Resourceful::Resource do
     it 'should take a uri' do
       @resource.uri.should == @uri
     end
+
+    it 'should take some default_options' do
+      r = Resourceful::Resource.new(@accessor, @uri, :foo => :bar)
+      r.default_options.should == {:foo => :bar}
+    end
+
+    it 'should default to an empty hash for options' do
+      @resource.default_options.should == {}
+    end
   end
 
   describe '#effective_uri' do
@@ -65,6 +74,22 @@ describe Resourceful::Resource do
     it 'should set the header of the request from the header arg' do
       Resourceful::Request.should_receive(:new).with(:some_method, @resource, nil, :foo => :bar).and_return(@request)
       @resource.do_read_request(:some_method, :foo => :bar)
+    end
+
+    describe 'default options' do
+      before do
+        @resource.default_options = {:foo => :bar}
+      end
+
+      it 'should merge the header with the default options' do
+        Resourceful::Request.should_receive(:new).with(anything, anything, anything, :foo => :bar).and_return(@request)
+        make_request
+      end
+
+      it 'should override any default header with the request header' do
+        Resourceful::Request.should_receive(:new).with(anything, anything, anything, :foo => :baz).and_return(@request)
+        @resource.do_read_request(:some_method, :foo => :baz)
+      end
     end
 
     describe 'non-success responses' do
@@ -244,12 +269,28 @@ describe Resourceful::Resource do
   describe '#do_write_request' do
 
     def make_request
-      @resource.do_write_request(:some_method, "data", {})
+      @resource.do_write_request(:some_method, "data")
     end
 
     it 'should make a new request object from the method' do
       Resourceful::Request.should_receive(:new).with(:some_method, @resource, "data", anything).and_return(@request)
       @resource.do_write_request(:some_method, "data")
+    end
+
+    describe 'default options' do
+      before do
+        @resource.default_options = {:foo => :bar}
+      end
+
+      it 'should merge the header with the default options' do
+        Resourceful::Request.should_receive(:new).with(anything, anything, anything, :foo => :bar).and_return(@request)
+        make_request
+      end
+
+      it 'should override any default header with the request header' do
+        Resourceful::Request.should_receive(:new).with(anything, anything, anything, :foo => :baz).and_return(@request)
+        @resource.do_write_request(:some_method, "data", :foo => :baz)
+      end
     end
 
     describe 'non-success responses' do
@@ -258,27 +299,27 @@ describe Resourceful::Resource do
         @resource = Resourceful::Resource.new(@accessor, @uri)
 
         @redirected_uri = 'http://www.example.com/get'
-        @redirect_response = mock('redirect_response',
-                                  :header                 => {'Location' => [@redirected_uri]},
-                                  :is_redirect?           => false,
-                                  :is_success?            => false,
-                                  :is_not_authorized?     => false,
-                                  :code                   => 404)
+        @response = mock('response',
+                         :header                 => {'Location' => [@redirected_uri]},
+                         :is_redirect?           => false,
+                         :is_success?            => false,
+                         :is_not_authorized?     => false,
+                         :code                   => 404)
         
-        @request.stub!(:response).and_return(@redirect_response, @response)
+        @request.stub!(:response).and_return(@response)
         @request.stub!(:method).and_return(:post)
         @request.stub!(:uri).and_return('http://www.example.com/code/404')
       end
 
       it 'should raise UnsuccessfulHttpRequestError' do
         lambda {
-          @resource.do_write_request(:post, "data", anything)
+          @resource.do_write_request(:post, "data")
         }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
       end 
 
       it 'should give a reasonable error message' do
         lambda {
-          @resource.do_write_request(:post, "data", anything)
+          @resource.do_write_request(:post, "data")
         }.should raise_error("post request to <http://www.example.com/code/404> failed with code 404")
       end
     end 
