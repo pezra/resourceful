@@ -35,7 +35,7 @@ task :clean
 # Packaging & Installation
 ##############################################################################
 
-RESOURCEFUL_VERSION = "0.2"
+RESOURCEFUL_VERSION = "0.2.1"
 
 windows = (PLATFORM =~ /win32|cygwin/) rescue nil
 
@@ -88,6 +88,6 @@ task :uninstall => :clean do
 end
 
 desc "Update rubyforge documentation"
-task :update_docs do
+task :update_docs => :yardoc do
   puts %x{rsync -aPz doc/* psadauskas@resourceful.rubyforge.org:/var/www/gforge-projects/resourceful/}
 end
