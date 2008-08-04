@@ -278,6 +278,19 @@ describe Resourceful do
           resp2.authoritative?.should be_true
         end
 
+        it 'should revalidate anything that is older than "Cache-Control: max-age" value' do
+
+          uri = URI.escape('http://localhost:3000/header?{Cache-Control: max-age=1, Date: "Mon, 04 Aug 2008 18:00:00 GMT"}')
+          resource = @accessor.resource(uri)
+          resp = resource.get
+          resp.authoritative?.should be_true
+
+          resp.expired?.should be_true
+
+          resp2 = resource.get
+          resp2.authoritative?.should be_true
+        end
+
         it 'should cache but revalidate anything with "Cache-Control: must-revalidate"' do
           uri = URI.escape('http://localhost:3000/header?{Cache-Control: must-revalidate}')
           resource = @accessor.resource(uri)

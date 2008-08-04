@@ -24,6 +24,7 @@ module Resourceful
 
       http_resp = NetHttpAdapter.make_request(@method, @resource.uri, @body, @header)
       response = Resourceful::Response.new(uri, *http_resp)
+      response.request_time = @request_time
 
       response.authoritative = true
       response

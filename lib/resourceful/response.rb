@@ -113,7 +113,8 @@ module Resourceful
       if header['Expire']
         return true if Time.httpdate(header['Expire'].first) < Time.now
       end
-      if header['Cache-Control'] and header['Cache-Control'].include?('max-age')
+      if header['Cache-Control'] and header['Cache-Control'].first.include?('max-age')
+        max_age = header['Cache-Control'].first.split(',').grep(/max-age/).first.split('=').last.to_i
         return true if current_age > max_age
       end
 
