@@ -50,7 +50,7 @@ describe Resourceful::Request do
       @net_http_adapter_response = mock('net_http_adapter_response')
       Resourceful::NetHttpAdapter.stub!(:make_request).and_return(@net_http_adapter_response)
 
-      @response = mock('response', :code => 200, :authoritative= => true, :was_unsuccessful? => false)
+      @response = mock('response', :code => 200, :authoritative= => true, :was_unsuccessful? => false, :request_time= => nil)
       Resourceful::Response.stub!(:new).and_return(@response)
     end
 
@@ -70,6 +70,13 @@ describe Resourceful::Request do
       @request.request_time.should == now
     end
 
+    it 'should set the response\'s request time' do
+      now = Time.now
+      Time.stub!(:now).and_return(now)
+
+      @response.should_receive(:request_time=).with(now)
+      @request.response
+    end
   end
 
   describe '#should_be_redirected?' do
@@ -77,7 +84,7 @@ describe Resourceful::Request do
       @net_http_adapter_response = mock('net_http_adapter_response')
       Resourceful::NetHttpAdapter.stub!(:make_request).and_return(@net_http_adapter_response)
 
-      @response = mock('response', :code => 200, :authoritative= => true, :was_unsuccessful? => false)
+      @response = mock('response', :code => 200, :authoritative= => true, :was_unsuccessful? => false, :request_time= => nil)
       Resourceful::Response.stub!(:new).and_return(@response)
     end
 

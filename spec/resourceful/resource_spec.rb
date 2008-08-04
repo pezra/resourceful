@@ -189,7 +189,7 @@ describe Resourceful::Resource do
         end
         
         it 'should make a new resource from the new location' do
-          new_resource = mock('resource', :do_read_request => @response)
+          new_resource = mock('resource', :do_read_request => @response, :uri => @uri)
           Resourceful::Resource.should_receive(:new).with(@accessor, @redirected_uri).and_return(new_resource)
           make_request
         end
