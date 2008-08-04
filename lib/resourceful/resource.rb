@@ -158,12 +158,12 @@ module Resourceful
 
       cached_response = accessor.cache_manager.lookup(request)
       if cached_response
-        logger.debug("    Retrieved from cache")
+        logger.info("    Retrieved from cache")
         if not cached_response.stale?
           # We're done!
           return cached_response
         else
-          logger.debug("    Cache entry is stale")
+          logger.info("    Cache entry is stale")
           request.set_validation_headers(cached_response)
         end
       end
@@ -171,6 +171,7 @@ module Resourceful
       response = request.response
 
       if response.is_not_modified?
+        logger.info("    Resource not modified")
         cached_response.header.merge(response.header)
         response = cached_response
         response.authoritative = true
@@ -179,9 +180,11 @@ module Resourceful
       if response.is_redirect? and request.should_be_redirected?
         if response.is_permanent_redirect?
           @uris.unshift response.header['Location'].first
+          logger.info("    Permanently redirected to #{uri} - Storing new location.")
           response = do_read_request(method, header)
         else
           redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
+          logger.info("    Redirected to #{redirected_resource.uri} - Storing new location.")
           response = redirected_resource.do_read_request(method, header)
         end
       end
@@ -189,7 +192,7 @@ module Resourceful
       if response.is_not_authorized? && !@already_tried_with_auth
         @already_tried_with_auth = true
         accessor.auth_manager.associate_auth_info(response)
-        logger.debug("Authentication Required. Retrying with auth info")
+        logger.info("Authentication Required. Retrying with auth info")
         response = do_read_request(method, header)
       end
 
