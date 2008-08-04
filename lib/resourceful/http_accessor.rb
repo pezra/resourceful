@@ -37,9 +37,9 @@ module Resourceful
     #
     # Errors will not be logged.  Instead an exception will be raised
     # and the application code should log it if appropriate.
-    attr_accessor :logger
+    attr_accessor :logger, :cache_manager
     
-    attr_reader :auth_manager, :cache_manager
+    attr_reader :auth_manager
     
     attr_reader :user_agent_tokens  
     
