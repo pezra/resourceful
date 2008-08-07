@@ -62,7 +62,15 @@ describe Resourceful::OptionsInterpreter, '#interpret(options)' do
     @interpreter.interpret({}).keys.should_not include(:foo)
   end 
 
-  it 'should not invoked option value munging block if option is not specified'
+  it 'should not invoked option value munging block if option is not specified' do 
+    @interpreter = Resourceful::OptionsInterpreter.new()
+    munging_block_executed = false
+    @interpreter.option(:foo) { |a| munging_block_executed = true }
+
+    lambda {
+      @interpreter.interpret({})
+    }.should_not change{munging_block_executed}
+  end
   
   it 'should use default if option is not specified' do
     @interpreter = Resourceful::OptionsInterpreter.new()
