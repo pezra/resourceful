@@ -33,14 +33,16 @@ module Resourceful
     # and the application code should log it if appropriate.
     attr_accessor :logger
     
-    attr_reader :auth_manager, :cache_manager
-    
+    attr_reader :auth_manager
+    attr_reader :cache_manager
     attr_reader :user_agent_tokens  
     
     INIT_OPTIONS = OptionsInterpreter.new do 
       option(:logger, :default => BitBucketLogger.new)
       option(:user_agent, :default => []) {|ua| [ua].flatten}
       option(:cache_manager, :default => NullCacheManager.new)
+      option(:authenticator)
+      option(:authenticators, :default => [])
     end
     
     # Initializes a new HttpAccessor.  Valid options:
@@ -50,6 +52,13 @@ module Resourceful
     #
     #  +:user_agent+:: One or more additional user agent tokens to
     #    added to the user agent string.
+    #
+    #  +:cache_manager+:: The cache manager this accessor should use.
+    #
+    #  +:authenticator+:: Add a single authenticator for this accessor.
+    #
+    #  +:authenticators+:: Enumerable of the authenticators for this
+    #    accessor.
     def initialize(options = {})
       @user_agent_tokens = [RESOURCEFUL_USER_AGENT_TOKEN]
       
@@ -58,6 +67,9 @@ module Resourceful
         self.logger = opts[:logger]
         @auth_manager = AuthenticationManager.new()
         @cache_manager = opts[:cache_manager]
+        
+        add_authenticator(opts[:authenticator]) if opts[:authenticator]
+        opts[:authenticators].each { |a| add_authenticator(a) }
       end     
     end
     
@@ -75,5 +87,9 @@ module Resourceful
     end
     alias [] resource
 
+    # Adds an Authenticator to the set used by the accessor.
+    def add_authenticator(an_authenticator)
+      auth_manager.add_auth_handler(an_authenticator)
+    end
   end
 end

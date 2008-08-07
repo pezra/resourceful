@@ -37,8 +37,8 @@ Simplest example
 Get a page requiring HTTP Authentication
 ----------------------------------------
 
-    basic_handler = Resourceful::BasicAuthenticator.new('My Realm', 'admin', 'secret')
-    http.auth_manager.add_auth_hander(basic_handler)
+    my_realm_authenticator = Resourceful::BasicAuthenticator.new('My Realm', 'admin', 'secret')
+    http = Resourceful::HttpAccessor.new(:authenticator => my_realm_authenticator)
     resp = http.resource('http://example.com/').get
     puts resp.body
 
@@ -52,8 +52,6 @@ callback. If the callback evaluates to true, it will follow the redirect.
     resource = http.resource('http://example.com/redirect_me')
     resource.on_redirect { |req, resp| resp.header['Location'] =~ /example.com/ }
     resource.get  # Will only follow the redirect if the new location is example.com
-
-
 
 Post a URL encoded form
 -----------------------
@@ -82,5 +80,5 @@ Delete a resource
 Copyright
 ---------
 
-Copyright (c) 2008 Absolute Performance, Inc, Peter Williams; released under the MIT License.
+Copyright (c) 2008 Absolute Performance, Inc, Peter Williams.  Released under the MIT License.
 
