@@ -27,12 +27,14 @@ module Resourceful
     #   The response to be stored.
     def store(request, response); end
 
+    protected
+
     # Selects the headers from the request named by the response's Vary header
     # http://www.w3.org/Protocols/rfc2616/rfc2616-sec13.html#sec13.5.6
     #
-    # @param request<Resourceful::Request>
+    # @param [Resourceful::Request] request
     #   The request used to obtain the response.
-    # @param response<Resourceful::Response>
+    # @param [Resourceful::Response] response
     #   The response obtained from the request.
     def select_request_headers(request, response)
       header = Resourceful::Header.new
