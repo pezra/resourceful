@@ -123,9 +123,8 @@ end unless defined? AuthorizationResponder
 
 describe 'simple http server', :shared => true do
   before(:all) do
-    #setup a thin http server we can connect to
-    require 'thin'
     require 'rack'
+    require 'mongrel'
 
     app = Rack::Builder.new do |env|
       use Rack::ShowExceptions
@@ -146,9 +145,7 @@ describe 'simple http server', :shared => true do
 
     #spawn the server in a separate thread
     @httpd = Thread.new do
-      Thin::Logging.silent = true
-      #Thin::Logging.debug = true
-      Thin::Server.start(app) 
+      Rack::Handler::Mongrel.run(app, :Host => '127.0.0.1', :Port => 3000)
     end
     #give the server a chance to initialize
     sleep 0.05

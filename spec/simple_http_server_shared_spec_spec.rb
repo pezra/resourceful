@@ -56,6 +56,15 @@ describe 'http server' do
     resp[1]['Foo'].should == ['bar']
   end
 
+  it 'should allow the Date header to be overridden' do
+    uri = URI.escape("http://localhost:3000/header?{Date: \"Thu, 21 Aug 2008 20:00:00 GMT\"}")
+    resp = Resourceful::NetHttpAdapter.make_request(:get, uri)
+
+    resp[1].should have_key('Date')
+    resp[1]['Date'].should == ['Thu, 21 Aug 2008 20:00:00 GMT']
+  end
+
+
   it 'should parse escaped uris properly' do
     uri = URI.escape("http://localhost:3000/header?{Expire: \"#{Time.now.httpdate}\"}")
 
