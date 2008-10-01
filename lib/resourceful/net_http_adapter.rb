@@ -24,6 +24,7 @@ module Resourceful
       uri = uri.is_a?(Addressable::URI) ? uri : Addressable::URI.parse(uri)
 
       req = net_http_request_class(method).new(uri.absolute_path)
+      #req = Net::HTTP::Head.new('http://dm-s3-adapter-test.s3.amazonaws.com')
       header.each { |k,v| req[k] = v } if header
       conn = Net::HTTP.new(uri.host, uri.port)
       conn.use_ssl = (/https/i === uri.scheme)
@@ -47,6 +48,7 @@ module Resourceful
     def self.net_http_request_class(method)
       case method
       when :get     then Net::HTTP::Get
+      when :head    then Net::HTTP::Head
       when :post    then Net::HTTP::Post
       when :put     then Net::HTTP::Put
       when :delete  then Net::HTTP::Delete
