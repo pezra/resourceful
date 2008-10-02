@@ -17,6 +17,11 @@ module Resourceful
       @header = header.is_a?(Resourceful::Header) ? header : Resourceful::Header.new(header || {})
 
       @header['Accept-Encoding'] = 'gzip, identity'
+      # 'Host' is a required HTTP/1.1 header, so set it if it isn't already
+      @header['Host'] ||= Addressable::URI.parse(resource.uri).host
+
+      # Setting the date isn't a bad idea, either
+      @header['Date'] ||= Time.now.httpdate
     end
 
     def response
