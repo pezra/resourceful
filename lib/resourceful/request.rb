@@ -11,6 +11,11 @@ module Resourceful
     attr_accessor :method, :resource, :body, :header
     attr_reader   :request_time
 
+    # @param [Symbol] http_method
+    #   :get, :put, :post, :delete or :head
+    # @param [Resourceful::Resource] resource
+    # @param [String] body
+    # @param [Resourceful::Header, Hash] header
     def initialize(http_method, resource, body = nil, header = nil)
       @method, @resource, @body = http_method, resource, body
       @header = header.is_a?(Resourceful::Header) ? header : Resourceful::Header.new(header || {})
@@ -55,6 +60,7 @@ module Resourceful
       @header['Cache-Control'] = 'max-age=0' if response.header.has_key?('Cache-Control') and response.header['Cache-Control'].include?('must-revalidate')
     end
 
+    # @return [String]   The URI against which this request will be, or was, made.
     def uri
       resource.uri
     end
