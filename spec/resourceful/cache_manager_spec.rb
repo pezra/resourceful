@@ -2,8 +2,8 @@ require 'pathname'
 require Pathname(__FILE__).dirname + '../spec_helper'
 
 require 'resourceful/cache_manager'
-
-describe Resourceful::CacheManager do
+ 
+describe Resourceful::AbstractCacheManager do
   before do
     @cm = Resourceful::InMemoryCacheManager.new #cheat, because I cant new a real one. 
   end
@@ -19,36 +19,6 @@ describe Resourceful::CacheManager do
   it 'should have a store method' do
     @cm.should respond_to(:store)
   end
-
-  describe '#select_request_headers' do
-    before do
-      @req_header = mock('header', :[] => nil)
-      @request = mock('request', :header => @req_header)
-
-      @resp_header = mock('header', :[] => nil)
-      @response = mock('response', :header => @resp_header)
-    end
-
-    it 'should select the request headers from the Vary header' do
-      @resp_header.should_receive(:[]).with('Vary')
-      @cm.select_request_headers(@request, @response)
-    end
-
-    it 'should pull the values from the request that match keys in the vary header' do
-      @resp_header.should_receive(:[]).with('Vary').twice.and_return(['foo', 'bar'])
-      @req_header.should_receive(:[]).with('foo').and_return('oof')
-      @req_header.should_receive(:[]).with('bar').and_return('rab')
-
-      header = @cm.select_request_headers(@request, @response)
-      header['foo'].should == 'oof'
-      header['bar'].should == 'rab'
-    end
-
-    it 'should return a new Header object' do
-      @cm.select_request_headers(@request, @response).should be_kind_of(Resourceful::Header)
-    end
-  end
-
 end
 
 describe Resourceful::NullCacheManager do
@@ -76,7 +46,7 @@ describe Resourceful::InMemoryCacheManager do
     @response = mock('response', :header => {})
 
     @entry = mock('cache entry', :response => @response, :valid_for? => true)
-    Resourceful::InMemoryCacheManager::CacheEntry.stub!(:new).and_return(@entry)
+    Resourceful::CacheEntry.stub!(:new).and_return(@entry)
 
     @imcm = Resourceful::InMemoryCacheManager.new
   end
@@ -103,9 +73,9 @@ describe Resourceful::InMemoryCacheManager do
     end
 
     it 'should make a new cache entry' do
-      Resourceful::InMemoryCacheManager::CacheEntry.should_receive(:new).with(
+      Resourceful::CacheEntry.should_receive(:new).with(
         Time.utc(2008,5,22,15,00),
-        {},
+        @request,
         @response
       )
 
@@ -133,14 +103,14 @@ describe Resourceful::InMemoryCacheManager do
 
 end
 
-describe Resourceful::InMemoryCacheManager::CacheEntryCollection do
+describe Resourceful::CacheEntryCollection do
   before do
     @entry_valid   = mock('entry', :valid_for? => true)
     @entry_invalid = mock('entry', :valid_for? => false)
 
     @request = mock('request')
 
-    @collection = Resourceful::InMemoryCacheManager::CacheEntryCollection.new
+    @collection = Resourceful::CacheEntryCollection.new
   end
 
   it 'should find the right entry for a request' do
@@ -172,10 +142,12 @@ describe Resourceful::InMemoryCacheManager::CacheEntryCollection do
 
 end
 
-describe Resourceful::InMemoryCacheManager::CacheEntry do
+describe Resourceful::CacheEntry do
   before do
-    @entry = Resourceful::InMemoryCacheManager::CacheEntry.new(
-      Time.utc(2008,5,16,0,0,0), {'Content-Type' => 'text/plain'}, mock('response')
+    @entry = Resourceful::CacheEntry.new(
+      Time.utc(2008,5,16,0,0,0), 
+      mock('original_request', :header => {'Content-Type' => 'text/plain'}), 
+      mock('response', :header => {'Vary' => 'Content-Type'})
     )
 
     @request = mock('request')
@@ -197,6 +169,34 @@ describe Resourceful::InMemoryCacheManager::CacheEntry do
     @entry.valid_for?(@request).should be_false
   end
 
+  describe '#select_request_headers' do
+    before do
+      @req_header = mock('header', :[] => nil)
+      @request = mock('request', :header => @req_header)
+
+      @resp_header = mock('header', :[] => nil)
+      @response = mock('response', :header => @resp_header)
+    end
+
+    it 'should select the request headers from the Vary header' do
+      @resp_header.should_receive(:[]).with('Vary')
+      @entry.select_request_headers(@request, @response)
+    end
+
+    it 'should pull the values from the request that match keys in the vary header' do
+      @resp_header.should_receive(:[]).with('Vary').twice.and_return(['foo', 'bar'])
+      @req_header.should_receive(:[]).with('foo').and_return('oof')
+      @req_header.should_receive(:[]).with('bar').and_return('rab')
+
+      header = @entry.select_request_headers(@request, @response)
+      header['foo'].should == 'oof'
+      header['bar'].should == 'rab'
+    end
+
+    it 'should return a new Header object' do
+      @entry.select_request_headers(@request, @response).should be_kind_of(Resourceful::Header)
+    end
+  end
 end
 
 
