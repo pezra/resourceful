@@ -4,6 +4,7 @@ require 'resourceful/util'
 
 # Resourceful is a library that provides a high level HTTP interface.
 module Resourceful
+  VERSION = "0.2.3"
 
   HOP_BY_HOP_HEADERS = %w{
     Connection
