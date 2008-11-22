@@ -81,19 +81,6 @@ module Resourceful
       end
     end
 
-    # Performs a HEAD on the resource, following redirects as neccessary, and retriving
-    # it from the local cache if its available and valid.
-    #
-    # @return [Response] The Response to the final request made.
-    #
-    # @raise [UnsuccessfulHttpRequestError] unless the request is a
-    #   success, ie the final request returned a 2xx response code
-    def head(header = {})
-      log_request_with_time "HEAD [#{uri}]" do
-        do_read_request(:head, header)
-      end
-    end
-
     # :call-seq:
     #   post(data = "", :content_type => mime_type)
     #
@@ -185,7 +172,8 @@ module Resourceful
 
       if response.is_not_modified?
         logger.info("    Resource not modified")
-        cached_response.header.merge(response.header)
+        cached_response.header.merge!(response.header)
+        cached_response.request_time = response.request_time
         response = cached_response
         response.authoritative = true
       end
