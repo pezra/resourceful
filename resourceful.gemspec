@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
   s.rubyforge_project = %q{resourceful}
   s.rubygems_version = %q{1.3.1}
-  s.summary = nil
+  s.summary = %q{An HTTP library for Ruby that takes advantage of everything HTTP has to offer.}
 
   if s.respond_to? :specification_version then
     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
