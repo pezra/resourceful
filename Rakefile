@@ -12,6 +12,7 @@ task :test => :spec
 
 desc "Verify Resourceful against it's specs"
 Spec::Rake::SpecTask.new(:spec) do |t|
+  t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
   t.libs << 'lib'
   t.pattern = 'spec/**/*_spec.rb'
 end
@@ -34,7 +35,7 @@ task :clean
 # Packaging & Installation
 ##############################################################################
 
-RESOURCEFUL_VERSION = "0.2"
+RESOURCEFUL_VERSION = "0.2.1"
 
 windows = (PLATFORM =~ /win32|cygwin/) rescue nil
 
@@ -62,7 +63,6 @@ spec = Gem::Specification.new do |s|
   s.add_dependency "addressable"
   s.add_dependency "httpauth"
   s.add_dependency "rspec"
-  s.add_dependency "thin"
   s.add_dependency "facets"
 
   s.required_ruby_version = ">= 1.8.6"
@@ -87,3 +87,7 @@ task :uninstall => :clean do
   sh %{#{SUDO} gem uninstall resourceful}
 end
 
+desc "Update rubyforge documentation"
+task :update_docs => :yardoc do
+  puts %x{rsync -aPz doc/* psadauskas@resourceful.rubyforge.org:/var/www/gforge-projects/resourceful/}
+end

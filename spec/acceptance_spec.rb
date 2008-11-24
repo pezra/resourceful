@@ -8,7 +8,7 @@ require Pathname(__FILE__).dirname + 'acceptance_shared_specs'
 describe Resourceful do
   it_should_behave_like 'simple http server'
 
-  describe 'getting a resource' do
+  describe 'working with a resource' do
     before do
       @accessor = Resourceful::HttpAccessor.new
     end
@@ -21,6 +21,14 @@ describe Resourceful do
       resp.body.should == 'Hello, world!'
       resp.header.should be_instance_of(Resourceful::Header)
       resp.header['Content-Type'].should == ['text/plain']
+    end
+
+    it 'should set additional headers on the #get' do
+      resource = @accessor.resource('http://localhost:3000/echo_header')
+      resp = resource.get(:foo => :bar)
+      resp.should be_instance_of(Resourceful::Response)
+      resp.code.should == 200
+      resp.body.should =~ /"HTTP_FOO"=>"bar"/
     end
 
     it 'should #post a resource, and return the response' do
@@ -51,6 +59,38 @@ describe Resourceful do
       resp.body.should == 'KABOOM!'
       resp.header.should be_instance_of(Resourceful::Header)
       resp.header['Content-Type'].should == ['text/plain']
+    end
+
+    it 'should take an optional default header for reads' do
+      resource = @accessor.resource('http://localhost:3000/echo_header', :foo => :bar)
+      resp = resource.get
+      resp.should be_instance_of(Resourceful::Response)
+      resp.code.should == 200
+      resp.body.should =~ /"HTTP_FOO"=>"bar"/
+    end
+
+    it 'should take an optional default header for writes' do
+      resource = @accessor.resource('http://localhost:3000/echo_header', :foo => :bar)
+      resp = resource.post("data", :content_type => 'text/plain')
+      resp.should be_instance_of(Resourceful::Response)
+      resp.code.should == 200
+      resp.body.should =~ /"HTTP_FOO"=>"bar"/
+    end
+
+    it 'should override the default header with any set on a read action' do
+      resource = @accessor.resource('http://localhost:3000/echo_header', :foo => :bar)
+      resp = resource.get(:foo => :baz)
+      resp.should be_instance_of(Resourceful::Response)
+      resp.code.should == 200
+      resp.body.should =~ /"HTTP_FOO"=>"baz"/
+    end
+
+    it 'should override the default header with any set on a write action' do
+      resource = @accessor.resource('http://localhost:3000/echo_header', :foo => :bar)
+      resp = resource.post("data", :foo => :baz, :content_type => 'text/plain')
+      resp.should be_instance_of(Resourceful::Response)
+      resp.code.should == 200
+      resp.body.should =~ /"HTTP_FOO"=>"baz"/
     end
 
     describe 'redirecting' do
@@ -191,6 +231,17 @@ describe Resourceful do
         resp2.should == resp
       end
 
+      it 'should not use a cached document for a resource that has been posted to' do
+        resource = @accessor.resource('http://localhost:3000/get')
+        resp = resource.get
+        resp.authoritative?.should be_true
+
+        resource.post("foo", :content_type => 'text/plain')
+
+        resp2 = resource.get
+        resp2.should_not == resp
+      end
+
       describe 'Cache-Control' do
 
         it 'should cache anything with "Cache-Control: public"' do
@@ -222,6 +273,19 @@ describe Resourceful do
           resource = @accessor.resource(uri)
           resp = resource.get
           resp.authoritative?.should be_true
+
+          resp2 = resource.get
+          resp2.authoritative?.should be_true
+        end
+
+        it 'should revalidate anything that is older than "Cache-Control: max-age" value' do
+
+          uri = URI.escape('http://localhost:3000/header?{Cache-Control: max-age=1, Date: "Mon, 04 Aug 2008 18:00:00 GMT"}')
+          resource = @accessor.resource(uri)
+          resp = resource.get
+          resp.authoritative?.should be_true
+
+          resp.expired?.should be_true
 
           resp2 = resource.get
           resp2.authoritative?.should be_true

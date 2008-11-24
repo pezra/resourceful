@@ -8,8 +8,10 @@ require Pathname(__FILE__).dirname + 'header'
 module Addressable
   class URI
     def absolute_path
-      absolute_path = self.path.to_s
+      absolute_path = ""
+      absolute_path << self.path.to_s
       absolute_path << "?#{self.query}" if self.query != nil
+      absolute_path << "##{self.fragment}" if self.fragment != nil
       return absolute_path
     end
   end
@@ -45,6 +47,7 @@ module Resourceful
     def self.net_http_request_class(method)
       case method
       when :get     then Net::HTTP::Get
+      when :head    then Net::HTTP::Head
       when :post    then Net::HTTP::Post
       when :put     then Net::HTTP::Put
       when :delete  then Net::HTTP::Delete

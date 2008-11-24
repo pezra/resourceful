@@ -18,7 +18,7 @@ describe Resourceful::HttpAccessor, 'init' do
   it 'should provide logger object even when no logger is specified' do
     ha = Resourceful::HttpAccessor.new()
     
-    ha.logger.should be_instance_of(Resourceful::HttpAccessor::BitBucketLogger)
+    ha.logger.should be_instance_of(Resourceful::BitBucketLogger)
   end 
 
   it 'should raise arg error if unrecognized options are passed' do
@@ -93,13 +93,13 @@ describe Resourceful::HttpAccessor do
   end 
 
   it 'should pass uri to resource upon creation (#[])' do
-    Resourceful::Resource.should_receive(:new).with(anything, 'http://www.example/previously-unused-uri').
+    Resourceful::Resource.should_receive(:new).with(anything, 'http://www.example/previously-unused-uri', anything).
       and_return(stub('resource'))
     @accessor['http://www.example/previously-unused-uri']
   end 
   
   it 'should pass owning accessor to resource upon creation (#[])' do
-    Resourceful::Resource.should_receive(:new).with(@accessor, anything).and_return(stub('resource'))
+    Resourceful::Resource.should_receive(:new).with(@accessor, anything, anything).and_return(stub('resource'))
     @accessor['http://www.example/previously-unused-uri']
   end 
 
@@ -113,15 +113,20 @@ describe Resourceful::HttpAccessor do
   end 
 
   it 'should pass owning accessor to resource upon creation (#[])' do
-    Resourceful::Resource.should_receive(:new).with(@accessor, anything).and_return(stub('resource'))
+    Resourceful::Resource.should_receive(:new).with(@accessor, anything, anything).and_return(stub('resource'))
     @accessor.resource('http://www.example/previously-unused-uri')
   end 
 
   it 'should pass uri to resource upon creation (#resource)' do
-    Resourceful::Resource.should_receive(:new).with(anything, 'http://www.example/previously-unused-uri').
+    Resourceful::Resource.should_receive(:new).with(anything, 'http://www.example/previously-unused-uri', anything).
       and_return(stub('resource'))
     @accessor.resource('http://www.example/previously-unused-uri')
   end 
+
+  it 'should pass additional options to resource upon creation' do
+    Resourceful::Resource.should_receive(:new).with(anything, anything, :foo => :bar).and_return(stub('resource'))
+    @accessor.resource('http://example.com/', :foo => :bar)
+  end
 
 end
 

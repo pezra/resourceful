@@ -87,4 +87,10 @@ describe Addressable::URI, '#absolute_path monkey patch' do
     uri.absolute_path.should == '/foo'
   end
 
+  it 'should not add the query parameter twice' do
+    uri = Addressable::URI.parse('http://localhost/foo?bar=baz')
+    uri.absolute_path.should == '/foo?bar=baz'
+    uri.absolute_path.should == '/foo?bar=baz'
+  end
+
 end

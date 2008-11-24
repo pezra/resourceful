@@ -29,6 +29,15 @@ module Resourceful
     # @param response<Resourceful::Response>
     #   The response to be stored.
     def store(request, response); end
+
+    # Invalidates a all cached entries for a uri. 
+    #
+    # This is used, for example, to invalidate the cache for a resource 
+    # that gets POSTed to.
+    #
+    # @param uri<String>
+    #   The uri of the resource to be invalidated
+    def invalidate(uri); end
   end
 
   # This is the default cache, and does not do any caching. All lookups
@@ -49,11 +58,11 @@ module Resourceful
   class InMemoryCacheManager < AbstractCacheManager
 
     def initialize
-      @collection = Hash.new(CacheEntryCollection.new)
+      @collection = Hash.new{ |h,k| h[k] = CacheEntryCollection.new}
     end
 
     def lookup(request)
-      entry = @collection[request.resource.uri][request]
+      entry = @collection[request.uri.to_s][request]
       response = entry.response if entry
       response.authoritative = false if response
 
@@ -65,7 +74,11 @@ module Resourceful
 
       entry = CacheEntry.new(request.request_time, request, response)
       
-      @collection[request.resource.uri][request] = entry
+      @collection[request.uri.to_s][request] = entry
+    end
+
+    def invalidate(uri)
+      @collection.delete(uri)
     end
   end  # class InMemoryCacheManager
 

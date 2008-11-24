@@ -1,4 +1,5 @@
 require 'pathname'
+require 'benchmark'
 require Pathname(__FILE__).dirname + 'response'
 require Pathname(__FILE__).dirname + 'net_http_adapter'
 
@@ -26,20 +27,9 @@ module Resourceful
     def response
       @request_time = Time.now
 
-      cached_response = resource.accessor.cache_manager.lookup(self)
-      return cached_response if cached_response and not cached_response.stale?
-
-      set_validation_headers(cached_response) if cached_response and cached_response.stale?
-
       http_resp = NetHttpAdapter.make_request(@method, @resource.uri, @body, @header)
       response = Resourceful::Response.new(uri, *http_resp)
-
-      if response.code == 304
-        cached_response.header.merge(response.header)
-        response = cached_response
-      end
-
-      resource.accessor.cache_manager.store(self, response)
+      response.request_time = @request_time
 
       response.authoritative = true
       response
@@ -63,6 +53,10 @@ module Resourceful
     # @return [String]   The URI against which this request will be, or was, made.
     def uri
       resource.uri
+    end
+    
+    def logger
+      resource.logger
     end
 
   end

@@ -166,6 +166,14 @@ end
 describe Resourceful::DigestAuthenticator do
 
   before do 
+    @header = {'WWW-Authenticate' => ['Digest realm="Test Auth"']}
+    @chal = mock('response', :header => @header, :uri => 'http://example.com/foo/bar')
+
+    @req_header = {}
+    @req = mock('request', :header => @req_header, 
+                           :uri => 'http://example.com',
+                           :method => 'GET')
+
     @auth = Resourceful::DigestAuthenticator.new('Test Auth', 'admin', 'secret')
   end
 
@@ -175,12 +183,21 @@ describe Resourceful::DigestAuthenticator do
     end
   end
 
-  describe "Updating from a challenge response" do
-    before do
-      @header = {'WWW-Authenticate' => ['Digest realm="Test Auth"']}
-      @chal = mock('response', :header => @header, :uri => 'http://example.com/foo/bar')
+  describe "Updating credentials from a challenge response" do
+
+    it "should set the domain from the host part of the challenge response uri" do
+      @auth.update_credentials(@chal)
+      @auth.domain.should == 'example.com'
     end
 
+    it "should create an HTTPAuth Digest Challenge from the challenge response WWW-Authenticate header" do
+      HTTPAuth::Digest::Challenge.should_receive(:from_header).with(@header['WWW-Authenticate'].first)
+      @auth.update_credentials(@chal)
+    end
+
+  end
+
+  describe "Validating a challenge" do
     it 'should be valid for a challenge response with scheme "Digest" and the same realm' do
       @auth.valid_for?(@chal).should be_true
     end
@@ -199,6 +216,34 @@ describe Resourceful::DigestAuthenticator do
       @header['WWW-Authenticate'] = nil
       @auth.valid_for?(@chal).should be_false
     end
+  end
+
+  it "should be able to handle requests to the same domain" do
+    @auth.instance_variable_set("@domain", 'example.com')
+    @auth.can_handle?(@req).should be_true
+  end
+
+  it "should not handle requests to a different domain" do
+    @auth.instance_variable_set("@domain", 'example2.com')
+    @auth.can_handle?(@req).should be_false
+  end
+
+  it "should add credentials to a request" do
+    @auth.update_credentials(@chal)
+    @auth.add_credentials_to(@req)
+    @req_header.should have_key('Authorization')
+    @req_header['Authorization'].should_not be_blank
+  end
+
+  it "should have HTTPAuth::Digest generate the Authorization header" do
+    @auth.update_credentials(@chal)
+    cred = mock('digest_credentials', :to_header => nil)
+
+    HTTPAuth::Digest::Credentials.should_receive(:from_challenge).with(
+      @auth.challenge, :username => 'admin', :password => 'secret', :method => 'GET', :uri => ''
+    ).and_return(cred)
+
+    cred = @auth.credentials_for(@req)
   end
 
 end

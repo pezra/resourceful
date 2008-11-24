@@ -35,7 +35,7 @@ CodeResponder = lambda do |env|
   [ code, {'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}, body ]
 end unless defined? CodeResponder
 
-# YAML-parses the quesy string (expected hash) and sets the header to that
+# YAML-parses the query string (expected hash) and sets the header to that
 HeaderResponder = lambda do |env|
   header = YAML.load(URI.unescape(env['QUERY_STRING']))
   body = [header.inspect]
@@ -47,6 +47,18 @@ HeaderResponder = lambda do |env|
 
   [ 200, header, body ]
 end unless defined? HeaderResponder
+
+# Echos the request header in the response body
+EchoHeaderResponder = lambda do |env|
+  body = [env.inspect]
+
+  header = {
+            'Content-Type' => 'text/plain', 
+            'Content-Length' => body.join.size.to_s
+           }
+
+  [ 200, header, body ]
+end unless defined? EchoHeaderResponder
 
 # redirect. /redirect/{301|302}?{url}
 Redirector = lambda do |env|
@@ -111,10 +123,8 @@ end unless defined? AuthorizationResponder
 
 describe 'simple http server', :shared => true do
   before(:all) do
-    #setup a thin http server we can connect to
-    require 'thin'
     require 'rack'
-    require 'rack/lobster'
+    require 'mongrel'
 
     app = Rack::Builder.new do |env|
       use Rack::ShowExceptions
@@ -128,15 +138,14 @@ describe 'simple http server', :shared => true do
       map( '/code'     ){ run CodeResponder }
       map( '/redirect' ){ run Redirector }
       map( '/header'   ){ run HeaderResponder }
+      map( '/echo_header' ){ run EchoHeaderResponder }
       map( '/modified' ){ run ModifiedResponder }
       map( '/auth'     ){ run AuthorizationResponder }
     end
 
     #spawn the server in a separate thread
     @httpd = Thread.new do
-      Thin::Logging.silent = true
-      #Thin::Logging.debug = true
-      Thin::Server.start(app) 
+      Rack::Handler::Mongrel.run(app, :Host => '127.0.0.1', :Port => 3000)
     end
     #give the server a chance to initialize
     sleep 0.05
