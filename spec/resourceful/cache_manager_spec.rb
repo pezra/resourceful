@@ -58,7 +58,7 @@ describe Resourceful::InMemoryCacheManager do
   describe 'finding' do
     before do
       @response.stub!(:authoritative=)
-      @imcm.instance_variable_set("@collection", {'uri' => {@request => @entry}})
+      @imcm.instance_variable_set("@collection", {'uri' => {@request => @response}})
     end
 
     it 'should lookup the response by request' do
@@ -74,7 +74,6 @@ describe Resourceful::InMemoryCacheManager do
   describe 'saving' do
     it 'should make a new cache entry' do
       Resourceful::CacheEntry.should_receive(:new).with(
-        Time.utc(2008,5,22,15,00),
         @request,
         @response
       )
@@ -85,7 +84,7 @@ describe Resourceful::InMemoryCacheManager do
     it 'should store the response entity by request' do
       @imcm.store(@request, @response)
       col = @imcm.instance_variable_get("@collection")
-      col['uri'][@request].response.should == @response
+      col['uri'][@request].should == @response
     end
 
     it 'should check if the response is cachable' do
@@ -114,10 +113,11 @@ end
 
 describe Resourceful::CacheEntryCollection do
   before do
-    @entry_valid   = mock('entry', :valid_for? => true)
-    @entry_invalid = mock('entry', :valid_for? => false)
+    @request = mock('request', :uri => 'this', :request_time => Time.now, :header => {})
+    @valid_resp = stub('valid_resp', :authoritative= => nil, :header => {})
 
-    @request = mock('request')
+    @entry_valid   = mock('entry', :valid_for? => true, :response => @valid_resp)
+    @entry_invalid = mock('entry', :valid_for? => false, :response => stub('invalid_resp'))
 
     @collection = Resourceful::CacheEntryCollection.new
   end
@@ -125,7 +125,7 @@ describe Resourceful::CacheEntryCollection do
   it 'should find the right entry for a request' do
     @collection.instance_variable_set('@entries', [@entry_valid, @entry_invalid])
     @entry_valid.should_receive(:valid_for?).with(@request).and_return(true)
-    @collection[@request].should == @entry_valid
+    @collection[@request].should == @valid_resp
   end
 
   it 'should be nil if no matching entry was found' do
@@ -135,18 +135,18 @@ describe Resourceful::CacheEntryCollection do
   end
 
   it 'should store an entry' do
-    @collection[@request] = @entry_valid
-    @collection.instance_variable_get("@entries").should include(@entry_valid)
+    @collection[@request] = @valid_resp
+    @collection.instance_variable_get("@entries").should have(1).items
   end
 
   it 'should replace an existing entry if the existing entry matches the request' do
-    @new_entry = mock('entry', :valid_for? => true)
+    new_resp = stub('new_resp', :authoritative= => nil, :header => {})
 
-    @collection[@request] = @entry_valid
-    @collection[@request] = @new_entry
+    @collection[@request] = @valid_resp
+    @collection[@request] = new_resp
 
-    @collection.instance_variable_get("@entries").should include(@new_entry)
-    @collection.instance_variable_get("@entries").should_not include(@entry_valid)
+    @collection.instance_variable_get("@entries").map{|it| it.response}.should include(new_resp)
+    @collection.instance_variable_get("@entries").map{|it| it.response}.should_not include(@valid_resp)
   end
 
 end
@@ -154,28 +154,40 @@ end
 describe Resourceful::CacheEntry do
   before do
     @entry = Resourceful::CacheEntry.new(
-      Time.utc(2008,5,16,0,0,0), 
-      mock('original_request', :header => {'Content-Type' => 'text/plain'}), 
-      mock('response', :header => {'Vary' => 'Content-Type'})
+      mock('original_request', :header => {'Accept' => 'text/plain'} , 
+           :request_time => Time.utc(2008,5,16,0,0,0), :uri => 'http://foo.invalid'), 
+      mock('response', :header => {'Vary' => 'Accept'})
     )
 
-    @request = mock('request')
+    @request = mock('request', :uri => 'http://foo.invalid')
   end
 
-  [:request_time, :request_vary_headers, :response, :valid_for?].each do |method|
-    it "should respond to ##{method}" do
-      @entry.should respond_to(method)
+  describe "#valid_for?(a_request)" do 
+    it "should true for request to URI w/ matching header " do
+      @entry.valid_for?(mock("new_request", 
+                             :uri => 'http://foo.invalid', 
+                             :header => {'Accept' => 'text/plain'})).should be_true
+    end 
+
+    it "should false for requests against different URIs even if headers match" do
+      @entry.valid_for?(mock("new_request", :uri => 'http://bar.invalid', 
+                             :header => {'Accept' => 'text/plain'})).should be_false
+    end 
+
+    it "should false for requests where headers don't match" do
+      @entry.valid_for?(mock("new_request", :uri => 'http://foo.invalid', 
+                             :header => {'Accept' => 'application/octet-stream'})).should be_false
+    end 
+
+    it "should be false if request has a varying header and the original request was missing that header" do 
+      entry = Resourceful::CacheEntry.new(
+                 mock('original_request', :header => {}, 
+                      :request_time => Time.utc(2008,5,16,0,0,0), :uri => 'http://foo.invalid'), 
+                 mock('response', :header => {'Vary' => 'Accept'}))
+
+      entry.valid_for?(mock("new_request", :uri => 'http://foo.invalid', 
+                             :header => {'Accept' => 'text/plain'})).should be_false
     end
-  end
-
-  it 'should be valid for a request if all the vary headers match' do
-    @request.stub!(:header).and_return({'Content-Type' => 'text/plain'})
-    @entry.valid_for?(@request).should be_true
-  end
-
-  it 'should not be valid for a request if not all the vary headers match' do
-    @request.stub!(:header).and_return({'Content-Type' => 'text/html'})
-    @entry.valid_for?(@request).should be_false
   end
 
   describe '#select_request_headers' do

@@ -1,5 +1,6 @@
 require 'resourceful/header'
-
+require 'andand'
+\
 module Resourceful
 
   class AbstractCacheManager
@@ -62,19 +63,15 @@ module Resourceful
     end
 
     def lookup(request)
-      entry = @collection[request.uri.to_s][request]
-      response = entry.response if entry
-      response.authoritative = false if response
-
-      response      
+      returning(@collection[request.uri.to_s][request]) do |response|
+        response.authoritative = false if response
+      end
     end
 
     def store(request, response)
       return unless response.cachable?
 
-      entry = CacheEntry.new(request.request_time, request, response)
-      
-      @collection[request.uri.to_s][request] = entry
+      @collection[request.uri.to_s][request] = response
     end
 
     def invalidate(uri)
@@ -82,7 +79,9 @@ module Resourceful
     end
   end  # class InMemoryCacheManager
 
-  # The collection of all cached entries for a single resource (uri). 
+  # The collection of cached entries.  Nominally all the entry in a
+  # collection of this sort will be for the same resource but that is
+  # not required to be true.
   class CacheEntryCollection
     include Enumerable
     
@@ -98,25 +97,27 @@ module Resourceful
     # Looks of a Entry that could fullfil the request. Returns nil if none
     # was found.
     #
-    # @param request<Resourceful::Request>
+    # @param [Resourceful::Request] request
     #   The request to use for the lookup.
+    #
+    # @return [Resourceful::Response] 
+    #   The cached response for the specified request if one is available.
     def [](request)
-      self.each do |entry|
-        return entry if entry.valid_for?(request)
-      end
-      return nil
+      find { |an_entry| an_entry.valid_for?(request) }.andand.response 
     end
     
     # Saves an entry into the collection. Replaces any existing ones that could 
     # be used with the updated response.
     #
-    # @param request<Resourceful::Request>
+    # @param [Resourceful::Request] request
     #   The request that was used to obtain the response
-    # @param cache_entry<CacheEntry>
+    # @param [Resourceful::Response] response
     #   The cache_entry generated from response that was obtained.
-    def []=(request, cache_entry)
+    def []=(request, response)
       @entries.delete_if { |e| e.valid_for?(request) }
-      @entries.unshift cache_entry
+      @entries << CacheEntry.new(request, response)
+
+      response
     end
   end # class CacheEntryCollection
 
@@ -125,19 +126,29 @@ module Resourceful
   # request in the future.  It also understands what a matching
   # request means.
   class CacheEntry
-    # request_vary_headers is a HttpHeader with keys from the 
-    # Vary header of the response, plus the values from the matching
-    # fields in the request
-    attr_accessor :request_time, :request_vary_headers, :response
+    # request_vary_headers is a HttpHeader with keys from the Vary
+    # header of the response, plus the values from the matching fields
+    # in the request
+    attr_reader :request_vary_headers
     
-    # @param request_time<Time>
-    #   Client-generated timestamp for when the request was made
+    # The time at which the client believes the request was made.
+    attr_reader :request_time
+
+    # The URI of the request
+    attr_reader :request_uri
+
+    # The response to that we are caching
+    attr_reader :response
+
     # @param [Resourceful::Request] request
     #   The request whose response we are storing in the cache.
     # @param response<Resourceful::Response>
     #   The Response obhect to be stored.
-    def initialize(request_time, request, response)
-      @request_time, @request_vary_headers, @response = request_time, select_request_headers(request, response), response
+    def initialize(request, response)
+      @request_uri = request.uri
+      @request_time = request.request_time
+      @request_vary_headers = select_request_headers(request, response)
+      @response = response
     end
 
     # Returns true if this entry may be used to fullfil the given request, 
@@ -146,9 +157,8 @@ module Resourceful
     # @param request<Resourceful::Request>
     #   The request to do the lookup on. 
     def valid_for?(request)
-      @request_vary_headers.all? do |key, value|
-        request.header[key] == value
-      end
+      request.uri == @request_uri and 
+        @request_vary_headers.all? {|key, value| request.header[key] == value}
     end
 
     # Selects the headers from the request named by the response's Vary header
