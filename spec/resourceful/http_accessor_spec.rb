@@ -23,20 +23,26 @@ describe Resourceful::HttpAccessor, 'init' do
 
   it 'should raise arg error if unrecognized options are passed' do
     lambda {
-      ha = Resourceful::HttpAccessor.new(:foo => 'foo', :bar => 'bar')
+      Resourceful::HttpAccessor.new(:foo => 'foo', :bar => 'bar')
     }.should raise_error(ArgumentError, /Unrecognized options: (foo, bar)|(bar, foo)/)
   end 
 
   it 'should allow an additional user agent token to be passed at init' do
-    Resourceful::HttpAccessor.new(:user_agent => "Super/3000").tap do |ha|
-      ha.user_agent_string.should match(%r{^Super/3000})
-    end
+    ha = Resourceful::HttpAccessor.new(:user_agent => "Super/3000")
+
+    ha.user_agent_string.should match(%r{^Super/3000})
   end 
 
   it 'should allow multiple additional user agent tokens to be passed at init' do
-    Resourceful::HttpAccessor.new(:user_agent => ["Super/3000", "Duper/2.1"]).tap do |ha|
-      ha.user_agent_string.should match(%r{^Super/3000 Duper/2\.1 })
-    end
+    ha = Resourceful::HttpAccessor.new(:user_agent => ["Super/3000", "Duper/2.1"])
+
+    ha.user_agent_string.should match(%r{^Super/3000 Duper/2\.1 })
+  end 
+
+  it 'should allow cache manager to be provided at init' do
+    ha = Resourceful::HttpAccessor.new(:cache_manager => :marker)
+
+    ha.cache_manager.should equal(:marker)
   end 
 
 end 
@@ -123,3 +129,36 @@ describe Resourceful::HttpAccessor do
   end
 
 end
+
+describe Resourceful::HttpAccessor, "(authentication)" do           
+  before do
+    @auth_manager = stub('auth_manager', :add_auth_handler => nil)
+    Resourceful::AuthenticationManager.stub!(:new).and_return(@auth_manager)
+    @ha = Resourceful::HttpAccessor.new()
+  end
+
+  it 'should allow authenticators to be registered' do
+    an_authenticator = stub('an_authenicator')
+    @auth_manager.should_receive(:add_auth_handler).with(an_authenticator)
+
+    @ha.add_authenticator(an_authenticator)
+  end 
+
+  it 'should allow an authenicator to be specified at init' do
+    an_authenticator = stub('an_authenicator')
+    @auth_manager.should_receive(:add_auth_handler).with(an_authenticator)
+
+    Resourceful::HttpAccessor.new(:authenticator => an_authenticator)
+  end 
+
+  it 'should allow multiple authenicators to be specified at init' do
+    authenticator1 = stub('authenicator1')
+    authenticator2 = stub('authenicator2')
+
+    @auth_manager.should_receive(:add_auth_handler).with(authenticator1)
+    @auth_manager.should_receive(:add_auth_handler).with(authenticator2)
+
+    Resourceful::HttpAccessor.new(:authenticators => [authenticator1, authenticator2])
+  end 
+
+end 
