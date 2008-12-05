@@ -1,6 +1,6 @@
 require 'resourceful/header'
 require 'andand'
-\
+
 module Resourceful
 
   class AbstractCacheManager

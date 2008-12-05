@@ -1,14 +1,41 @@
-# -*- ruby -*-
-
 require 'rubygems'
-require 'hoe'
-require './lib/resourceful.rb'
+require 'rake'
+require 'echoe'
 
-Hoe.new('resourceful', Resourceful::VERSION) do |p|
-  p.rubyforge_name = 'resourceful' # if different than lowercase project name
-  p.developer('Paul Sadauskas', 'psadauskas@gmail.com')
-  p.developer('Peter Williams', 'pezra@barelyenough.org')
-  p.summary = "An HTTP library for Ruby that takes advantage of everything HTTP has to offer."
+Echoe.new('resourceful', '0.3.0') do |p|
+  p.description     = "An HTTP library for Ruby that takes advantage of everything HTTP has to offer."
+  p.url             = "http://github.com/paul/resourceful"
+  p.author          = "Paul Sadauskas"
+  p.email           = "psadauskas@gmail.com"
+
+  p.ignore_pattern  = ["pkg/*", "tmp/*"]
+  p.dependencies    = ['addressable', 'httpauth', 'rspec', 'facets', 'andand']
+  p.development_dependencies = ['thin', 'yard']
 end
 
-# vim: syntax=Ruby
+require 'spec/rake/spectask'
+
+desc 'Run all specs'
+Spec::Rake::SpecTask.new(:spec) do |t|
+  t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
+  t.libs << 'lib'
+  t.spec_files = FileList['spec/**/*_spec.rb']
+end
+
+desc 'Default: Run Specs'
+task :default => :spec
+
+desc 'Run all tests'
+task :test => :spec
+
+require 'yard'
+
+desc "Generate Yardoc"
+YARD::Rake::YardocTask.new do |t|
+  t.files = ['lib/**/*.rb', 'README.markdown']
+end
+
+desc "Update rubyforge documentation"
+task :update_docs => :yardoc do
+  puts %x{rsync -aPz doc/* psadauskas@resourceful.rubyforge.org:/var/www/gforge-projects/resourceful/}
+end
