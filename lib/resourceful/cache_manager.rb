@@ -1,5 +1,6 @@
 require 'resourceful/header'
 require 'andand'
+require 'facets/kernel/returning'
 
 module Resourceful
 
