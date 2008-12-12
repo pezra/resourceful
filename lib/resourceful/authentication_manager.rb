@@ -20,8 +20,9 @@ module Resourceful
     end
 
     def add_credentials(request)
-      authenticator = @authenticators.find { |authenticator| authenticator.can_handle?(request) }
-      authenticator.add_credentials_to(request) if authenticator
+      @authenticators.each do |authenticator|
+        authenticator.add_credentials_to(request) if authenticator.can_handle?(request)
+      end
     end
 
   end
