@@ -170,7 +170,32 @@ describe Resourceful::Response do
       @response.should respond_to(:cachable?)
     end
 
-    it 'should normally be cachable' do
+    it 'should not be cachable by default' do
+      @response.cachable?.should be_false
+    end
+
+    it 'should be cachable if it has status (200) OK' do
+      @response.instance_variable_set(:@code, 200)
+      @response.cachable?.should be_true
+    end
+
+    it 'should be cachable if it has status (203) Non-authoritative information' do
+      @response.instance_variable_set(:@code, 203)
+      @response.cachable?.should be_true
+    end
+
+    it 'should be cachable if it has status (300) Multiple choices' do
+      @response.instance_variable_set(:@code, 300)
+      @response.cachable?.should be_true
+    end
+
+    it 'should be cachable if it has status (301) Moved Permenantly' do
+      @response.instance_variable_set(:@code, 301)
+      @response.cachable?.should be_true
+    end
+
+    it 'should be cachable if it has status (410) Gone' do
+      @response.instance_variable_set(:@code, 410)
       @response.cachable?.should be_true
     end
 

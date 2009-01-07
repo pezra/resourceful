@@ -138,6 +138,7 @@ module Resourceful
     #
     # @return true|false
     def cachable?
+      return false unless [200, 203, 300, 301, 410].include?(code.to_i)
       return false if header['Vary'] and header['Vary'].include?('*')
       return false if header['Cache-Control'] and header['Cache-Control'].include?('no-store')
 
