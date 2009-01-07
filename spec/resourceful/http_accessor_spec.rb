@@ -59,7 +59,7 @@ describe Resourceful::HttpAccessor do
   end
   
   it 'should have user agent string w/ just resourceful token by default' do
-    @accessor.user_agent_string.should == "Resourceful/#{RESOURCEFUL_VERSION}(Ruby/#{RUBY_VERSION})"
+    @accessor.user_agent_string.should == "Resourceful/#{Resourceful::HttpAccessor::RESOURCEFUL_VERSION}(Ruby/#{RUBY_VERSION})"
   end 
   
   it 'should add additional user agent tokens to beginning of user agent string' do
