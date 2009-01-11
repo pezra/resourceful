@@ -243,7 +243,9 @@ module Resourceful
         response = do_write_request(method, data, header)
       end
 
-      raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
+      unless response.is_success? || (response.is_redirect? and request.should_be_redirected?)
+        raise UnsuccessfulHttpRequestError.new(request,response) 
+      end
 
       accessor.cache_manager.invalidate(uri)
       return response
