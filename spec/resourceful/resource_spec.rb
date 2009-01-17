@@ -258,7 +258,7 @@ describe Resourceful::Resource do
 
       it 'should not store the response in the cache if the request has no-store directive' do
         @request.header['Cache-Control'] = 'no-store'
-        @cache_manager.should_not_receive(:store).with(@request)
+        @cache_manager.should_not_receive(:store)
         make_request
       end
 

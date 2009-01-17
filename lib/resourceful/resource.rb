@@ -200,7 +200,7 @@ module Resourceful
 
       raise UnsuccessfulHttpRequestError.new(request,response) unless response.is_success?
 
-      accessor.cache_manager.store(request, response)
+      accessor.cache_manager.store(request, response) unless (request.header['Cache-Control'] || '').include?('no-store')
 
       return response
     end
