@@ -245,8 +245,20 @@ describe Resourceful::Resource do
         make_request
       end
 
+      it 'should not lookup the request in the cache if the request has no-cache directive' do
+        @request.header['Cache-Control'] = 'no-cache'
+        @cache_manager.should_not_receive(:lookup).with(@request)
+        make_request
+      end
+
       it 'should check if the cached response is stale' do
         @cached_response.should_receive(:stale?).and_return(false)
+        make_request
+      end
+
+      it 'should not store the response in the cache if the request has no-store directive' do
+        @request.header['Cache-Control'] = 'no-store'
+        @cache_manager.should_not_receive(:store).with(@request)
         make_request
       end
 

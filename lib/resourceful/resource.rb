@@ -156,7 +156,8 @@ module Resourceful
       request = Resourceful::Request.new(method, self, nil, default_options.merge(header))
       accessor.auth_manager.add_credentials(request)
 
-      cached_response = accessor.cache_manager.lookup(request)
+      
+      cached_response = accessor.cache_manager.lookup(request) unless (request.header['Cache-Control'] || '').include?('no-cache')
       if cached_response
         logger.info("    Retrieved from cache")
         if revalidate?(request, cached_response)
