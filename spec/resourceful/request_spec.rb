@@ -132,6 +132,17 @@ describe Resourceful::Request do
     end
   end
 
+  describe '#max_age' do
+    it 'should be nil if Cache-control: max-age has note been set' do
+      @request.max_age.should be_nil
+    end
+    
+    it 'should be equal to lifetime set in Cache-control: max-age header' do
+      @request.header['Cache-control'] = 'max-age=60'
+      @request.max_age.should == 60
+    end
+  end
+
   describe '#set_validation_headers' do
     before do
       @cached_response = mock('cached_response')

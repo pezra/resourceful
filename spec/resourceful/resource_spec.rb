@@ -21,7 +21,7 @@ describe Resourceful::Resource do
                                  :is_success? => true,
                                  :is_not_modified? => false)
 
-    @request = mock('request', :response => @response, :should_be_redirected? => true, :uri => @uri)
+    @request = mock('request', :response => @response, :should_be_redirected? => true, :uri => @uri, :header => Resourceful::Header.new({}), :max_age => nil)
     Resourceful::Request.stub!(:new).and_return(@request)
   end
 

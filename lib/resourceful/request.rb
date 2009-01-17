@@ -60,6 +60,15 @@ module Resourceful
       resource.uri
     end
     
+    # Indicates the maxmimum response age in seconds we are willing to accept
+    #
+    # Returns nil if we don't care how old the response is
+    def max_age
+      if header['Cache-Control'] and header['Cache-Control'].include?('max-age')
+        header['Cache-Control'].split(',').grep(/max-age/).first.split('=').last.to_i
+      end
+    end
+
     def logger
       resource.logger
     end

@@ -159,12 +159,12 @@ module Resourceful
       cached_response = accessor.cache_manager.lookup(request)
       if cached_response
         logger.info("    Retrieved from cache")
-        if not cached_response.stale?
-          # We're done!
-          return cached_response
-        else
+        if revalidate?(request, cached_response)
           logger.info("    Cache entry is stale")
           request.set_validation_headers(cached_response)
+        else
+          # We're done!
+          return cached_response
         end
       end
 
@@ -202,6 +202,14 @@ module Resourceful
       accessor.cache_manager.store(request, response)
 
       return response
+    end
+
+    # Based on request and cached response headers, must this request be revalidated
+    # with the origin server?
+    def revalidate?(request, response)
+      return true if response.stale?
+      return true if request.max_age && response.current_age > request.max_age
+      false
     end
 
     # Performs a write request (POST, PUT, DELETE). Users should use the #post, etc 

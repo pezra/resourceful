@@ -242,7 +242,7 @@ describe Resourceful do
         resp2.should_not == resp
       end
 
-      describe 'Cache-Control' do
+      describe 'Server provided Cache-Control' do
 
         it 'should cache anything with "Cache-Control: public"' do
           uri = URI.escape('http://localhost:3000/header?{Cache-Control: public}')
@@ -311,6 +311,23 @@ describe Resourceful do
           resp2.authoritative?.should be_true
         end
 
+
+      end
+
+      describe 'Client provided Cache-Control' do
+
+        it 'should revalidate anything that is older than "Cache-Control: max-age" value' do
+          a_minute_ago = (Time.now - 60).httpdate
+          uri = URI.escape("http://localhost:3000/header?{Cache-Control: max-age=120, Date: \"#{a_minute_ago}\"}")
+          resource = @accessor.resource(uri)
+          resp = resource.get
+          resp.authoritative?.should be_true
+
+          resp.expired?.should be_false
+
+          resp2 = resource.get({:cache_control => "max-age=1"})
+          resp2.authoritative?.should be_true
+        end
 
       end
 
