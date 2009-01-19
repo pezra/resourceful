@@ -72,6 +72,18 @@ describe Resourceful::NetHttpAdapter do
 
   end
 
+  describe "#proxy_details" do
+    it 'should return nil when http_proxy environment variable not set' do
+      ENV.delete 'http_proxy'
+      Resourceful::NetHttpAdapter.proxy_details.should be_nil
+    end
+
+    it 'should return a 4 element Array when http_proxy environment variable is set' do
+      ENV['http_proxy'] = "http://user:password@example.com:4321"
+      Resourceful::NetHttpAdapter.proxy_details.should == ["example.com", 4321, "user", "password"]
+    end
+  end
+
 end
 
 describe Addressable::URI, '#absolute_path monkey patch' do

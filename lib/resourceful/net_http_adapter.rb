@@ -20,12 +20,15 @@ end
 module Resourceful
 
   class NetHttpAdapter
+    # Make an HTTP request using the standard library net/http.
+    #
+    # Will use a proxy defined in the http_proxy environment variable, if set.
     def self.make_request(method, uri, body = nil, header = nil)
       uri = uri.is_a?(Addressable::URI) ? uri : Addressable::URI.parse(uri)
 
       req = net_http_request_class(method).new(uri.absolute_path)
       header.each { |k,v| req[k] = v } if header
-      conn = Net::HTTP.new(uri.host, uri.port)
+      conn = Net::HTTP.Proxy(*proxy_details).new(uri.host, uri.port)
       conn.use_ssl = (/https/i === uri.scheme)
       begin 
         conn.start
@@ -40,6 +43,12 @@ module Resourceful
       ]
     ensure
       
+    end
+
+    # Parse proxy details from http_proxy environment variable
+    def self.proxy_details
+      proxy = Addressable::URI.parse(ENV["http_proxy"])
+      [proxy.host, proxy.port, proxy.user, proxy.password] if proxy
     end
 
     private
