@@ -19,6 +19,7 @@ describe Resourceful::Resource do
                                  :is_redirect? => false, 
                                  :is_not_authorized? => false, 
                                  :is_success? => true,
+                                 :is_error? => false,
                                  :is_not_modified? => false)
 
     @request = mock('request', :response => @response, :should_be_redirected? => true, :uri => @uri, :header => Resourceful::Header.new({}), :max_age => nil)
@@ -236,6 +237,7 @@ describe Resourceful::Resource do
         @cached_response = mock('cached response', :is_redirect? => false,
                                                    :is_not_authorized? => false,
                                                    :is_success? => true,
+                                                   :is_error? => false,
                                                    :stale? => false)
         @cache_manager.stub!(:lookup).and_return(@cached_response)
       end
@@ -316,6 +318,7 @@ describe Resourceful::Resource do
                          :is_redirect?           => false,
                          :is_success?            => false,
                          :is_not_authorized?     => false,
+                         :is_error?              => true,
                          :code                   => 404)
         
         @request.stub!(:response).and_return(@response)
@@ -512,7 +515,11 @@ describe Resourceful::Resource do
   describe "#post(body_data, :content_type => content-type)" do
     before do
       @resource = Resourceful::Resource.new(@accessor, 'http://foo.invalid/')
-      @response = mock('response', :is_redirect? => false, :is_success? => true, :is_not_authorized? => false, :code => 200)
+      @response = mock('response', :code => 200,
+                                   :is_redirect? => false, 
+                                   :is_success? => true, 
+                                   :is_not_authorized? => false, 
+                                   :is_error? => false)
       @request = mock('request', :response => @response)
       Resourceful::Request.stub!(:new).and_return(@request)
     end
@@ -562,7 +569,11 @@ describe Resourceful::Resource do
   describe "#put(body_data, :content_type => content_type)" do
     before do
       @resource = Resourceful::Resource.new(@accessor, 'http://foo.invalid/')
-      @response = mock('response', :is_redirect? => false, :is_success? => true, :is_not_authorized? => false, :code => 200)
+      @response = mock('response', :code => 200,
+                                   :is_redirect? => false, 
+                                   :is_success? => true, 
+                                   :is_error? => false,
+                                   :is_not_authorized? => false)
       @request = mock('request', :response => @response)
       Resourceful::Request.stub!(:new).and_return(@request)
     end
