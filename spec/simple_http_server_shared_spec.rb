@@ -150,7 +150,8 @@ describe 'simple http server', :shared => true do
       Thin::Server.start(app)
     end
     #give the server a chance to initialize
-    sleep 0.1
+    #If this time isn't long enough, you will get IOErrors in your spec output
+    sleep 0.2
   end
 
   after(:all) do
