@@ -143,19 +143,19 @@ describe 'simple http server', :shared => true do
       map( '/auth'     ){ run AuthorizationResponder }
     end
 
-    #spawn the server in a separate thread
-    @httpd = Thread.new do
+    #spawn the server in a separate process
+    @httpd = fork do
       Thin::Logging.silent = true
       # Thin::Logging.debug = true
       Thin::Server.start(app)
     end
     #give the server a chance to initialize
-    sleep 0.05
+    sleep 0.1
   end
 
   after(:all) do
-    # kill the server thread
-    @httpd.exit
+    # kill the server process
+    Process.kill("HUP", @httpd)
   end
 
 
