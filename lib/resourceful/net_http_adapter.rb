@@ -45,13 +45,13 @@ module Resourceful
       
     end
 
+    private
+
     # Parse proxy details from http_proxy environment variable
     def self.proxy_details
       proxy = Addressable::URI.parse(ENV["http_proxy"])
       [proxy.host, proxy.port, proxy.user, proxy.password] if proxy
     end
-
-    private
 
     def self.net_http_request_class(method)
       case method

@@ -74,13 +74,13 @@ describe Resourceful::NetHttpAdapter do
 
   describe "#proxy_details" do
     it 'should return nil when http_proxy environment variable not set' do
-      ENV.delete 'http_proxy'
-      Resourceful::NetHttpAdapter.proxy_details.should be_nil
+      ENV.should_receive(:[]).with('http_proxy').and_return(nil)
+      Resourceful::NetHttpAdapter.send(:proxy_details).should be_nil
     end
 
     it 'should return a 4 element Array when http_proxy environment variable is set' do
-      ENV['http_proxy'] = "http://user:password@example.com:4321"
-      Resourceful::NetHttpAdapter.proxy_details.should == ["example.com", 4321, "user", "password"]
+      ENV.should_receive(:[]).with('http_proxy').and_return("http://user:password@example.com:4321")
+      Resourceful::NetHttpAdapter.send(:proxy_details).should == ["example.com", 4321, "user", "password"]
     end
   end
 
