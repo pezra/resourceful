@@ -6,7 +6,6 @@ require 'addressable/uri'
 require 'resourceful/net_http_adapter'
 
 describe 'http server' do
-  it_should_behave_like 'simple http server'
 
   it 'should have a response code of 200 if the path is /get' do
     Resourceful::NetHttpAdapter.make_request(:get, 'http://localhost:3000/get')[0].should == 200

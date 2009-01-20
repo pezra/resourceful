@@ -10,5 +10,3 @@ require 'resourceful'
 require 'resourceful/http_accessor'
 
 require Pathname(__FILE__).dirname + 'simple_http_server_shared_spec'
-
-

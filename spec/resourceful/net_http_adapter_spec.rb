@@ -18,8 +18,6 @@ describe Resourceful::NetHttpAdapter do
 end
 
 describe Resourceful::NetHttpAdapter do
-  it_should_behave_like 'simple http server'
-
 
   describe '#make_request' do
     before do

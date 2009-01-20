@@ -121,43 +121,34 @@ AuthorizationResponder = lambda do |env|
   [ code, header.merge({'Content-Type' => 'text/plain', 'Content-Length' => body.join.size.to_s}), body ]
 end unless defined? AuthorizationResponder
 
-describe 'simple http server', :shared => true do
-  before(:all) do
-    require 'rack'
-    require 'thin'
+# describe 'simple http server', :shared => true do
+#   before(:all) do
+require 'rack'
+require 'thin'
 
-    app = Rack::Builder.new do |env|
-      use Rack::ShowExceptions
-
-      map( '/get'    ){ run SimpleGet  }
-      map( '/post'   ){ run SimplePost }
-      map( '/put'    ){ run SimplePut  }
-      map( '/delete' ){ run SimpleDel  }
-
-      map( '/method'   ){ run MethodResponder }
-      map( '/code'     ){ run CodeResponder }
-      map( '/redirect' ){ run Redirector }
-      map( '/header'   ){ run HeaderResponder }
-      map( '/echo_header' ){ run EchoHeaderResponder }
-      map( '/modified' ){ run ModifiedResponder }
-      map( '/auth'     ){ run AuthorizationResponder }
-    end
-
-    #spawn the server in a separate process
-    @httpd = fork do
-      Thin::Logging.silent = true
-      # Thin::Logging.debug = true
-      Thin::Server.start(app)
-    end
-    #give the server a chance to initialize
-    #If this time isn't long enough, you will get IOErrors in your spec output
-    sleep 0.2
-  end
-
-  after(:all) do
-    # kill the server process
-    Process.kill("HUP", @httpd)
-  end
-
-
+app = Rack::Builder.new do |env|
+  use Rack::ShowExceptions
+  
+  map( '/get'    ){ run SimpleGet  }
+  map( '/post'   ){ run SimplePost }
+  map( '/put'    ){ run SimplePut  }
+  map( '/delete' ){ run SimpleDel  }
+  
+  map( '/method'   ){ run MethodResponder }
+  map( '/code'     ){ run CodeResponder }
+  map( '/redirect' ){ run Redirector }
+  map( '/header'   ){ run HeaderResponder }
+  map( '/echo_header' ){ run EchoHeaderResponder }
+  map( '/modified' ){ run ModifiedResponder }
+  map( '/auth'     ){ run AuthorizationResponder }
 end
+at_exit { exit! }
+
+httpd = fork do
+  Thin::Logging.silent = true
+  #Thin::Logging.debug = true
+  Thin::Server.start(app)
+end
+#give the server a chance to initialize
+#If this time isn't long enough, you will get IOErrors in your spec output
+sleep 0.1

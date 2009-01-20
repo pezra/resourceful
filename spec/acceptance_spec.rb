@@ -6,7 +6,6 @@ require Pathname(__FILE__).dirname + 'acceptance_shared_specs'
 
 
 describe Resourceful do
-  it_should_behave_like 'simple http server'
 
   describe 'working with a resource' do
     before do
