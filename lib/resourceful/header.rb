@@ -55,6 +55,7 @@ module Resourceful
       If-None-Match
       If-Range
       If-Unmodified-Since
+      Keep-Alive
       Last-Modified
       Location
       Max-Forwards
@@ -80,7 +81,7 @@ module Resourceful
       const = header.upcase.gsub('-', '_')
       meth  = header.downcase.gsub('-', '_')
 
-      class_eval <<-RUBY
+      class_eval <<-RUBY, __FILE__, __LINE__
         #{const} = "#{header}".freeze    # ACCEPT = "accept".freeze
 
         def #{meth}                      # def accept
@@ -93,6 +94,25 @@ module Resourceful
       RUBY
 
     end
+
+    HOP_BY_HOP_HEADERS = [
+      CONNECTION,
+      KEEP_ALIVE,
+      PROXY_AUTHENTICATE,
+      PROXY_AUTHORIZATION,
+      TE,
+      TRAILER,
+      TRANSFER_ENCODING,
+      UPGRADE
+    ].freeze
+
+    NON_MODIFIABLE_HEADERS = [
+      CONTENT_LOCATION,
+      CONTENT_MD5,
+      ETAG,
+      LAST_MODIFIED,
+      EXPIRES
+    ].freeze
 
   end
 end

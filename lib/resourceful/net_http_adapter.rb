@@ -3,7 +3,7 @@ require 'net/https'
 require 'addressable/uri'
 
 require 'pathname'
-require Pathname(__FILE__).dirname + 'header'
+require 'resourceful/header'
 
 module Addressable
   class URI
