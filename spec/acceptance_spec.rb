@@ -218,7 +218,6 @@ describe Resourceful do
         resource = @accessor.resource(uri)
         resp = resource.get
         resp.should be_authoritative
-        resp.header['Cache-Control'].should include('must-revalidate')
 
         resp2 = resource.get
         resp2.should be_authoritative
@@ -254,10 +253,10 @@ describe Resourceful do
           uri = URI.escape('http://localhost:3000/header?{Cache-Control: private}')
           resource = @accessor.resource(uri)
           resp = resource.get
-          resp.authoritative?.should be_true
+          resp.should be_authoritative
 
           resp2 = resource.get
-          resp2.authoritative?.should be_false
+          resp2.should_not be_authoritative
 
           resp2.should == resp
         end

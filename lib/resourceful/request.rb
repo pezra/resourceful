@@ -10,6 +10,7 @@ module Resourceful
 
     REDIRECTABLE_METHODS = [:get, :head]
     CACHEABLE_METHODS = [:get, :head]
+    INVALIDATING_METHODS = [:post, :put, :delete]
 
     attr_accessor :method, :resource, :body, :header
     attr_reader   :request_time, :accessor
@@ -38,15 +39,14 @@ module Resourceful
 
     end
 
+    # Uses the auth manager to add any valid credentials to this request
     def add_credentials!
       @accessor.auth_manager.add_credentials(self)
     end
 
+    # Performs all the work. Handles caching, redirects, auth retries, etc
     def fetch_response
-      accessor.auth_manager.add_credentials(self)
-      cached_response = accessor.cache_manager.lookup(self) unless skip_cache?
       if cached_response
-        logger.info("    Retrieved from cache")
         if needs_revalidation?(cached_response)
           logger.info("    Cache entry is stale")
           set_validation_headers!(cached_response)
@@ -58,49 +58,101 @@ module Resourceful
 
       response = perform!
 
-      if response.not_modified?
-        logger.info("    Resource not modified")
-        cached_response.header.merge!(response.header)
-        cached_response.request_time = response.request_time
-        response = cached_response
-        response.authoritative = true
-      end
-
-      if response.redirect? and should_be_redirected?(response)
-        if response.moved_permanently?
-          resource.update_uri response.header['Location'].first
-          logger.info("    Permanently redirected to #{uri} - Storing new location.")
-          response = fetch_response
-        elsif response.see_other? # Always use GET for this redirect, regardless of initial method
-          redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
-          response = Request.new(:get, redirected_resource, body, header).fetch_response
-        else
-          redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
-          logger.info("    Redirected to #{redirected_resource.uri} - Caching new location.")
-          response = Request.new(method, redirected_resource, body, header).fetch_response
-        end
-      end
-
-      if response.unauthorized? && !@already_tried_with_auth
-        @already_tried_with_auth = true
-        accessor.auth_manager.associate_auth_info(response)
-        logger.info("Authentication Required. Retrying with auth info")
-        accessor.auth_manager.add_credentials(self)
-        response = fetch_response
-      end
+      response = revalidate_cached_response(response) if response.not_modified?
+      response = follow_redirect(response)            if should_be_redirected?(response)
+      response = retry_with_auth(response)            if needs_authorization?(response)
 
       raise UnsuccessfulHttpRequestError.new(self, response) if response.error?
 
-      accessor.cache_manager.store(self, response) unless (self.header['Cache-Control'] || '').include?('no-store')
+      if cacheable?(response)
+        store_in_cache(response)
+      elsif invalidates_cache?
+        invalidate_cache
+      end
 
       return response
     end
 
+    # Should we look for a response to this request in the cache?
     def skip_cache?
       return true unless method.in? CACHEABLE_METHODS
       header.cache_control && header.cache_control.include?('no-cache')
     end
 
+    # The cached response
+    def cached_response
+      return if skip_cache?
+      return if @cached_response.nil? && @already_checked_cache
+      @cached_response ||= begin
+        @already_checked_cache = true
+        resp = accessor.cache_manager.lookup(self)
+        logger.info("    Retrieved from cache")
+        resp
+      end
+    end
+
+    # Revalidate the cached response with what we got from a 304 response
+    def revalidate_cached_response(not_modified_response)
+      logger.info("    Resource not modified")
+      cached_response.revalidate!(not_modified_response)
+      cached_response
+    end
+
+    # Follow a redirect response
+    def follow_redirect(response)
+      if response.moved_permanently?
+        new_uri = response.header.location.first
+        logger.info("    Permanently redirected to #{new_uri} - Storing new location.")
+        resource.update_uri new_uri
+        response = fetch_response
+      elsif response.see_other? # Always use GET for this redirect, regardless of initial method
+        redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
+        response = Request.new(:get, redirected_resource, body, header).fetch_response
+      else
+        redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
+        logger.info("    Redirected to #{redirected_resource.uri} - Caching new location.")
+        response = Request.new(method, redirected_resource, body, header).fetch_response
+      end
+    end
+
+    # Add any auth headers from the response to the auth manager, and try the request again
+    def retry_with_auth(response)
+      @already_tried_with_auth = true
+      logger.info("Authentication Required. Retrying with auth info")
+      accessor.auth_manager.associate_auth_info(response)
+      add_credentials!
+      response = fetch_response
+    end
+
+    # Does this request need to be authorized? Will only be true if we haven't already tried with auth
+    def needs_authorization?(response)
+      !@already_tried_with_auth && response.unauthorized?
+    end
+
+    # Store the response to this request in the cache
+    def store_in_cache(response)
+      accessor.cache_manager.store(self, response) 
+    end
+
+    # Invalidated the cache for this uri (eg, after a POST)
+    def invalidate_cache
+      accessor.cache_manager.invalidate(resource.uri)
+    end
+
+    # Is this request & response permitted to be stored in this (private) cache?
+    def cacheable?(response)
+      return false unless response.success?
+      return false unless method.in? CACHEABLE_METHODS
+      return false if header.cache_control && header.cache_control.include?('no-store')
+      true
+    end
+
+    # Does this request invalidate the cache?
+    def invalidates_cache?
+      return true if method.in? INVALIDATING_METHODS
+    end
+
+    # Perform the request, with no magic handling of anything.
     def perform!
       @request_time = Time.now
 
@@ -112,7 +164,9 @@ module Resourceful
       @response
     end
 
+    # Is this a response a redirect, and are we permitted to follow it?
     def should_be_redirected?(response)
+      return false unless response.redirect?
       if resource.on_redirect.nil?
         return true if method.in? REDIRECTABLE_METHODS
         false
@@ -121,16 +175,20 @@ module Resourceful
       end
     end
 
+    # Do we need to revalidate our cache?
     def needs_revalidation?(response)
+      return true if forces_revalidation?
       return true if response.stale?
       return true if max_age && response.current_age > max_age
+      return true if response.must_be_revalidated?
       false
     end
 
+    # Set the validation headers of a request based on the response in the cache
     def set_validation_headers!(response)
       @header['If-None-Match'] = response.header['ETag'] if response.header.has_key?('ETag')
       @header['If-Modified-Since'] = response.header['Last-Modified'] if response.header.has_key?('Last-Modified')
-      @header['Cache-Control'] = 'max-age=0' if response.header.has_key?('Cache-Control') and response.header['Cache-Control'].include?('must-revalidate')
+      @header['Cache-Control'] = 'max-age=0' if response.must_be_revalidated?    
     end
 
     # @return [String]   The URI against which this request will be, or was, made.
@@ -138,6 +196,7 @@ module Resourceful
       resource.uri
     end
 
+    # Does this request force us to revalidate the cache?
     def forces_revalidation?
       if cc = header['Cache-Control']
         cc.include?('no-cache') || max_age == 0
@@ -145,7 +204,7 @@ module Resourceful
         false
       end
     end
-    
+
     # Indicates the maxmimum response age in seconds we are willing to accept
     #
     # Returns nil if we don't care how old the response is

@@ -5,10 +5,6 @@ require 'facets/kernel/ergo'
 require 'zlib'
 
 module Resourceful
-  # Exception indicating that the server used a content coding scheme
-  # that Resourceful is unable to handle.
-  class UnsupportedContentCoding < Exception
-  end
 
   class Response
     REDIRECT_RESPONSE_CODES = [301,302,303,307]
@@ -60,6 +56,18 @@ module Resourceful
       return false if header['Cache-Control'] and header['Cache-Control'].include?('no-store')
 
       true
+    end
+
+    # Does this response force revalidation?
+    def must_be_revalidated?
+      header.cache_control && header.cache_control.include?('must-revalidate')
+    end
+    
+    # Update our headers from a later 304 response
+    def revalidate!(not_modified_response)
+      header.merge!(not_modified_response.header)
+      request_time = not_modified_response.request_time
+      @authoritative = true
     end
 
     # Algorithm taken from RCF2616#13.2.3
@@ -170,7 +178,14 @@ module Resourceful
     def redirection?
       @code.in? 300..399
     end
-    alias redirect? redirection?
+
+    # Is the response a actual redirect? True for
+    # 301, 302, 303, 307 response codes
+    #
+    # @return true|false
+    def redirect?
+      @code.in? REDIRECT_RESPONSE_CODES
+    end
 
     # Is the response the result of a client error? True for
     # 4xx series response codes

@@ -69,7 +69,7 @@ Redirector = lambda do |env|
   [ code, {'Content-Type' => 'text/plain', 'Location' => location, 'Content-Length' => body.join.size.to_s}, body ]
 end unless defined? Redirector
 
-# Returns 304 if 'If-Modified-Since' is after given mod time
+# Returns 304 if 'If-Modified-Since' is given
 ModifiedResponder = lambda do |env|
   modtime = Time.httpdate(URI.unescape(env['QUERY_STRING']))
 
@@ -81,8 +81,7 @@ ModifiedResponder = lambda do |env|
 
   header = {'Content-Type' => 'text/plain',
             'Content-Length' => body.join.size.to_s,
-            'Last-Modified' => modtime.httpdate,
-            'Cache-Control' => 'must-revalidate'}
+            'Last-Modified' => modtime.httpdate }
 
   [ code, header, body ]
 end unless defined? ModifiedResponder
