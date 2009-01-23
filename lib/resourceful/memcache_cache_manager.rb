@@ -1,4 +1,4 @@
-require File.dirname(__FILE__) + "/cache_manager"
+require "resourceful/cache_manager"
 
 require 'memcache'
 require 'facets/kernel/returning'

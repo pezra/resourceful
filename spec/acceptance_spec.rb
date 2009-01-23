@@ -97,26 +97,21 @@ describe Resourceful do
       describe 'registering callback' do
         before do
           @resource = @accessor.resource('http://localhost:3000/redirect/301?http://localhost:3000/get')
-          @callback = mock('callback')
-          @callback.stub!(:call).and_return(true)
-
-          @resource.on_redirect { @callback.call }
         end
 
         it 'should allow a callback to be registered' do
           @resource.should respond_to(:on_redirect)
         end
 
-        it 'should perform a registered callback on redirect' do
-          @callback.should_receive(:call).and_return(true)
-          @resource.get
+        it 'should perform a redirect if the callback is true' do
+          @resource.on_redirect { true }
+          @resource.get.should be_successful
         end
 
         it 'should not perform the redirect if the callback returns false' do
-          @callback.should_receive(:call).and_return(false)
-          lambda {
-            @resource.get
-          }.should raise_error(Resourceful::UnsuccessfulHttpRequestError)
+          @resource.on_redirect { false }
+          @resource.get
+          @resource.get.should be_redirect
         end
       end
 

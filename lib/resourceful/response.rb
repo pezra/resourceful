@@ -24,88 +24,6 @@ module Resourceful
       @response_time = Time.now
     end
 
-    # Is the response code sucessful? True for only 2xx series
-    # response codes.
-    #
-    # @return true|false
-    def is_success?
-      @code.in? 200..299
-    end
-    alias was_successful? is_success?
-
-    # Is the response the result of a server error? True for
-    # 5xx series response codes
-    #
-    # @return true|false
-    def is_server_error?
-      @code.in? 500..599
-    end
-    alias was_server_error? is_server_error?
-
-    # Is the response the result of a client error? True for
-    # 4xx series response codes
-    #
-    # @return true|false
-    def is_client_error?
-      @code.in? 400..499
-    end
-    alias was_client_error? is_client_error?
-
-    # Is the response the result of any kind of error? True for
-    # 4xx and 5xx series response codes
-    #
-    # @return true|false
-    def is_error?
-      is_server_error? || is_client_error?
-    end
-    alias was_error? is_error?
-
-    # Is the response not a success? True for
-    # 3xx, 4xx and 5xx series response codes
-    #
-    # @return true|false
-    def is_unsuccesful?
-      is_error? || is_redirect?
-    end
-    alias was_unsuccessful? is_unsuccesful?
-
-    # Is the response a redirect response code? True for
-    # 3xx codes that are redirects (301, 302, 303, 307)
-    #
-    # @return true|false
-    def is_redirect?
-      @code.in? REDIRECT_RESPONSE_CODES
-    end
-    alias was_redirect? is_redirect?
-
-    # Is the response a Permanent Redirect (301) ?
-    #
-    # @return true|false
-    def is_permanent_redirect?
-      @code == 301
-    end
-
-    # Is the response a Temporary Redirect (anything but 301) ?
-    #
-    # @return true|false
-    def is_temporary_redirect?
-      is_redirect? and not is_permanent_redirect?
-    end
-
-    # Is the response a client error of Not Authorized (401) ?
-    #
-    # @return true|false
-    def is_not_authorized?
-      @code == 401
-    end
-
-    # Is the response not modified (304) ?
-    #
-    # @return true|false
-    def is_not_modified?
-      @code == 304
-    end
-  
     # Is this a cached response that has expired?
     #
     # @return true|false
@@ -170,6 +88,114 @@ module Resourceful
         raise UnsupportedContentCoding, "Resourceful does not support #{header['Content-Encoding'].ergo.first} content coding" 
       end
     end
+
+    CODE_NAMES = {
+      100 => "Continue".freeze,
+      101 => "Switching Protocols".freeze,
+
+      200 => "OK".freeze,
+      201 => "Created".freeze,
+      202 => "Accepted".freeze,
+      203 => "Non-Authoritative Information".freeze,
+      204 => "No Content".freeze,
+      205 => "Reset Content".freeze,
+      206 => "Partial Content".freeze,
+
+      300 => "Multiple Choices".freeze,
+      301 => "Moved Permanently".freeze,
+      302 => "Found".freeze,
+      303 => "See Other".freeze,
+      304 => "Not Modified".freeze,
+      305 => "Use Proxy".freeze,
+      307 => "Temporary Redirect".freeze,
+
+      400 => "Bad Request".freeze,
+      401 => "Unauthorized".freeze,
+      402 => "Payment Required".freeze,
+      403 => "Forbidden".freeze,
+      404 => "Not Found".freeze,
+      405 => "Method Not Allowed".freeze,
+      406 => "Not Acceptable".freeze,
+      407 => "Proxy Authentication Required".freeze,
+      408 => "Request Timeout".freeze,
+      409 => "Conflict".freeze,
+      410 => "Gone".freeze,
+      411 => "Length Required".freeze,
+      412 => "Precondition Failed".freeze,
+      413 => "Request Entity Too Large".freeze,
+      414 => "Request-URI Too Long".freeze,
+      415 => "Unsupported Media Type".freeze,
+      416 => "Requested Range Not Satisfiable".freeze,
+      417 => "Expectation Failed".freeze,
+
+      500 => "Internal Server Error".freeze,
+      501 => "Not Implemented".freeze,
+      502 => "Bad Gateway".freeze,
+      503 => "Service Unavailable".freeze,
+      504 => "Gateway Timeout".freeze,
+      505 => "HTTP Version Not Supported".freeze,
+    }.freeze
+
+    CODE_NAMES.each do |code, msg|
+      method_name = msg.downcase.gsub(/[- ]/, "_")
+
+      class_eval <<-RUBY
+        def #{method_name}?                           # def ok?
+          @code == #{code}                            #   @code == 200
+        end                                           # end
+      RUBY
+    end
+
+    # Is the response informational? True for
+    # 1xx series response codes
+    #
+    # @return true|false
+    def informational?
+      @code.in? 100..199
+    end
+
+    # Is the response code sucessful? True for only 2xx series
+    # response codes.
+    #
+    # @return true|false
+    def successful?
+      @code.in? 200..299
+    end
+    alias success? successful?
+
+    # Is the response a redirect? True for
+    # 3xx series response codes
+    #
+    # @return true|false
+    def redirection?
+      @code.in? 300..399
+    end
+    alias redirect? redirection?
+
+    # Is the response the result of a client error? True for
+    # 4xx series response codes
+    #
+    # @return true|false
+    def client_error?
+      @code.in? 400..499
+    end
+
+    # Is the response the result of a server error? True for
+    # 5xx series response codes
+    #
+    # @return true|false
+    def server_error?
+      @code.in? 500..599
+    end
+
+    # Is the response the result of any kind of error? True for
+    # 4xx and 5xx series response codes
+    #
+    # @return true|false
+    def error?
+      server_error? || client_error?
+    end
+
   end
   
 end
