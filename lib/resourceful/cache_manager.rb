@@ -1,6 +1,7 @@
 require 'resourceful/header'
 require 'andand'
 require 'facets/kernel/returning'
+require 'digest/md5'
 
 module Resourceful
 
@@ -40,6 +41,13 @@ module Resourceful
     # @param uri<String>
     #   The uri of the resource to be invalidated
     def invalidate(uri); end
+
+    protected
+
+    # Returns an alphanumeric hash of a URI
+    def uri_hash(uri)
+      Digest::MD5.hexdigest(uri)
+    end
   end
 
   # This is the default cache, and does not do any caching. All lookups
@@ -124,7 +132,7 @@ module Resourceful
     end
 
     def cache_file(uri)
-      "#{@dir}/#{Digest::MD5.hexdigest(uri)}"
+      "#{@dir}/#{uri_hash(uri)}"
     end
   end # class FileCacheManager
 
