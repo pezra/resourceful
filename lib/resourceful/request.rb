@@ -41,7 +41,7 @@ module Resourceful
 
     # Uses the auth manager to add any valid credentials to this request
     def add_credentials!
-      @accessor.auth_manager.add_credentials(self)
+      @already_tried_with_auth ||= @accessor.auth_manager.add_credentials(self)
     end
 
     # Performs all the work. Handles caching, redirects, auth retries, etc
@@ -55,6 +55,8 @@ module Resourceful
           return cached_response
         end
       end
+
+      add_credentials!  # Prepopulate authentication info, if possible
 
       response = perform!
 
@@ -117,16 +119,16 @@ module Resourceful
 
     # Add any auth headers from the response to the auth manager, and try the request again
     def retry_with_auth(response)
-      @already_tried_with_auth = true
       logger.info("Authentication Required. Retrying with auth info")
       accessor.auth_manager.associate_auth_info(response)
       add_credentials!
+      @already_tried_with_auth = true   # we only want to retry once
       response = fetch_response
     end
 
     # Does this request need to be authorized? Will only be true if we haven't already tried with auth
     def needs_authorization?(response)
-      !@already_tried_with_auth && response.unauthorized?
+      response.unauthorized? && !@already_tried_with_auth
     end
 
     # Store the response to this request in the cache
@@ -154,6 +156,7 @@ module Resourceful
 
     # Perform the request, with no magic handling of anything.
     def perform!
+      logger.debug @header.inspect
       @request_time = Time.now
 
       http_resp = NetHttpAdapter.make_request(@method, @resource.uri, @body, @header)

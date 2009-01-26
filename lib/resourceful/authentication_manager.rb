@@ -19,12 +19,24 @@ module Resourceful
       end
     end
 
+    # Add authentication credentials to `request`, if possible.
+    #
+    # @param [Resourceful::Request] request the request to which authentication should be added.
+    #
+    # @return [true,false] True if any credentials were added to the request, otherwise false.
     def add_credentials(request)
-      @authenticators.each do |authenticator|
-        authenticator.add_credentials_to(request) if authenticator.can_handle?(request)
+      usable_authenticators(request).each do |authenticator|
+        authenticator.add_credentials_to(request)
       end
+      
+      not usable_authenticators(request).empty?
     end
 
+    protected
+
+    def usable_authenticators(request)
+      @authenticators.select{|a| a.can_handle?(request)}
+    end
   end
 
   class BasicAuthenticator
@@ -100,9 +112,6 @@ module Resourceful
                                                    :method   => request.method.to_s.upcase,
                                                    :uri      => Addressable::URI.parse(request.uri).path).to_header
     end
-
   end
-
-
 end
 
