@@ -155,6 +155,7 @@ module Resourceful
     # Perform the request, with no magic handling of anything.
     def perform!
       @request_time = Time.now
+      logger.debug("    DEBUG: Request Header: #{@header.inspect}")
 
       http_resp = NetHttpAdapter.make_request(@method, @resource.uri, @body, @header)
       @response = Resourceful::Response.new(uri, *http_resp)
