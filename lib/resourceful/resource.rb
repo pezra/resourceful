@@ -67,10 +67,7 @@ module Resourceful
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
     def get(header = {})
-      log_request_with_time "GET [#{uri}]" do
-        request = Request.new(:get, self, nil, default_header.merge(header))
-        request.fetch_response
-      end
+      request(:get, nil, header)
     end
 
     # :call-seq:
@@ -90,12 +87,8 @@ module Resourceful
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
     def post(data = "", header = {})
-      raise ArgumentError, ":content_type must be specified" unless header.has_key?(:content_type)
-
-      log_request_with_time "POST [#{uri}]" do
-        request = Request.new(:post, self, data, default_header.merge(header))
-        request.fetch_response
-      end
+      check_content_type_exists(header)
+      request(:post, data, header)
     end
 
     # :call-seq:
@@ -115,12 +108,8 @@ module Resourceful
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
     def put(data = "", header = {})
-      raise ArgumentError, ":content_type must be specified" unless header.has_key?(:content_type)
-
-      log_request_with_time "PUT [#{uri}]" do
-        request = Request.new(:put, self, data, default_header.merge(header))
-        request.fetch_response
-      end
+      check_content_type_exists(header)
+      request(:put, data, header)
     end
 
     # Performs a DELETE on the resource, following redirects as neccessary.
@@ -130,10 +119,7 @@ module Resourceful
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
     def delete(header = {})
-      log_request_with_time "DELETE [#{uri}]" do
-        request = Request.new(:delete, self, nil, default_header.merge(header))
-        request.fetch_response
-      end
+      request(:delete, nil, header)
     end
 
     def logger
@@ -141,6 +127,19 @@ module Resourceful
     end
 
     private
+
+    # Ensures that the request has a content type header
+    def check_content_type_exists(header)
+      raise ArgumentError, ":content_type must be specified" unless header.has_key?(:content_type) or default_header.has_key?(:content_type)
+    end
+
+    # Actually make the request
+    def request(method, data, header)
+      log_request_with_time "#{method.to_s.upcase} [#{uri}]" do
+        request = Request.new(method, self, data, default_header.merge(header))
+        request.fetch_response
+      end
+    end
 
     def log_request_with_time(msg, indent = 2)
       logger.info(" " * indent + msg)

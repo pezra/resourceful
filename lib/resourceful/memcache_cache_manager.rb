@@ -58,7 +58,7 @@ module Resourceful
     # @param [String] uri
     #   The uri of the resource to be invalidated
     def invalidate(uri)
-      @memcache.delete(Digest::MD5.hexdigest(uri))
+      @memcache.delete(uri_hash(uri))
     end
 
 
@@ -69,17 +69,7 @@ module Resourceful
     attr_reader :memcache
 
     def cache_entries_for(a_request)
-      @memcache.get(a_request.to_mc_key) || Resourceful::CacheEntryCollection.new
+      @memcache.get(uri_hash(a_request.uri)) || Resourceful::CacheEntryCollection.new
     end
-  end
-  
-  module MemCacheKey
-    def to_mc_key
-      Digest::MD5.hexdigest(uri)
-    end
-  end
-
-  class Request
-    include MemCacheKey
   end
 end

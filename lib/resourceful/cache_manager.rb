@@ -1,6 +1,7 @@
 require 'resourceful/header'
 require 'andand'
 require 'facets/kernel/returning'
+require 'digest/md5'
 
 module Resourceful
 
@@ -40,6 +41,13 @@ module Resourceful
     # @param uri<String>
     #   The uri of the resource to be invalidated
     def invalidate(uri); end
+
+    protected
+
+    # Returns an alphanumeric hash of a URI
+    def uri_hash(uri)
+      Digest::MD5.hexdigest(uri)
+    end
   end
 
   # This is the default cache, and does not do any caching. All lookups
@@ -80,6 +88,55 @@ module Resourceful
     end
   end  # class InMemoryCacheManager
 
+  # Stores cache entries in a directory on the filesystem. Similarly to the 
+  # InMemoryCacheManager there are no limits on storage, so this will eventually 
+  # eat up all your disk!
+  class FileCacheManager < AbstractCacheManager
+    # Create a new FileCacheManager
+    #
+    # @param [String] location
+    #   A directory on the filesystem to store cache entries. This directory
+    #   will be created if it doesn't exist
+    def initialize(location="/tmp/resourceful")
+      require 'fileutils'
+      require 'yaml'
+      @dir = FileUtils.mkdir_p(location)
+    end
+
+    def lookup(request)
+      returning(cache_entries_for(request)[request]) do |response|
+        response.authoritative = false if response
+      end
+    end
+
+    def store(request, response)
+      return unless response.cachable?
+
+      entries = cache_entries_for(request)
+      entries[request] = response
+      File.open(cache_file(request.uri), "w") {|fh| fh.write( YAML.dump(entries) ) }
+    end
+
+    def invalidate(uri);
+      File.unlink(cache_file(uri));
+    end
+
+    private
+    
+    def cache_entries_for(request)
+      if File.readable?( cache_file(request.uri) )
+        YAML.load_file( cache_file(request.uri) )
+      else
+        Resourceful::CacheEntryCollection.new
+      end
+    end
+
+    def cache_file(uri)
+      "#{@dir}/#{uri_hash(uri)}"
+    end
+  end # class FileCacheManager
+
+  
   # The collection of cached entries.  Nominally all the entry in a
   # collection of this sort will be for the same resource but that is
   # not required to be true.

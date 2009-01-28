@@ -219,7 +219,7 @@ describe Resourceful do
         resp = resource.get
         resp.should be_authoritative
 
-        resp2 = resource.get
+        resp2 = resource.get(:cache_control => "max-age=0")
         resp2.should be_authoritative
         resp2.should == resp
       end
