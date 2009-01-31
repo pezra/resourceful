@@ -15,14 +15,14 @@ end
 describe "POST /" do
   it 'should be 201 with no body' do
     post '/'
-    @response.status.should == 201
+    @response.should be_ok
     @response.body.should == ""
   end
 
   it 'should return the request body as the response body' do
     body = "Some text"
     post '/', body
-    @response.status.should == 201
+    @response.should be_ok
     @response.body.should == body
   end
 end
@@ -74,11 +74,9 @@ describe "/header" do
     get "/header", "X-Foo" => "Bar"
     @response['X-Foo'].should == "Bar"
   end
-end
 
-describe "/request_header" do
   it 'should dump the request headers into the body as yaml' do
-    get '/request_header', {}, "X-Foo" => "Bar"
+    get '/header', {}, "X-Foo" => "Bar"
     body = YAML.load(@response.body)
     body['X-Foo'].should == "Bar"
   end

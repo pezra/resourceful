@@ -41,15 +41,11 @@ any '/code/:code' do
   params[:code]
 end
 
-# Sets response header from the query string
+# Sets the response header from the query string, and
+# dumps the request header into the body as yaml for inspection
 any '/header' do
   params.each { |k,v| response[k] = v }
-  params.inspect
-end
-
-# Dumps the request header into the body as yaml for inspection
-any '/request_header' do
-  response['Content-Type'] = "application/yaml"
+  response['Content-Type'] ||= "application/yaml"
   request.env.to_yaml
 end
   
