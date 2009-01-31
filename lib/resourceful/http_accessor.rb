@@ -28,8 +28,6 @@ module Resourceful
   # provided by the Resourceful library.  Conceptually this object
   # acts a collection of all the resources available via HTTP.
   class HttpAccessor
-    RESOURCEFUL_VERSION = "0.3.1"
-    RESOURCEFUL_USER_AGENT_TOKEN = "Resourceful/#{RESOURCEFUL_VERSION}(Ruby/#{RUBY_VERSION})"
     
     # A logger object to which messages about the activities of this
     # object will be written.  This should be an object that responds

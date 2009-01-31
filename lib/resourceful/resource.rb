@@ -15,7 +15,7 @@ module Resourceful
     #   The uri for the location of the resource
     def initialize(accessor, uri, default_header = {})
       @accessor, @uris = accessor, [uri]
-      @default_header = default_header
+      @default_header = Resourceful::Header.new({'User-Agent' => Resourceful::RESOURCEFUL_USER_AGENT_TOKEN}.merge(default_header))
       @on_redirect = nil
     end
 
@@ -144,6 +144,7 @@ module Resourceful
       end
     end
 
+    # Log it took the time to make the request
     def log_request_with_time(msg, indent = 2)
       logger.info(" " * indent + msg)
       result = nil

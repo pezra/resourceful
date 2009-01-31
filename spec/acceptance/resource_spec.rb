@@ -10,6 +10,17 @@ describe Resourceful do
       @resource = @http.resource('http://localhost:3000/')
     end
 
+    it 'should make the original uri available' do 
+      @resource.effective_uri.should == 'http://localhost:3000/'
+      @resource.uri.should == 'http://localhost:3000/'
+    end
+
+    it 'should set the user agent string on the default header' do
+      @resource.default_header.should have_key('User-Agent')
+      @resource.default_header['User-Agent'].should == Resourceful::RESOURCEFUL_USER_AGENT_TOKEN
+
+    end
+
     describe "GET" do
 
       it "should be performable on a resource and return a response" do

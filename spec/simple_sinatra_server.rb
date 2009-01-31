@@ -65,19 +65,22 @@ end
 
 
 require 'thin'
-# Spawn the server in another process
-@server = fork do
-  Thin::Logging.silent = true
-  #Thin::Logging.debug = true
+# Only do this shit once, no matter how many times its #require'd
+unless @server
+  # Spawn the server in another process
+  @server = fork do
+    Thin::Logging.silent = true
+    #Thin::Logging.debug = true
 
-  Thin::Server.start(Sinatra::Application)
+    Thin::Server.start(Sinatra::Application)
+  end
+
+  # Kill the server process when rspec finishes
+  at_exit { Process.kill("TERM", @server) }
+
+  # Give the app a change to initialize
+  $stderr.puts "Waiting for thin to initialize..."
+  sleep 0.2
 end
-
-# Kill the server process when rspec finishes
-at_exit { Process.kill("TERM", @server) }
-
-# Give the app a change to initialize
-$stderr.puts "Waiting for thin to initialize..."
-sleep 0.2
 
 
