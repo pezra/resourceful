@@ -2,7 +2,7 @@ require 'rubygems'
 require 'rake'
 require 'echoe'
 
-Echoe.new('resourceful', '0.3.1') do |p|
+Echoe.new('resourceful', '0.4.0') do |p|
   p.description     = "An HTTP library for Ruby that takes advantage of everything HTTP has to offer."
   p.url             = "http://github.com/paul/resourceful"
   p.author          = "Paul Sadauskas"
@@ -10,7 +10,7 @@ Echoe.new('resourceful', '0.3.1') do |p|
 
   p.ignore_pattern  = ["pkg/*", "tmp/*"]
   p.dependencies    = ['addressable', 'httpauth', 'rspec', 'facets', 'andand']
-  p.development_dependencies = ['thin', 'yard']
+  p.development_dependencies = ['thin', 'yard', 'sinatra']
 end
 
 require 'spec/rake/spectask'

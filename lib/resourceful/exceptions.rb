@@ -20,4 +20,11 @@ module Resourceful
   class UnsupportedContentCoding < Exception
   end
 
+  # Raised when a body is supplied, but not a content-type header
+  class MissingContentType < ArgumentError
+    def initialize
+      super("A Content-Type must be specified when an entity-body is supplied.")
+    end
+  end
+
 end

@@ -86,8 +86,8 @@ module Resourceful
     # @raise [ArgumentError] unless :content-type is specified in options
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
-    def post(data = "", header = {})
-      check_content_type_exists(header)
+    def post(data = nil, header = {})
+      check_content_type_exists(data, header)
       request(:post, data, header)
     end
 
@@ -107,8 +107,8 @@ module Resourceful
     # @raise [ArgumentError] unless :content-type is specified in options
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
-    def put(data = "", header = {})
-      check_content_type_exists(header)
+    def put(data, header = {})
+      check_content_type_exists(data, header)
       request(:put, data, header)
     end
 
@@ -129,8 +129,11 @@ module Resourceful
     private
 
     # Ensures that the request has a content type header
-    def check_content_type_exists(header)
-      raise ArgumentError, ":content_type must be specified" unless header.has_key?(:content_type) or default_header.has_key?(:content_type)
+    # TODO Move this to request
+    def check_content_type_exists(body, header)
+      if body
+        raise MissingContentType unless header.has_key?(:content_type) or default_header.has_key?(:content_type)
+      end
     end
 
     # Actually make the request
