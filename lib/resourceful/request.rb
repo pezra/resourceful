@@ -2,6 +2,7 @@ require 'pathname'
 require 'benchmark'
 require 'resourceful/response'
 require 'resourceful/net_http_adapter'
+require 'resourceful/rfuzz_http_adapter'
 require 'resourceful/exceptions'
 
 module Resourceful
@@ -161,7 +162,7 @@ module Resourceful
       @request_time = Time.now
       logger.debug("DEBUG: Request Header: #{@header.inspect}")
 
-      http_resp = NetHttpAdapter.make_request(@method, @resource.uri, @body, @header)
+      http_resp = http_adapter.make_request(@method, @resource.uri, @body, @header)
       @response = Resourceful::Response.new(uri, *http_resp)
       @response.request_time = @request_time
       @response.authoritative = true
@@ -224,6 +225,13 @@ module Resourceful
       resource.logger
     end
 
+    def http_adapter
+      if defined?(RFuzzHttpAdapter)
+        RFuzzHttpAdapter
+      else
+        NetHttpAdapter
+      end
+    end
   end
 
 end
