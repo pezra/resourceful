@@ -78,7 +78,7 @@ module Resourceful
     end
 
     def store(request, response)
-      return unless response.cachable?
+      return unless response.cacheable?
 
       @collection[request.uri.to_s][request] = response
     end
@@ -110,7 +110,7 @@ module Resourceful
     end
 
     def store(request, response)
-      return unless response.cachable?
+      return unless response.cacheable?
 
       entries = cache_entries_for(request)
       entries[request] = response

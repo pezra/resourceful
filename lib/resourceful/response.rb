@@ -8,6 +8,7 @@ module Resourceful
 
   class Response
     REDIRECT_RESPONSE_CODES = [301,302,303,307]
+    NORMALLY_CACHEABLE_RESPONSE_CODES = [200, 203, 300, 301, 410]
 
     attr_reader :uri, :code, :header, :body, :response_time
     alias headers header
@@ -50,12 +51,15 @@ module Resourceful
     # Is this response cachable?
     #
     # @return true|false
-    def cachable?
-      return false unless [200, 203, 300, 301, 410].include?(code.to_i)
-      return false if header['Vary'] and header['Vary'].include?('*')
-      return false if header['Cache-Control'] and header['Cache-Control'].include?('no-store')
-
-      true
+    def cacheable?
+      @cacheable ||= begin
+        @cacheable = true  if NORMALLY_CACHEABLE_RESPONSE_CODES.include?(code.to_i)
+        @cacheable = false if header.vary && header.vary.include?('*')
+        @cacheable = false if header.cache_control && header.cache_control.include?('no-cache')
+        @cacheable = true  if header.cache_control && header.cache_control.include?('public')
+        @cacheable = true  if header.cache_control && header.cache_control.include?('private')
+        @cacheable || false
+      end
     end
 
     # Does this response force revalidation?
@@ -143,6 +147,8 @@ module Resourceful
       504 => "Gateway Timeout".freeze,
       505 => "HTTP Version Not Supported".freeze,
     }.freeze
+
+    CODES = CODE_NAMES.keys
 
     CODE_NAMES.each do |code, msg|
       method_name = msg.downcase.gsub(/[- ]/, "_")

@@ -48,7 +48,7 @@ module Resourceful
     def fetch_response
       if cached_response
         if needs_revalidation?(cached_response)
-          logger.info("    Cache entry is stale")
+          logger.info("    Cache needs revalidation")
           set_validation_headers!(cached_response)
         else
           # We're done!
@@ -60,7 +60,7 @@ module Resourceful
 
       response = perform!
 
-      response = revalidate_cached_response(response) if response.not_modified?
+      response = revalidate_cached_response(response) if cached_response && response.not_modified?
       response = follow_redirect(response)            if should_be_redirected?(response)
       response = retry_with_auth(response)            if needs_authorization?(response)
 
@@ -102,6 +102,7 @@ module Resourceful
 
     # Follow a redirect response
     def follow_redirect(response)
+      raise MalformedServerResponse.new(self, response) unless response.header.location
       if response.moved_permanently?
         new_uri = response.header.location.first
         logger.info("    Permanently redirected to #{new_uri} - Storing new location.")
@@ -158,7 +159,7 @@ module Resourceful
     def perform!
       logger.debug @header.inspect
       @request_time = Time.now
-      logger.debug("    DEBUG: Request Header: #{@header.inspect}")
+      logger.debug("DEBUG: Request Header: #{@header.inspect}")
 
       http_resp = NetHttpAdapter.make_request(@method, @resource.uri, @body, @header)
       @response = Resourceful::Response.new(uri, *http_resp)
@@ -202,9 +203,10 @@ module Resourceful
 
     # Does this request force us to revalidate the cache?
     def forces_revalidation?
-      if cc = header['Cache-Control']
-        cc.include?('no-cache') || max_age == 0
-      else
+      if max_age == 0 || header.cache_control && cc.include?('no-cache')
+        logger.info("    Client forced revalidation")
+        true
+      else 
         false
       end
     end

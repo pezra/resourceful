@@ -15,9 +15,20 @@ module Resourceful
     end
   end
 
+  class MalformedServerResponse < UnsuccessfulHttpRequestError
+  end
+      
+
   # Exception indicating that the server used a content coding scheme
   # that Resourceful is unable to handle.
   class UnsupportedContentCoding < Exception
+  end
+
+  # Raised when a body is supplied, but not a content-type header
+  class MissingContentType < ArgumentError
+    def initialize
+      super("A Content-Type must be specified when an entity-body is supplied.")
+    end
   end
 
 end
