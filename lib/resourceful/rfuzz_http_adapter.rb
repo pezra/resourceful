@@ -12,7 +12,7 @@ if defined?(RFuzz::HttpClient)
       # Make an HTTP request
       #
       # @param [Symbol] method   The HTTP method of the request to make.
-      # @param [Addressable::URI]   The URI of the resource to request
+      # @param [Addressable::URI, String]   The URI of the resource to request
       # @param [String]   The body of the request to make.
       # @param [Resourceful::Header]   The set of header fields that should be 
       #   included in the request.
@@ -20,6 +20,8 @@ if defined?(RFuzz::HttpClient)
       # @return [Array(Integer,Resourceful::Header,String)]  The status, header and 
       #   body of the response.
       def make_request(method, uri, body = nil, header = nil)
+        uri = uri.is_a?(Addressable::URI) ? uri : Addressable::URI.parse(uri)
+        
         resp = client_for(uri).send_request(method.to_s.upcase, uri.absolute_path, :body => body, :header => header)
 
         [resp.http_status.to_i,

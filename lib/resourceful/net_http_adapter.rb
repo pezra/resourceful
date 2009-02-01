@@ -8,11 +8,11 @@ require 'resourceful/header'
 module Addressable
   class URI
     def absolute_path
-      absolute_path = ""
-      absolute_path << self.path.to_s
-      absolute_path << "?#{self.query}" if self.query != nil
-      absolute_path << "##{self.fragment}" if self.fragment != nil
-      return absolute_path
+      "".tap do |str|
+        str << (self.path.empty? ? "/" : self.path)
+        str << "?#{self.query}" if self.query != nil
+        str << "##{self.fragment}" if self.fragment != nil
+      end
     end
   end
 end
