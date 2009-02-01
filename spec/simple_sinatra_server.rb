@@ -1,5 +1,5 @@
-
 require 'sinatra'
+require 'yaml'
 
 def any(path, opts={}, &blk)
   %w[head get post put delete].each do |verb|
