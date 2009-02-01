@@ -15,6 +15,10 @@ module Resourceful
     end
   end
 
+  class MalformedServerResponse < UnsuccessfulHttpRequestError
+  end
+      
+
   # Exception indicating that the server used a content coding scheme
   # that Resourceful is unable to handle.
   class UnsupportedContentCoding < Exception
