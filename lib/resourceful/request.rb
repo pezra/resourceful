@@ -226,11 +226,7 @@ module Resourceful
     end
 
     def http_adapter
-      if defined?(RFuzzHttpAdapter)
-        RFuzzHttpAdapter
-      else
-        NetHttpAdapter
-      end
+      return NetHttpAdapter
     end
   end
 
