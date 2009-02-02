@@ -132,6 +132,11 @@ module Resourceful
 
     # Store the response to this request in the cache
     def store_in_cache(response)
+      # RFC2618 - 14.18 : A received message that does not have a Date header 
+      # field MUST be assigned one by the recipient if the message will be cached 
+      # by that recipient.
+      response.header.date ||= response.response_time.httpdate
+
       accessor.cache_manager.store(self, response) 
     end
 

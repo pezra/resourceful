@@ -115,24 +115,70 @@ describe Resourceful do
         resp.should be_authoritative
       end
     end
-    
-    describe "Not Modified responses" do
-      it "should replace the 304 with whats in the cache" do
-        now = Time.now.httpdate
 
-        resource = @http.resource(uri_plus_params('http://localhost:3000/cached',
-                                                  "modified" => now))
+    describe 'authoritative' do
 
-        resp = resource.get
-        resp.should be_authoritative
-        body = resp.body
+      it "should be authoritative if the response is directly from the server" do
+        resource = @http.resource(
+          uri_plus_params('http://localhost:3000/', "Cache-Control" => 'max-age=10')
+        )
 
-        resp = resource.get("Cache-Control" => "max-age=0")
-        resp.should be_authoritative
-        resp.body.should == body
+        response  = resource.get
+        response.should be_authoritative
       end
 
-      it "should merge the headers"
+      it "should be authoritative if a cached response was revalidated with the server" do
+        now = Time.now.httpdate
+        resource = @http.resource(
+          uri_plus_params('http://localhost:3000/cached', 
+                          "modified" => now, 
+                          "Cache-Control" => 'max-age=0')
+        )
+
+        resource.get
+        response = resource.get("Cache-Control" => "max-age=0")
+        response.should be_authoritative
+      end
+
+      it "should not be authoritative if the cached response was not revalidated" do
+        now = Time.now.httpdate
+        resource = @http.resource(
+          uri_plus_params('http://localhost:3000/cached', 
+                          "modified" => now, 
+                          "Cache-Control" => 'max-age=10')
+        )
+
+        resource.get
+        response = resource.get
+        response.should_not be_authoritative
+
+      end
+
+    end
+    
+    describe "Not Modified responses" do
+      before do
+        now = Time.now.httpdate
+
+        resource = @http.resource(
+          uri_plus_params('http://localhost:3000/cached', 
+                          "modified" => now, 
+                          "Cache-Control" => 'max-age=0')
+        )
+
+        @first_response  = resource.get
+        @second_response = resource.get("Cache-Control" => "max-age=0") # Force revalidation
+      end
+
+      it "should replace the 304 response with whats in the cache" do
+        @second_response.code.should == @first_response.code
+      end
+
+      it "should provide a body identical to the original response" do
+        @second_response.body.should == @first_response.body
+      end
+
+      it "should override any cached headers with new ones"
     end
 
     describe "cache invalidation" do
