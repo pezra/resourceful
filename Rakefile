@@ -2,7 +2,9 @@ require 'rubygems'
 require 'rake'
 require 'echoe'
 
-Echoe.new('resourceful', '0.4.0') do |p|
+require 'lib/resourceful'
+
+Echoe.new('resourceful', Resourceful::VERSION) do |p|
   p.description     = "An HTTP library for Ruby that takes advantage of everything HTTP has to offer."
   p.url             = "http://github.com/paul/resourceful"
   p.author          = "Paul Sadauskas"

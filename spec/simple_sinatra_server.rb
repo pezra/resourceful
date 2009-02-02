@@ -68,6 +68,11 @@ get '/cached' do
 end
 
 
+Sinatra::Default.set(
+  :logging => ENV["SPEC_LOGGING"] || false,
+  :port => 3000
+)
+
 
 
 

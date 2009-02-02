@@ -1,8 +1,11 @@
 
+require 'rubygems'
 require 'sinatra'
 require 'sinatra/test/rspec'
 
-require File.dirname(__FILE__) + '/simple_sinatra_server'
+#require File.dirname(__FILE__) + '/simple_sinatra_server'
+
+require File.dirname(__FILE__) + '/spec_helper'
 
 describe "GET /" do
   it 'should render "Hello, world!"' do
