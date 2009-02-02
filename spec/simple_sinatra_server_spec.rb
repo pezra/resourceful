@@ -3,8 +3,6 @@ require 'rubygems'
 require 'sinatra'
 require 'sinatra/test/rspec'
 
-#require File.dirname(__FILE__) + '/simple_sinatra_server'
-
 require File.dirname(__FILE__) + '/spec_helper'
 
 describe "GET /" do
@@ -88,13 +86,13 @@ end
 describe "/cache" do
   it 'should be normal 200 if the modified query param and the ims header dont match' do
     now = Time.now
-    get '/cached', {"modified" => now.httpdate}, {"If-Modified-Since" => (now - 3600).httpdate}
+    get '/cached', {"modified" => now.httpdate}, {"HTTP_IF_MODIFIED_SINCE" => (now - 3600).httpdate}
     @response.should be_ok
   end
 
   it 'should be 304 if the modified query param and the ims header are the same' do
     now = Time.now
-    get '/cached', {"modified" => now.httpdate}, {"If-Modified-Since" => now.httpdate}
+    get '/cached', {"modified" => now.httpdate}, {"HTTP_IF_MODIFIED_SINCE" => now.httpdate}
     @response.status.should == 304
   end
 end
