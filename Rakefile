@@ -21,7 +21,23 @@ desc 'Run all specs'
 Spec::Rake::SpecTask.new(:spec) do |t|
   t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
   t.libs << 'lib'
-  t.spec_files = FileList['spec/**/*_spec.rb']
+  t.spec_files = FileList['spec/acceptance/*_spec.rb'] 
+end
+
+desc 'Run the specs for the server'
+Spec::Rake::SpecTask.new('spec:server') do |t|
+  t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
+  t.libs << 'lib'
+  t.spec_files = FileList['spec/simple_sinatra_server_spec.rb'] 
+end
+
+desc "Run the sinatra echo server, with loggin" 
+task :server do
+  require 'spec/simple_sinatra_server'
+  Sinatra::Default.set(
+    :run => true,
+    :logging => true
+  )
 end
 
 desc 'Default: Run Specs'
