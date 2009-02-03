@@ -30,6 +30,11 @@ module Resourceful
     end
     alias uri effective_uri
 
+    # Returns the host for this Resource's current uri
+    def host
+      Addressable::URI.parse(uri).host
+    end
+
     # Updates the effective uri after following a permanent redirect
     def update_uri(uri)
       @uris.unshift(uri)

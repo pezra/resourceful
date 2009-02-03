@@ -34,7 +34,7 @@ module Resourceful
         conn.start
         res = conn.request(req, body)
       ensure
-        conn.finish
+        conn.finish if conn.started?
       end
 
       [ Integer(res.code),

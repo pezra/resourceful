@@ -29,8 +29,8 @@ module Resourceful
       # Resourceful handled gzip encoding transparently, so set that up
       @header.accept_encoding ||= 'gzip, identity'
 
-      # 'Host' is a required HTTP/1.1 header, so set it if it isn't already
-      @header.host ||= Addressable::URI.parse(resource.uri).host
+      # 'Host' is a required HTTP/1.1 header, overrides Host in user-provided headers
+      @header.host = @resource.host
 
       # Setting the date isn't a bad idea, either
       @header.date ||= Time.now.httpdate
@@ -108,6 +108,7 @@ module Resourceful
         new_uri = response.header.location.first
         logger.info("    Permanently redirected to #{new_uri} - Storing new location.")
         resource.update_uri new_uri
+        @header.host = resource.host
         response = fetch_response
       elsif response.see_other? # Always use GET for this redirect, regardless of initial method
         redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
@@ -135,6 +136,11 @@ module Resourceful
 
     # Store the response to this request in the cache
     def store_in_cache(response)
+      # RFC2618 - 14.18 : A received message that does not have a Date header 
+      # field MUST be assigned one by the recipient if the message will be cached 
+      # by that recipient.
+      response.header.date ||= response.response_time.httpdate
+
       accessor.cache_manager.store(self, response) 
     end
 
