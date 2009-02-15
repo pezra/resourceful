@@ -28,8 +28,9 @@ module Resourceful
 
       req = net_http_request_class(method).new(uri.absolute_path)
       header.each { |k,v| req[k] = v } if header
-      conn = Net::HTTP.Proxy(*proxy_details).new(uri.host, uri.port)
-      conn.use_ssl = (/https/i === uri.scheme)
+      https = ("https" == uri.scheme)
+      conn = Net::HTTP.Proxy(*proxy_details).new(uri.host, uri.port || (https ? 443 : 80))
+      conn.use_ssl = https
       begin 
         conn.start
         res = conn.request(req, body)
