@@ -9,7 +9,7 @@ module Resourceful
   class PushBackIo
     attr_accessor :secondary
 
-    def initialize(secondary)
+    def initialize(secondary) 
       @secondary = secondary
       @buffer = StringIO.new
       @partial_supported = secondary.respond_to?(:readpartial)
@@ -39,25 +39,30 @@ module Resourceful
       end
     end
 
+    # Write `content` to secondary IO
     def write(content)
       @secondary.write(content)
     end
 
+    # Flush secondary IO
     def flush
       @secondary.flush
     end
 
+    # Close this object and the secondary IO
     def close
       @buffer.string = ""
       @secondary.close
     end
 
+    # Is this IO closed?
     def closed?
       @buffer.size == 0 && @secondary.closed? 
     end
 
     protected
 
+    # Get some data from the push back buffer.
     def pop(n)
       @buffer.rewind
       o = @buffer.read(n)
