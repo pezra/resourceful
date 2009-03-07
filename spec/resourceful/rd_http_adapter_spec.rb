@@ -6,11 +6,13 @@ require 'facets'
 
 describe Resourceful::RdHttpAdapter do
   describe "(when making request)" do
+    BASIC_HTTP_RESPONSE = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello"
+
     before do
       @adapter = Resourceful::RdHttpAdapter.new
 
       @request = request = ""
-      @server_conn = stub("server_conn", :close => nil, :flush => nil)
+      @server_conn = stub("server_conn", :close => nil, :flush => nil, :closed? => false, :readpartial => BASIC_HTTP_RESPONSE)
       @server_conn.eigenclass.class_eval do
         define_method(:write) {|req| request << req}
       end
@@ -99,12 +101,39 @@ describe Resourceful::RdHttpAdapter do
       request_lines.grep(/Content-Length/).should be_empty
     end 
 
-
     it "should flush socket after it is done" do
       @server_conn.should_receive(:flush)
       @adapter.make_request(:get, u("http://foo.invalid/"))
     end
 
+    describe 'simple 200 response' do
+      before do
+        resp = ["HTTP/1.1 200 OK",
+                "Content-Length: 5",
+                "X-Test-Header: yer mom",
+                "",
+                "Hello"].join("\r\n")
+
+        @server_conn.stub!(:readpartial).and_return(resp)
+      end
+
+      it "should return correct response status" do
+        @adapter.make_request(:get, u("http://foo.invalid/"))[0].should eql(200)
+      end 
+
+      it "should return correct headers (content-length)" do
+        @adapter.make_request(:get, u("http://foo.invalid/"))[1].should include('Content-Length' => '5')
+      end 
+
+      it "should return correct headers (custom)" do
+        @adapter.make_request(:get, u("http://foo.invalid/"))[1].should include('X-Test-Header' =>'yer mom')
+      end 
+
+      it "should return correct body " do
+        @adapter.make_request(:get, u("http://foo.invalid/"))[2].should eql('Hello')
+      end 
+    end
+    
     it "should close socket after it is done" do
       @server_conn.should_receive(:close)
       @adapter.make_request(:post, u("http://foo.invalid/"))

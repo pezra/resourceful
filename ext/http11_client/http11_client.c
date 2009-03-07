@@ -10,7 +10,7 @@
 #include "http11_parser.h"
 #include <ctype.h>
 
-static VALUE mFastHttp;
+static VALUE mResourceful;
 static VALUE cHttpClientParser;
 static VALUE eHttpClientParserError;
 
@@ -284,11 +284,11 @@ VALUE HttpClientParser_nread(VALUE self)
 void Init_http11_client()
 {
 
-  mFastHttp = rb_define_module("FastHttp");
+  mResourceful = rb_define_module("Resourceful");
 
-  eHttpClientParserError = rb_define_class_under(mFastHttp, "HttpClientParserError", rb_eIOError);
+  eHttpClientParserError = rb_define_class_under(mResourceful, "HttpClientParserError", rb_eIOError);
 
-  cHttpClientParser = rb_define_class_under(mFastHttp, "HttpClientParser", rb_cObject);
+  cHttpClientParser = rb_define_class_under(mResourceful, "HttpClientParser", rb_cObject);
   rb_define_alloc_func(cHttpClientParser, HttpClientParser_alloc);
   rb_define_method(cHttpClientParser, "initialize", HttpClientParser_init,0);
   rb_define_method(cHttpClientParser, "reset", HttpClientParser_reset,0);

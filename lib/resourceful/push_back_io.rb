@@ -1,6 +1,7 @@
 # Copied from Rfuzz, w/ the bits I don't need removed.  Thanks Zed.
 require 'stringio'
 
+puts "****HERE"
 module Resourceful
   # A simple class that using a StringIO object internally to allow for faster
   # and simpler "push back" semantics.  It basically lets you read a random
