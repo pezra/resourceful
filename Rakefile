@@ -22,18 +22,46 @@ end
 require 'spec/rake/spectask'
 
 desc 'Run all specs'
-Spec::Rake::SpecTask.new(:spec) do |t|
-  t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
-  t.libs << 'lib'
-  t.spec_files = FileList['spec/acceptance/*_spec.rb'] 
+task :spec => 'spec:all'
+
+namespace :spec do
+  def spec_task(name, file_list)
+    Spec::Rake::SpecTask.new(name) do |t|
+      t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
+      t.libs << 'lib'
+      t.spec_files = file_list
+    end
+  end
+
+  desc 'Run all specs'
+  spec_task(:all, FileList['spec/**/*_spec.rb'])
+
+#   Spec::Rake::SpecTask.new(:all) do |t|
+#     t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
+#     t.libs << 'lib'
+#     t.spec_files = 
+#   end
+  
+  desc 'Run acceptance specs'
+  spec_task(:acceptance, FileList['spec/acceptance/*_spec.rb'])
+
+#   Spec::Rake::SpecTask.new(:acceptance) do |t|
+#     t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
+#     t.libs << 'lib'
+#     t.spec_files = FileList['spec/acceptance/*_spec.rb'] 
+#   end
+
+  desc 'Run the specs for the server'
+  spec_task(:server, FileList['spec/simple_sinatra_server_spec.rb'])
+
+#   Spec::Rake::SpecTask.new(:server) do |t|
+#     t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
+#     t.libs << 'lib'
+#     t.spec_files = FileList['spec/simple_sinatra_server_spec.rb'] 
+#   end
+
 end
 
-desc 'Run the specs for the server'
-Spec::Rake::SpecTask.new('spec:server') do |t|
-  t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
-  t.libs << 'lib'
-  t.spec_files = FileList['spec/simple_sinatra_server_spec.rb'] 
-end
 
 begin 
   require 'spec/simple_sinatra_server'

@@ -1,6 +1,7 @@
 require 'rubygems'
 require 'spec'
 
+
 $LOAD_PATH << File.join(File.dirname(__FILE__), "..", "lib")
 require 'resourceful'
 
@@ -8,14 +9,16 @@ $LOAD_PATH << File.dirname(__FILE__) # ./spec
 
 # Spawn the server in another process
 
-@server = fork do
+if ! defined?(STUB_SERVER_STARTED)
+  STUB_SERVER_STARTED = true
 
-  require 'simple_sinatra_server'
-  Sinatra::Default.set(
-    :run => true,
-    :logging => false
-  )
-
+  @server = fork do
+    
+    require 'simple_sinatra_server'
+    Sinatra::Default.set(
+      :run => true,
+      :logging => false)
+  end
 end
 
 # Kill the server process when rspec finishes
