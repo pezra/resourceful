@@ -36,30 +36,11 @@ namespace :spec do
   desc 'Run all specs'
   spec_task(:all, FileList['spec/**/*_spec.rb'])
 
-#   Spec::Rake::SpecTask.new(:all) do |t|
-#     t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
-#     t.libs << 'lib'
-#     t.spec_files = 
-#   end
-  
   desc 'Run acceptance specs'
   spec_task(:acceptance, FileList['spec/acceptance/*_spec.rb'])
 
-#   Spec::Rake::SpecTask.new(:acceptance) do |t|
-#     t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
-#     t.libs << 'lib'
-#     t.spec_files = FileList['spec/acceptance/*_spec.rb'] 
-#   end
-
   desc 'Run the specs for the server'
   spec_task(:server, FileList['spec/simple_sinatra_server_spec.rb'])
-
-#   Spec::Rake::SpecTask.new(:server) do |t|
-#     t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
-#     t.libs << 'lib'
-#     t.spec_files = FileList['spec/simple_sinatra_server_spec.rb'] 
-#   end
-
 end
 
 
