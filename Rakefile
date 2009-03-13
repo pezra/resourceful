@@ -1,18 +1,22 @@
 require 'rubygems'
 require 'rake'
-require 'echoe'
-
 require 'lib/resourceful'
 
-Echoe.new('resourceful', Resourceful::VERSION) do |p|
-  p.description     = "An HTTP library for Ruby that takes advantage of everything HTTP has to offer."
-  p.url             = "http://github.com/paul/resourceful"
-  p.author          = "Paul Sadauskas"
-  p.email           = "psadauskas@gmail.com"
+begin
+  require 'echoe'
 
-  p.ignore_pattern  = ["pkg/*", "tmp/*"]
-  p.dependencies    = ['addressable', 'httpauth', 'rspec', 'facets', 'andand']
-  p.development_dependencies = ['thin', 'yard', 'sinatra']
+  Echoe.new('resourceful', Resourceful::VERSION) do |p|
+    p.description     = "An HTTP library for Ruby that takes advantage of everything HTTP has to offer."
+    p.url             = "http://github.com/paul/resourceful"
+    p.author          = "Paul Sadauskas"
+    p.email           = "psadauskas@gmail.com"
+
+    p.ignore_pattern  = ["pkg/*", "tmp/*"]
+    p.dependencies    = ['addressable', 'httpauth', 'rspec', 'facets', 'andand']
+    p.development_dependencies = ['thin', 'yard', 'sinatra']
+  end
+rescue LoadError => e
+  puts "install 'echoe' gem to be able to build the gem"
 end
 
 require 'spec/rake/spectask'
@@ -31,13 +35,17 @@ Spec::Rake::SpecTask.new('spec:server') do |t|
   t.spec_files = FileList['spec/simple_sinatra_server_spec.rb'] 
 end
 
-desc "Run the sinatra echo server, with loggin" 
-task :server do
+begin 
   require 'spec/simple_sinatra_server'
-  Sinatra::Default.set(
-    :run => true,
-    :logging => true
-  )
+  desc "Run the sinatra echo server, with loggin" 
+  task :server do
+    Sinatra::Default.set(
+      :run => true,
+      :logging => true
+    )
+  end
+rescue LoadError => e
+  puts "Install 'sinatra' gem to run the server"
 end
 
 desc 'Default: Run Specs'
@@ -46,11 +54,15 @@ task :default => :spec
 desc 'Run all tests'
 task :test => :spec
 
-require 'yard'
+begin
+  require 'yard'
 
-desc "Generate Yardoc"
-YARD::Rake::YardocTask.new do |t|
-  t.files = ['lib/**/*.rb', 'README.markdown']
+  desc "Generate Yardoc"
+  YARD::Rake::YardocTask.new do |t|
+    t.files = ['lib/**/*.rb', 'README.markdown']
+  end
+rescue LoadError => e
+  puts "Install 'yard' gem to generate docs"
 end
 
 desc "Update rubyforge documentation"

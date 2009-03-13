@@ -76,12 +76,12 @@ module Resourceful
 
     # Algorithm taken from RCF2616#13.2.3
     def current_age
-      age_value   = Time.httpdate(header['Age'].first) if header['Age']
+      age_value   = header['Age'] ? header['Age'].first.to_i : 0
       date_value  = Time.httpdate(header['Date'].first)
       now         = Time.now
 
       apparent_age = [0, response_time - date_value].max
-      corrected_received_age = [apparent_age, age_value || 0].max
+      corrected_received_age = [apparent_age, age_value].max
       current_age = corrected_received_age + (response_time - request_time) + (now - response_time)
     end
 
