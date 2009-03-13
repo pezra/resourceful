@@ -2,7 +2,6 @@ require 'pathname'
 require 'benchmark'
 require 'resourceful/response'
 require 'resourceful/net_http_adapter'
-require 'resourceful/rfuzz_http_adapter'
 require 'resourceful/exceptions'
 
 module Resourceful
