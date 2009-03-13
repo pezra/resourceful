@@ -106,7 +106,7 @@ describe Resourceful::RdHttpAdapter do
       @adapter.make_request(:get, u("http://foo.invalid/"))
     end
 
-    describe 'simple 200 response' do
+    describe 'simple response' do
       before do
         resp = ["HTTP/1.1 200 OK",
                 "Content-Length: 5",
@@ -133,7 +133,136 @@ describe Resourceful::RdHttpAdapter do
         @adapter.make_request(:get, u("http://foo.invalid/"))[2].should eql('Hello')
       end 
     end
+
+    describe 'large response' do
+      before do
+        @bodysize = Resourceful::RdHttpAdapter::CHUNK_SIZE + 100
+
+        resp = http_msg(<<HEAD, 'a' * @bodysize)
+HTTP/1.1 200 OK
+Content-Length: #{@bodysize}
+X-Test-Header: yer mom
+
+HEAD
+        
+        @server_conn.stub!(:readpartial).once.and_return(resp[0,Resourceful::RdHttpAdapter::CHUNK_SIZE])
+        @server_conn.stub!(:read).and_return(resp[Resourceful::RdHttpAdapter::CHUNK_SIZE..-1])
+      end
+
+      it "should return correct body " do
+        @adapter.make_request(:get, u("http://foo.invalid/"))[2].length.should eql(@bodysize)
+      end 
+    end
+
+    describe 'incomplete response' do
+      before do
+
+        resp = http_msg(<<HEAD, "hello")
+HTTP/1.1 200 OK
+Content-Length: 30
+X-Test-Header: yer mom
+
+HEAD
+        @server_conn.stub!(:readpartial).once.and_return(resp)
+        @server_conn.stub!(:read).and_return("")
+      end
+
+      it "should return correct body " do
+        @adapter.make_request(:get, u("http://foo.invalid/"))[2].should eql("hello")
+      end 
+    end
+
+    describe 'response w/o body' do
+      before do
+
+        resp = http_msg(<<RESP)
+HTTP/1.1 200 OK
+X-Test-Header: yer mom
+
+RESP
+        
+        @server_conn.stub!(:readpartial).and_raise(EOFError)
+        @server_conn.stub!(:readpartial).once.and_return(resp)
+      end
+
+      it "should return correct body " do
+        @adapter.make_request(:get, u("http://foo.invalid/"))[2].should eql('')
+      end 
+    end
+
+    describe 'malformed response (incomplete header)' do
+      before do
+
+        resp = http_msg(<<RESP)
+HTTP/1.1 200 OK
+X-Test-Header: yer mom
+RESP
+
+        @server_conn.stub!(:readpartial).and_raise(EOFError)
+        @server_conn.stub!(:readpartial).once.and_return(resp)
+      end
+
+      it "should return correct body " do
+        lambda {
+          @adapter.make_request(:get, u("http://foo.invalid/"))
+        }.should raise_error
+      end 
+    end
+   
+     describe 'malformed response (incomplete header)' do
+      before do
+
+        resp = StringIO.new(["HTTP/1.1 200 OK",
+                             "X-Test-Header: yer mom"].join("\r\n"))
+        
+        @server_conn.stub!(:readpartial).and_return { resp.read() || raise(EOFError)}
+      end
+
+      it "should return correct body " do
+        lambda {
+          @adapter.make_request(:get, u("http://foo.invalid/"))
+        }.should raise_error
+      end 
+    end
     
+    describe 'malformed response (incomplete header)' do
+      before do
+
+        resp = http_msg(<<HEAD)
+HTTP/1.1 200 OK
+X-Test-Header: yer mom
+HEAD
+
+        @server_conn.stub!(:readpartial).and_raise(EOFError)
+        @server_conn.stub!(:readpartial).once.and_return(resp)
+      end
+
+      it "should return correct body " do
+        lambda {
+          @adapter.make_request(:get, u("http://foo.invalid/"))
+        }.should raise_error
+      end 
+    end
+    
+    describe 'chunked response' do
+      before do
+        resp = http_msg(<<HEAD, "5\r\nhello5\r\nthere")
+HTTP/1.1 200 OK
+X-Test-Header: yer mom
+Transfer-Encoding: chunked
+
+HEAD
+
+        @server_conn.stub!(:readpartial).and_raise(EOFError)
+        @server_conn.stub!(:readpartial).and_return(resp)
+      end
+
+      it "should return correct body " do
+        @adapter.make_request(:get, u("http://foo.invalid/"))[2].should eql('hellothere')
+      end 
+    end
+    
+
     it "should close socket after it is done" do
       @server_conn.should_receive(:close)
       @adapter.make_request(:post, u("http://foo.invalid/"))
@@ -145,6 +274,12 @@ describe Resourceful::RdHttpAdapter do
 
     def request_lines
       @request.split("\r\n", -1)
+    end
+    
+    def http_msg(str, body = nil)
+      str.gsub(/\n/m, "\r\n").tap do |s|
+        s << body if body
+      end
     end
   end 
 

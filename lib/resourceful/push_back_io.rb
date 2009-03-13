@@ -40,6 +40,15 @@ module Resourceful
       end
     end
 
+    # Reads `n` bytes from the secondary IO.  
+    #
+    # @param [Integer] n the number of bytes to read.
+    def read(n)
+      (pop(n) || "").tap do |buffer|
+        buffer << @secondary.read(n - buffer.length) if buffer.length < n
+      end
+    end
+
     # Write `content` to secondary IO
     def write(content)
       @secondary.write(content)

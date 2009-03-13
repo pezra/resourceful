@@ -1,5 +1,6 @@
 require 'http11_client/http11_client'
 require 'resourceful/push_back_io'
+require 'stringio'
 
 module Resourceful
 
@@ -7,7 +8,7 @@ module Resourceful
   class RdHttpAdapter
     HTTP_REQUEST_START_LINE="%s %s HTTP/1.1\r\n"
     HTTP_HEADER_FIELD_LINE="%s: %s\r\n" 
-    CHUNK_SIZE=1024 * 16
+    CHUNK_SIZE= 1024 * 16
 
     # Makes HTTP request
     def make_request(method, uri, body = nil, header = {})
@@ -25,9 +26,13 @@ module Resourceful
 
       resp = read_parsed_header(conn)
       
+      needs = resp['CONTENT_LENGTH'].to_i - resp.http_body.length
+      resp.http_body += conn.read(needs) if needs > 0
+
       [Integer(resp.http_status), 
        Resourceful::Header.new(resp),
        resp.http_body]
+
     ensure
       conn.close if conn
     end
