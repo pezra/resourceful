@@ -3,3 +3,7 @@ pkg/*
 doc/*
 .yardoc
 \#*\#
+ext/http11_client/*.o
+ext/http11_client/*.so
+ext/http11_client/*.log
+ext/http11_client/Makefile
