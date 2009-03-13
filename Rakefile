@@ -97,3 +97,11 @@ desc "Update rubyforge documentation"
 task :update_docs => :yardoc do
   puts %x{rsync -aPz doc/* psadauskas@resourceful.rubyforge.org:/var/www/gforge-projects/resourceful/}
 end
+
+desc "Build the Native extension"
+task :build do
+  cd 'ext/http11_client' do
+    ruby 'extconf.rb'
+    system 'make'
+  end
+end
