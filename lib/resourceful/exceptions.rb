@@ -1,10 +1,8 @@
 
+
 module Resourceful
 
-  # This exception used to indicate that the request did not succeed.
-  # The HTTP response is included so that the appropriate actions can
-  # be taken based on the details of that response
-  class UnsuccessfulHttpRequestError < Exception
+  class RequestResponseError < Exception
     attr_reader :http_response, :http_request
  
     # Initialize new error from the HTTP request and response attributes.
@@ -15,7 +13,19 @@ module Resourceful
     end
   end
 
-  class MalformedServerResponse < UnsuccessfulHttpRequestError
+  # This exception used to indicate that the request did not succeed.
+  # The HTTP response is included so that the appropriate actions can
+  # be taken based on the details of that response
+  class UnsuccessfulHttpRequestError < RequestResponseError
+  end
+
+  class InvalidServerResponseError < RequestResponseError
+  end
+
+  class LocationMissingFromRedirectError < UnsuccessfulHttpRequestError
+  end
+
+  class MalformedServerResponseError < Exception
   end
       
 

@@ -1,5 +1,6 @@
 require 'http11_client/http11_client'
 require 'resourceful/push_back_io'
+require 'resourceful/exceptions'
 require 'stringio'
 
 module Resourceful
@@ -13,21 +14,15 @@ module Resourceful
     # Makes HTTP request
     def make_request(method, uri, body = nil, header = {})
       uri = parse_uri(uri)
-
-      conn = PushBackIo.new(Socket.new(uri.host, uri.port || 80))
+      
+      conn = HttpConnection.new(uri.host, uri.port || 80)
 
       if body
         header['Content-Length'] = body.length
       end
 
-      conn.write(build_request_header(method, uri, header))
-      conn.write(body) if body
-      conn.flush
-
-      resp = read_parsed_header(conn)
-      
-      needs = resp['CONTENT_LENGTH'].to_i - resp.http_body.length
-      resp.http_body += conn.read(needs) if needs > 0
+      conn.send_request(method, uri, body, header)
+      resp = conn.read_response
 
       [Integer(resp.http_status), 
        Resourceful::Header.new(resp),
@@ -41,41 +36,6 @@ module Resourceful
     
     def parser
       @parser ||= Resourceful::HttpClientParser.new
-    end
-
-    # Reads and parses header from `conn`
-    def read_parsed_header(conn)
-      parser.reset
-      resp = HttpResponse.new
-      data = conn.readpartial(CHUNK_SIZE)
-      nread = parser.execute(resp, data, 0)
-
-      while !parser.finished?
-        data << conn.readpartial(CHUNK_SIZE)
-        nread = parser.execute(resp, data, nread)
-      end
-
-      return resp
-    end
-    
-    # Builds the HTTP request header.
-    #
-    # @return [String] The, verbatim, HTTP header.
-    def build_request_header(method, uri, header_fields)
-      req = StringIO.new
-      req.write(HTTP_REQUEST_START_LINE % [method, uri])
-      
-      header_fields.each do |k, v|
-        if v.kind_of?(Array)
-          v.each {|sub_v| req.write(HTTP_HEADER_FIELD_LINE % [k,sub_v])}
-        else
-          req.write(HTTP_HEADER_FIELD_LINE % [k,v])
-        end
-      end
-
-      req.write("\r\n")
-
-      req.string
     end
 
     # Parses a URI string into a Addressable::URI object (if needed)
@@ -106,12 +66,6 @@ module Resourceful
       # The http body of the response, in the raw
       attr_accessor :http_body
 
-      # When parsing chunked encodings this is set
-      attr_accessor :http_chunk_size
-
-      # The actual chunks taken from the chunked encoding
-      attr_accessor :raw_chunks
-
       # Converts the http_chunk_size string properly
       def chunk_size
         if @chunk_size == nil
@@ -125,11 +79,125 @@ module Resourceful
       def last_chunk?
         @last_chunk || chunk_size == 0
       end
+    end
 
-      # Easier way to find out if this is a chunked encoding
-#       def chunked_encoding?
-#         /chunked/i === self[HttpClient::TRANSFER_ENCODING]
-#       end
+    class HttpConnection
+      attr_reader :host
+      attr_reader :port
+
+      # @param [String] host  The name of the host to connect to.
+      # @param [Integer] port The port to connect to.
+      def initialize(host, port)
+        @host = host
+        @port = port
+      end
+
+      def send_request(method, uri, body, header)
+        tcp_conn.write(build_request_header(method, uri, header))
+        tcp_conn.write(body) if body
+        tcp_conn.flush
+      end
+
+      # Read http response
+      #
+      # @return response 
+      def read_response
+        read_and_parse_header.tap do |resp|
+          if /chunked/i === resp['TRANSFER_ENCODING']
+            resp.http_body = read_chunked_body(resp.http_body)
+          else
+            needs = resp['CONTENT_LENGTH'].to_i - resp.http_body.length
+            resp.http_body << tcp_conn.read(needs) if needs > 0
+          end
+        end
+      end
+
+      # Close the underlying TCP connection.
+      def close
+        @tcp_conn.close
+      end
+
+      protected
+
+      # Builds the HTTP request header.
+      #
+      # @return [String] The, verbatim, HTTP header.
+      def build_request_header(method, uri, header_fields)
+        req = StringIO.new
+        req.write(HTTP_REQUEST_START_LINE % [method, uri])
+        
+        header_fields.each do |k, v|
+          if v.kind_of?(Array)
+            v.each {|sub_v| req.write(HTTP_HEADER_FIELD_LINE % [k,sub_v])}
+          else
+            req.write(HTTP_HEADER_FIELD_LINE % [k,v])
+          end
+        end
+        
+        req.write("\r\n")
+        
+        req.string
+      end
+
+      # Reads and parses header from `conn`
+      def read_and_parse_header
+        parser.reset
+        resp = HttpResponse.new
+        data = tcp_conn.readpartial(CHUNK_SIZE)
+        nread = parser.execute(resp, data, 0)
+        
+        while !parser.finished?
+          data << tcp_conn.readpartial(CHUNK_SIZE)
+          nread = parser.execute(resp, data, nread)
+        end
+        
+        resp
+
+      rescue Resourceful::HttpClientParserError => e
+        raise Resourceful::MalformedServerResponseError, e.message
+      end
+
+      def parser
+        @parser ||= Resourceful::HttpClientParser.new
+      end
+      
+      def tcp_conn
+        @tcp_conn ||= PushBackIo.new(Socket.new(host, port))        
+      end
+
+      # Used to process chunked headers and then read up their bodies.
+      def read_chunked_header
+        resp = read_and_parse_header
+        @tcp_conn.push(resp.http_body)
+        
+        if !resp.last_chunk?
+          resp.http_body = @tcp_conn.read(resp.chunk_size)
+          
+          trail = @tcp_conn.read(2)
+          if trail != "\r\n"
+            raise Resourceful::MalformedServerResponseError, "Chunk ended in #{trail.inspect} not a CRLF"
+          end
+        end
+        
+        return resp
+      end
+
+      # Collects up a chunked body both collecting the body together *and*
+      # collecting the chunks into HttpResponse.raw_chunks[] for alternative
+      # analysis.
+      def read_chunked_body(partial_body)
+        @tcp_conn.push(partial_body)
+        body = StringIO.new
+
+        while true
+          chunk = read_chunked_header
+          body << chunk.http_body
+
+          break if chunk.last_chunk?
+        end
+      
+        body.string
+      end
     end
 
   end

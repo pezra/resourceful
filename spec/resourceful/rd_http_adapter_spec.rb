@@ -5,7 +5,7 @@ require 'resourceful/rd_http_adapter'
 require 'facets'
 
 describe Resourceful::RdHttpAdapter do
-  describe "(when making request)" do
+  describe "#make_request" do
     BASIC_HTTP_RESPONSE = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello"
 
     before do
@@ -145,8 +145,8 @@ X-Test-Header: yer mom
 
 HEAD
         
-        @server_conn.stub!(:readpartial).once.and_return(resp[0,Resourceful::RdHttpAdapter::CHUNK_SIZE])
-        @server_conn.stub!(:read).and_return(resp[Resourceful::RdHttpAdapter::CHUNK_SIZE..-1])
+        @server_conn.should_receive(:readpartial).once.ordered.and_return(resp[0,Resourceful::RdHttpAdapter::CHUNK_SIZE])
+        @server_conn.should_receive(:read).once.ordered.and_return(resp[Resourceful::RdHttpAdapter::CHUNK_SIZE..-1])
       end
 
       it "should return correct body " do
@@ -154,7 +154,7 @@ HEAD
       end 
     end
 
-    describe 'incomplete response' do
+    describe 'incomplete small response' do
       before do
 
         resp = http_msg(<<HEAD, "hello")
@@ -163,8 +163,8 @@ Content-Length: 30
 X-Test-Header: yer mom
 
 HEAD
-        @server_conn.stub!(:readpartial).once.and_return(resp)
-        @server_conn.stub!(:read).and_return("")
+        @server_conn.should_receive(:readpartial).once.ordered.and_return(resp)
+        @server_conn.should_receive(:read).once.ordered.and_return("")
       end
 
       it "should return correct body " do
@@ -172,6 +172,26 @@ HEAD
       end 
     end
 
+    describe 'incomplete large body' do
+      before do
+        @bodysize = Resourceful::RdHttpAdapter::CHUNK_SIZE + 100
+
+        resp = http_msg(<<HEAD, 'a' * @bodysize)
+HTTP/1.1 200 OK
+X-Test-Header: yer mom
+Content-Length: #{@bodysize * 2}
+
+HEAD
+
+        @server_conn.should_receive(:readpartial).once.ordered.and_return(resp[0,Resourceful::RdHttpAdapter::CHUNK_SIZE])
+        @server_conn.should_receive(:read).once.ordered.and_return(resp[Resourceful::RdHttpAdapter::CHUNK_SIZE..-1])
+      end
+
+      it "should return the partial body" do
+        @adapter.make_request(:get, u("http://foo.invalid/"))[2].should have(@bodysize).items
+      end 
+    end
+    
     describe 'response w/o body' do
       before do
 
@@ -181,8 +201,7 @@ X-Test-Header: yer mom
 
 RESP
         
-        @server_conn.stub!(:readpartial).and_raise(EOFError)
-        @server_conn.stub!(:readpartial).once.and_return(resp)
+        @server_conn.should_receive(:readpartial).once.ordered.and_return(resp)
       end
 
       it "should return correct body " do
@@ -190,7 +209,7 @@ RESP
       end 
     end
 
-    describe 'malformed response (incomplete header)' do
+    describe 'incomplete header' do
       before do
 
         resp = http_msg(<<RESP)
@@ -198,55 +217,54 @@ HTTP/1.1 200 OK
 X-Test-Header: yer mom
 RESP
 
-        @server_conn.stub!(:readpartial).and_raise(EOFError)
-        @server_conn.stub!(:readpartial).once.and_return(resp)
+        @server_conn.should_receive(:readpartial).once.and_return(resp)
       end
 
-      it "should return correct body " do
+      it "should raise an execption" do
         lambda {
           @adapter.make_request(:get, u("http://foo.invalid/"))
-        }.should raise_error
+        }.should raise_error(Resourceful::MalformedServerResponseError)
+      end 
+    end
+
+    describe 'malformed header' do
+      before do
+
+        resp = http_msg(<<RESP)
+HTTP/1.1 200 OK
+X-Test-Header; yer mom
+
+RESP
+
+        @server_conn.should_receive(:readpartial).once.and_return(resp)
+      end
+
+      it "should raise an exception" do
+        lambda {
+          @adapter.make_request(:get, u("http://foo.invalid/"))
+        }.should raise_error(Resourceful::MalformedServerResponseError)
       end 
     end
    
-     describe 'malformed response (incomplete header)' do
+    describe 'chunked response' do
       before do
-
-        resp = StringIO.new(["HTTP/1.1 200 OK",
-                             "X-Test-Header: yer mom"].join("\r\n"))
-        
-        @server_conn.stub!(:readpartial).and_return { resp.read() || raise(EOFError)}
-      end
-
-      it "should return correct body " do
-        lambda {
-          @adapter.make_request(:get, u("http://foo.invalid/"))
-        }.should raise_error
-      end 
-    end
-    
-    describe 'malformed response (incomplete header)' do
-      before do
-
-        resp = http_msg(<<HEAD)
+        resp = http_msg(<<HEAD, "5\r\nhello\r\n5\r\nthere\r\n0\r\n")
 HTTP/1.1 200 OK
-X-Test-Header: yer mom
-HEAD
+Transfer-Encoding: chunked
 
-        @server_conn.stub!(:readpartial).and_raise(EOFError)
+HEAD
+ 
         @server_conn.stub!(:readpartial).once.and_return(resp)
       end
 
-      it "should return correct body " do
-        lambda {
-          @adapter.make_request(:get, u("http://foo.invalid/"))
-        }.should raise_error
-      end 
+      it "should have correct body" do
+        @adapter.make_request(:get, u("http://foo.invalid/"))[2].should eql('hellothere')
+      end
     end
-    
-    describe 'chunked response' do
+
+    describe 'malformed chunked response' do
       before do
-        resp = http_msg(<<HEAD, "5\r\nhello5\r\nthere")
+        resp = http_msg(<<HEAD, "3\r\nhello5\r\nthere")
 HTTP/1.1 200 OK
 X-Test-Header: yer mom
 Transfer-Encoding: chunked
@@ -256,8 +274,26 @@ HEAD
         @server_conn.stub!(:readpartial).and_raise(EOFError)
         @server_conn.stub!(:readpartial).and_return(resp)
       end
+      
+      it "should raise error" do
+        lambda {
+          @adapter.make_request(:get, u("http://foo.invalid/"))
+        }.should raise_error(Resourceful::MalformedServerResponseError)
+      end 
+    end
 
-      it "should return correct body " do
+    describe 'chunked response w/o final chunck' do
+      before do
+        resp = http_msg(<<HEAD, "5\r\nhello\r\n5\r\nthere\r\n")
+HTTP/1.1 200 OK
+Transfer-Encoding: chunked
+
+HEAD
+
+        @server_conn.should_receive(:readpartial).and_return(resp)
+      end
+      
+      it "should raise error" do
         pending
         @adapter.make_request(:get, u("http://foo.invalid/"))[2].should eql('hellothere')
       end 
