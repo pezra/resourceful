@@ -103,17 +103,19 @@ module Resourceful
     # Follow a redirect response
     def follow_redirect(response)
       raise LocationMissingFromRedirectError.new(self, response) unless response.header.location
+
+      # We can handle this redirect.
+      alt_location = response.header.location.first
       if response.moved_permanently?
-        new_uri = response.header.location.first
         logger.info("    Permanently redirected to #{new_uri} - Storing new location.")
-        resource.update_uri new_uri
+        resource.update_uri alt_location
         @header.host = resource.host
         response = fetch_response
       elsif response.see_other? # Always use GET for this redirect, regardless of initial method
-        redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
+        redirected_resource = Resourceful::Resource.new(self.accessor, alt_location)
         response = Request.new(:get, redirected_resource, body, header).fetch_response
       else
-        redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
+        redirected_resource = Resourceful::Resource.new(self.accessor, alt_location)
         logger.info("    Redirected to #{redirected_resource.uri} - Caching new location.")
         response = Request.new(method, redirected_resource, body, header).fetch_response
       end

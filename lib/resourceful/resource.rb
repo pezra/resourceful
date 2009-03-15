@@ -1,17 +1,21 @@
 require 'pathname'
 require 'resourceful/request'
+require 'forwardable'
 
 module Resourceful
 
   class Resource
+    extend Forwardable
+
     attr_reader :accessor
     attr_accessor :default_header
 
+
     # Build a new resource for a uri
     #
-    # @param accessor<HttpAccessor> 
+    # @param [HttpAccessor] accessor
     #   The parent http accessor
-    # @param uri<String, Addressable::URI> 
+    # @param [Addressable::URI, String] uri
     #   The uri for the location of the resource
     def initialize(accessor, uri, default_header = {})
       @accessor, @uris = accessor, [uri]
@@ -23,20 +27,25 @@ module Resourceful
     # used to create the resource, but in the case of a permanent redirect, this
     # will always reflect the lastest uri.
     #
-    # @return Addressable::URI 
+    # @return [Addressable::URI] 
     #   The current uri of the resource
     def effective_uri
       @uris.first
     end
     alias uri effective_uri
 
-    # Returns the host for this Resource's current uri
+    # The host for this Resource's current URI
+    # 
+    # @return [String]
     def host
       Addressable::URI.parse(uri).host
     end
 
-    # Updates the effective uri after following a permanent redirect
+    # Updates the effective URI after following a permanent redirect
+    #
+    # @param [Addressable::URI, String]  The URI that should be this resources current URI
     def update_uri(uri)
+      uri = Addressable::URI.parse(uri) unless uri.kind_of?(Addressable::URI)
       @uris.unshift(uri)
     end
 
@@ -119,7 +128,7 @@ module Resourceful
 
     # Performs a DELETE on the resource, following redirects as neccessary.
     #
-    # @return <Response>
+    # @return [Response]
     #
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
@@ -127,9 +136,8 @@ module Resourceful
       request(:delete, nil, header)
     end
 
-    def logger
-      accessor.logger
-    end
+    # @return [Logger]  The logger that should be used by this accessor.
+    def_delegator :accessor, :logger
 
     private
 
@@ -157,7 +165,5 @@ module Resourceful
       logger.info(" " * indent + "-> Returned #{result.code} in %.4fs" % time.real)
       result
     end
-
   end
-
 end
