@@ -51,35 +51,6 @@ module Resourceful
       end
     end
 
-    # A simple hash is returned for each request made by HttpClient with
-    # the headers that were given by the server for that request.
-    class HttpResponse < Hash
-      # The reason returned in the http response ("OK","File not found",etc.)
-      attr_accessor :http_reason
-
-      # The HTTP version returned.
-      attr_accessor :http_version
-
-      # The status code (as a string!)
-      attr_accessor :http_status
-
-      # The http body of the response, in the raw
-      attr_accessor :http_body
-
-      # Converts the http_chunk_size string properly
-      def chunk_size
-        if @chunk_size == nil
-          @chunk_size = @http_chunk_size ? @http_chunk_size.to_i(base=16) : 0
-        end
-
-        @chunk_size
-      end
-
-      # true if this is the last chunk, nil otherwise (false)
-      def last_chunk?
-        @last_chunk || chunk_size == 0
-      end
-    end
 
     class HttpConnection
       attr_reader :host
@@ -119,6 +90,14 @@ module Resourceful
 
       protected
 
+      class ParserOutput < Hash
+        attr_accessor :http_reason, :http_version, :http_status, :http_body, :http_chunk_size
+        
+        def chunk_size
+          http_chunk_size.to_i(16)
+        end
+      end
+      
       # Builds the HTTP request header.
       #
       # @return [String] The, verbatim, HTTP header.
@@ -142,7 +121,7 @@ module Resourceful
       # Reads and parses header from `conn`
       def read_and_parse_header
         parser.reset
-        resp = HttpResponse.new
+        resp = ParserOutput.new
         data = tcp_conn.readpartial(CHUNK_SIZE)
         nread = parser.execute(resp, data, 0)
         
@@ -170,7 +149,7 @@ module Resourceful
         resp = read_and_parse_header
         @tcp_conn.push(resp.http_body)
         
-        if !resp.last_chunk?
+        if resp.chunk_size > 0
           resp.http_body = @tcp_conn.read(resp.chunk_size)
           
           trail = @tcp_conn.read(2)
@@ -182,9 +161,7 @@ module Resourceful
         return resp
       end
 
-      # Collects up a chunked body both collecting the body together *and*
-      # collecting the chunks into HttpResponse.raw_chunks[] for alternative
-      # analysis.
+      # Collects up and returns chunked body 
       def read_chunked_body(partial_body)
         @tcp_conn.push(partial_body)
         body = StringIO.new
@@ -193,7 +170,7 @@ module Resourceful
           chunk = read_chunked_header
           body << chunk.http_body
 
-          break if chunk.last_chunk?
+          break if chunk.chunk_size.zero?
         end
       
         body.string
