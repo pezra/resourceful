@@ -2,6 +2,8 @@ require 'http11_client/http11_client'
 require 'resourceful/push_back_io'
 require 'resourceful/exceptions'
 require 'stringio'
+require 'resourceful/abstract_http_adapter'
+require 'forwardable'
 
 module Resourceful
 
@@ -11,25 +13,28 @@ module Resourceful
     HTTP_HEADER_FIELD_LINE="%s: %s\r\n" 
     CHUNK_SIZE= 1024 * 16
 
-    # Makes HTTP request
-    def make_request(method, uri, body = nil, header = {})
-      uri = parse_uri(uri)
-      
-      conn = HttpConnection.new(uri.host, uri.port || 80)
+    # Make the specified request and return the parsed info from the response
+    #
+    # @param [Resourceful::Request] request  The request to make.
+    #
+    # @return [Resourceful::Response]  The response from the server.
+    def make_request(request)
+      conn = HttpConnection.new(request.uri.host, request.uri.port || 80)
 
-      if body
-        header['Content-Length'] = body.length
+      if request.body
+        request.header['Content-Length'] = request.body.length
       end
 
-      conn.send_request(method, uri, body, header)
+      conn.send_request(request.method, request.uri, request.body, request.header)
       resp = conn.read_response
 
-      [Integer(resp.http_status), 
-       Resourceful::Header.new(resp),
-       resp.http_body]
+      Hash[:status => Integer(resp.http_status),
+           :reason => resp.http_reason,
+           :header => resp,
+           :body   => resp.http_body]
 
     ensure
-      conn.close if conn
+      conn.close unless conn.nil?
     end
 
     protected
@@ -53,14 +58,18 @@ module Resourceful
 
 
     class HttpConnection
+      extend Forwardable
+
       attr_reader :host
       attr_reader :port
+      attr_reader :tcp_conn
 
       # @param [String] host  The name of the host to connect to.
       # @param [Integer] port The port to connect to.
       def initialize(host, port)
         @host = host
         @port = port
+        @tcp_conn = PushBackIo.new(Socket.new(host, port))        
       end
 
       def send_request(method, uri, body, header)
@@ -84,20 +93,10 @@ module Resourceful
       end
 
       # Close the underlying TCP connection.
-      def close
-        @tcp_conn.close
-      end
+      def_delegator :tcp_conn, :close
 
       protected
 
-      class ParserOutput < Hash
-        attr_accessor :http_reason, :http_version, :http_status, :http_body, :http_chunk_size
-        
-        def chunk_size
-          http_chunk_size.to_i(16)
-        end
-      end
-      
       # Builds the HTTP request header.
       #
       # @return [String] The, verbatim, HTTP header.
@@ -140,10 +139,6 @@ module Resourceful
         @parser ||= Resourceful::HttpClientParser.new
       end
       
-      def tcp_conn
-        @tcp_conn ||= PushBackIo.new(Socket.new(host, port))        
-      end
-
       # Used to process chunked headers and then read up their bodies.
       def read_chunked_header
         resp = read_and_parse_header
@@ -175,7 +170,15 @@ module Resourceful
       
         body.string
       end
-    end
 
+      # The results of HTTP client parser
+      class ParserOutput < Hash
+        attr_accessor :http_reason, :http_version, :http_status, :http_body, :http_chunk_size
+        
+        def chunk_size
+          http_chunk_size.to_i(16)
+        end
+      end
+    end
   end
 end
