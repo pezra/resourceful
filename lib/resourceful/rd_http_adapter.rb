@@ -8,16 +8,17 @@ require 'forwardable'
 module Resourceful
 
   # A reasonable default HTTP adapter.
-  class RdHttpAdapter
+  class RdHttpAdapter < AbstractHttpAdapter
     HTTP_REQUEST_START_LINE="%s %s HTTP/1.1\r\n"
     HTTP_HEADER_FIELD_LINE="%s: %s\r\n" 
     CHUNK_SIZE= 1024 * 16
 
     # Make the specified request and return the parsed info from the response
     #
-    # @param [Resourceful::Request] request  The request to make.
-    #
-    # @return [Resourceful::Response]  The response from the server.
+    # @param request  
+    #   The request to make.
+    # @return [ResponseStruct]  
+    #   The response from the server.
     def make_request(request)
       conn = HttpConnection.new(request.uri.host, request.uri.port || 80)
 
@@ -28,10 +29,12 @@ module Resourceful
       conn.send_request(request.method, request.uri, request.body, request.header)
       resp = conn.read_response
 
-      Hash[:status => Integer(resp.http_status),
-           :reason => resp.http_reason,
-           :header => resp,
-           :body   => resp.http_body]
+      ResponseStruct.new.tap {|r|
+        r.status = Integer(resp.http_status)
+        r.reason = resp.http_reason
+        r.header = resp
+        r.body   = resp.http_body
+      }
 
     ensure
       conn.close unless conn.nil?
@@ -45,8 +48,8 @@ module Resourceful
 
     # Parses a URI string into a Addressable::URI object (if needed)
     #
-    # @param [Addressable::URI, String] a_uri  The URI to parse.
-    #
+    # @param [Addressable::URI, String] a_uri
+    #   The URI to parse.
     # @return Addressable::URI
     def parse_uri(a_uri)
       if a_uri.is_a?(Addressable::URI) 
@@ -64,8 +67,10 @@ module Resourceful
       attr_reader :port
       attr_reader :tcp_conn
 
-      # @param [String] host  The name of the host to connect to.
-      # @param [Integer] port The port to connect to.
+      # @param [String] host  
+      #   The name of the host to connect to.
+      # @param [Integer] port 
+      #   The port to connect to.
       def initialize(host, port)
         @host = host
         @port = port
@@ -80,7 +85,7 @@ module Resourceful
 
       # Read http response
       #
-      # @return response 
+      # @return [ParserOutput]
       def read_response
         read_and_parse_header.tap do |resp|
           if /chunked/i === resp['TRANSFER_ENCODING']

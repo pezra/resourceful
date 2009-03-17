@@ -134,20 +134,12 @@ describe Resourceful::RdHttpAdapter do
         @adapter.make_request(@request).should respond_to(:[])
       end 
 
-      def have_item(key, value)
-        simple_matcher("Hash has value") do |given, matcher|
-          matcher.failure_message = "Expected #{given.inspect} to include key #{key.inspect} with #{value.inspect}"
-
-          given.has_key?(key) && given[key] == value
-        end
-      end
-
-      def have_header(key, value)
+      def have_field(key, value)
         key_matcher = Regexp.compile(key.gsub(/-/, '[-_]'), Regexp::IGNORECASE)
 
-        simple_matcher("Hash has value") do |given, matcher|
+        simple_matcher("header matcher") do |given, matcher|
           matcher.failure_message = "Expected #{given.inspect} to include key #{key.inspect} with #{value.inspect}"
-          header = given[:header]
+          header = given
 
           actual_key = header.keys.find{|a_key| key_matcher === a_key}
 
@@ -156,23 +148,23 @@ describe Resourceful::RdHttpAdapter do
       end
 
       it "should return correct response status" do
-        @adapter.make_request(@request).should have_item(:status, 200)
+        @adapter.make_request(@request).status.should eql(200)
       end 
 
-      it "should return headers (content-length)" do
-        @adapter.make_request(@request).should have_key(:header)
-      end 
+      it "should return headers" do
+        @adapter.make_request(@request).header.should be_kind_of(Hash)
+      end
 
       it "should return correct headers (content-length)" do
-        @adapter.make_request(@request).should have_header('Content-Length','5')
+        @adapter.make_request(@request).header.should have_field('Content-Length','5')
       end 
 
       it "should return correct headers (custom)" do
-        @adapter.make_request(@request)[:header].should have_item('X_TEST_HEADER', 'yer mom')
+        @adapter.make_request(@request).header.should have_field('X-Test-Header', 'yer mom')
       end 
 
       it "should return correct body " do
-        @adapter.make_request(@request).should have_item(:body, 'Hello')
+        @adapter.make_request(@request).body.should eql('Hello')
       end 
     end
 
@@ -362,7 +354,4 @@ HEAD
     end
   end 
 
-  def u(uri)
-    Addressable::URI.parse(uri)
-  end
 end 
