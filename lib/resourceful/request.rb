@@ -12,9 +12,44 @@ module Resourceful
     CACHEABLE_METHODS = [:get, :head]
     INVALIDATING_METHODS = [:post, :put, :delete]
 
-    attr_accessor :method, :resource, :body, :header
-    attr_reader   :request_time, :accessor
+    ##
+    # The HTTP method of this request.
+    # 
+    # @return [Symbol]
+    attr_accessor :method
+    
+    ##
+    # The resource this request targets
+    #
+    # @return [Resouce]
+    attr_accessor :resource
 
+    ## 
+    # The body of this request
+    #
+    # @return [nil, String]
+    attr_accessor :body
+
+    ##
+    # The header fields of this request
+    #
+    # @return [Header]
+    attr_accessor :header
+
+    ##
+    # The time this request was made
+    # 
+    # @return [nil, Time]
+    attr_reader   :request_time
+
+    ##
+    # The HttpAccessor to which this object belongs
+    #
+    # @return [HttpAccessor]
+    attr_reader :accessor
+
+    # Create a new request object.
+    #
     # @param [Symbol] http_method
     #   :get, :put, :post, :delete or :head
     # @param [Resourceful::Resource] resource
