@@ -18,7 +18,7 @@ module Resourceful
     # @param [Addressable::URI, String] uri
     #   The uri for the location of the resource
     def initialize(accessor, uri, default_header = {})
-      @accessor, @uris = accessor, [uri]
+      @accessor, @uris = accessor, [parse_uri(uri)]
       @default_header = Resourceful::Header.new({'User-Agent' => Resourceful::RESOURCEFUL_USER_AGENT_TOKEN}.merge(default_header))
       @on_redirect = nil
     end
@@ -38,15 +38,14 @@ module Resourceful
     # 
     # @return [String]
     def host
-      Addressable::URI.parse(uri).host
+      uri.host
     end
 
     # Updates the effective URI after following a permanent redirect
     #
     # @param [Addressable::URI, String]  The URI that should be this resources current URI
     def update_uri(uri)
-      uri = Addressable::URI.parse(uri) unless uri.kind_of?(Addressable::URI)
-      @uris.unshift(uri)
+      @uris.unshift(parse_uri(uri))
     end
 
     # When performing a redirect, this callback will be executed first. If the callback
@@ -164,6 +163,10 @@ module Resourceful
       time = Benchmark.measure { result = yield }
       logger.info(" " * indent + "-> Returned #{result.code} in %.4fs" % time.real)
       result
+    end
+
+    def parse_uri(uri)
+      uri.kind_of?(Addressable::URI) ? uri : Addressable::URI.parse(uri)
     end
   end
 end

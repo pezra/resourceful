@@ -23,24 +23,24 @@ describe Resourceful::RdHttpAdapter do
       @request = mock(Resourceful::Request, :uri => STD_PORT_URL, :method => :get, :body => nil, :header => Resourceful::Header.new)
       @post_request = mock(Resourceful::Request, :uri => STD_PORT_URL, :method => :post, :body => 'hello there', :header => Resourceful::Header.new)
 
-      Socket.stub!(:new).and_return(@server_conn)
+      TCPSocket.stub!(:new).and_return(@server_conn)
     end
 
     it "should create a socket to correct host" do
-      Socket.should_receive(:new).with("foo.invalid", anything)
+      TCPSocket.should_receive(:new).with("foo.invalid", anything)
 
       @adapter.make_request(@request)
     end 
 
     it "should create a socket to correct implicit port" do
-      Socket.should_receive(:new).with(anything, 80)
+      TCPSocket.should_receive(:new).with(anything, 80)
 
       @adapter.make_request(@request)
     end 
 
     it "should create a socket to correct explicit port" do
       @request.stub!(:uri).and_return(NONSTD_PORT_URL)
-      Socket.should_receive(:new).with(anything, 8080)
+      TCPSocket.should_receive(:new).with(anything, 8080)
 
       @adapter.make_request(@request)
     end 
@@ -61,13 +61,24 @@ describe Resourceful::RdHttpAdapter do
 
     it "should send correct request uri for implicit port" do
       @adapter.make_request(@request)
-      request_start_line.should match(%r{ http://foo.invalid/ }i)
+      request_start_line.should match(%r{ / }i)
+    end
+
+    it "should send correct Host header for implicit port" do
+      @adapter.make_request(@request)
+      request_lines.should include("Host: foo.invalid")
     end
 
     it "should send correct request uri for explicit port" do
       @request.stub!(:uri).and_return(NONSTD_PORT_URL)
       @adapter.make_request(@request)
-      request_start_line.should match(%r{ http://foo.invalid:8080/ }i)
+      request_start_line.should match(%r{ / }i)
+    end
+
+    it "should send correct Host header for explicit port" do
+      @request.stub!(:uri).and_return(NONSTD_PORT_URL)
+      @adapter.make_request(@request)
+      request_lines.should include("Host: foo.invalid:8080")
     end
 
     it "should send correct HTTP version" do

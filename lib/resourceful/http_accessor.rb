@@ -5,6 +5,7 @@ require 'resourceful/authentication_manager'
 require 'resourceful/cache_manager'
 require 'resourceful/resource'
 require 'resourceful/stubbed_resource_proxy'
+require 'resourceful/rd_http_adapter'
 
 module Resourceful
   # This is an imitation Logger used when no real logger is
@@ -93,6 +94,11 @@ module Resourceful
     # Adds an Authenticator to the set used by the accessor.
     def add_authenticator(an_authenticator)
       auth_manager.add_auth_handler(an_authenticator)
+    end
+
+    def http_adapter
+      RdHttpAdapter.new
+#      return NetHttpAdapter
     end
   end
 end

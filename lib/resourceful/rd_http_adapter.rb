@@ -74,7 +74,7 @@ module Resourceful
       def initialize(host, port)
         @host = host
         @port = port
-        @tcp_conn = PushBackIo.new(Socket.new(host, port))        
+        @tcp_conn = PushBackIo.new(TCPSocket.new(host, port))        
       end
 
       def send_request(method, uri, body, header)
@@ -104,11 +104,21 @@ module Resourceful
 
       # Builds the HTTP request header.
       #
-      # @return [String] The, verbatim, HTTP header.
+      # @return [String] 
+      #   The, verbatim, HTTP request header.
       def build_request_header(method, uri, header_fields)
         req = StringIO.new
-        req.write(HTTP_REQUEST_START_LINE % [method, uri])
+        relative_uri = uri.path
+        relative_uri << '?' + uri.query if uri.query
+
+        req.write(HTTP_REQUEST_START_LINE % [method.to_s.upcase, relative_uri])
         
+        header_fields['Host'] = if uri.inferred_port == 80
+                                  uri.host
+                                else 
+                                  "#{uri.host}:#{uri.port}"
+                                end
+
         header_fields.each do |k, v|
           if v.kind_of?(Array)
             v.each {|sub_v| req.write(HTTP_HEADER_FIELD_LINE % [k,sub_v])}

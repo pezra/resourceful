@@ -10,14 +10,19 @@ module Resourceful
     REDIRECT_RESPONSE_CODES = [301,302,303,307]
     NORMALLY_CACHEABLE_RESPONSE_CODES = [200, 203, 300, 301, 410]
 
-    attr_reader :uri, :code, :header, :body, :response_time
+    attr_accessor :uri, :code, :header, :body, :response_time
     alias headers header
 
     attr_accessor :authoritative, :request_time
     alias authoritative? authoritative
 
-    def initialize(uri, code, header, body)
-      @uri, @code, @header, @body = uri, code, header, body
+    def initialize(uri=nil, code=nil, header=nil, body=nil)
+      if block_given?
+        yield self
+      else
+        @uri, @code, @header, @body = uri, code, header, body
+      end
+
       @response_time = Time.now
     end
 

@@ -7,12 +7,22 @@ module Resourceful
   # amount from a secondary IO object, parse what is needed, and then anything
   # remaining can be quickly pushed back in one chunk for the next read.
   class PushBackIo
+    extend Forwardable
+
     attr_accessor :secondary
+
+    module EmulateReadPartialSupport
+      def readpartial(maxlen)
+        raise EOFError if closed?
+                
+        read(maxlen)
+      end
+    end
 
     def initialize(secondary) 
       @secondary = secondary
       @buffer = StringIO.new
-      @partial_supported = secondary.respond_to?(:readpartial)
+      secondary.extend EmulateReadPartialSupport if not secondary.respond_to?(:readpartial)
     end
 
     # Pushes the given string content back onto the stream for the 
@@ -29,14 +39,7 @@ module Resourceful
       return r if r
       # buffer was empty, read from secondary IO
 
-      if @partial_supported
-        return @secondary.readpartial(maxlen) 
-      else
-        raise EOFError if closed?
-        # We have an open IO from which to read 
-  
-        return @secondary.read(maxlen)
-      end
+      @secondary.readpartial(maxlen) 
     end
 
     # Reads `n` bytes from the secondary IO.  
@@ -47,16 +50,16 @@ module Resourceful
         buffer << @secondary.read(n - buffer.length) if buffer.length < n
       end
     end
-
+    
+    ##
+    # :write
     # Write `content` to secondary IO
-    def write(content)
-      @secondary.write(content)
-    end
-
-    # Flush secondary IO
-    def flush
-      @secondary.flush
-    end
+    def_delegator :@secondary, :write
+    
+    ##
+    # :flush
+    def_delegator :@secondary, :flush
+    
 
     # Close this object and the secondary IO
     def close

@@ -3,10 +3,12 @@ require 'benchmark'
 require 'resourceful/response'
 require 'resourceful/net_http_adapter'
 require 'resourceful/exceptions'
+require 'forwardable'
 
 module Resourceful
 
   class Request
+    extend Forwardable
 
     REDIRECTABLE_METHODS = [:get, :head]
     CACHEABLE_METHODS = [:get, :head]
@@ -197,19 +199,22 @@ module Resourceful
     def invalidates_cache?
       return true if method.in? INVALIDATING_METHODS
     end
-
+    
     # Perform the request, with no magic handling of anything.
     def perform!
       logger.debug @header.inspect
       @request_time = Time.now
       logger.debug("DEBUG: Request Header: #{@header.inspect}")
 
-      http_resp = http_adapter.make_request(@method, @resource.uri, @body, @header)
-      @response = Resourceful::Response.new(uri, *http_resp)
-      @response.request_time = @request_time
-      @response.authoritative = true
-
-      @response
+      http_resp = http_adapter.make_request(self)
+      @response = Resourceful::Response.new{|r|
+        r.uri           = uri
+        r.code          = http_resp.status
+        r.header        = Resourceful::Header.new(http_resp.header)
+        r.body          = http_resp.body
+        r.request_time  = @request_time
+        r.authoritative = true
+      }
     end
 
     # Is this a response a redirect, and are we permitted to follow it?
@@ -267,9 +272,9 @@ module Resourceful
       resource.logger
     end
 
-    def http_adapter
-      return NetHttpAdapter
-    end
+    ##
+    # :http_adapter
+    def_delegator :accessor, :http_adapter
   end
 
 end

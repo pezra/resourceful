@@ -1,9 +1,15 @@
+require 'pathname'
 
-__DIR__ = File.dirname(__FILE__)
+def add_to_load_path(dir)
+  dir = Pathname(dir).expand_path
+  return if $LOAD_PATH.any?{|load_path_dir| Pathname(load_path_dir).expand_path == dir}
+  # dir is not already in load path
 
-$LOAD_PATH.unshift __DIR__ unless
-  $LOAD_PATH.include?(__DIR__) ||
-  $LOAD_PATH.include?(File.expand_path(__DIR__))
+  $LOAD_PATH.unshift(dir)
+end
+
+add_to_load_path Pathname(__FILE__).dirname
+add_to_load_path Pathname(__FILE__).dirname + '../ext'
 
 require 'resourceful/util'
 

@@ -4,6 +4,9 @@ require 'resourceful'
 
 describe Resourceful do
   describe "working with a resource" do
+    def u(a_uri)
+      Addressable::URI.parse(a_uri)
+    end
     before do 
       @http = Resourceful::HttpAccessor.new
       @ok_resource = @http.resource('http://localhost:3000/code/200')
@@ -11,11 +14,11 @@ describe Resourceful do
     end
 
     it 'should expose the original URI' do 
-      @ok_resource.uri.should == 'http://localhost:3000/code/200'
+      @ok_resource.uri.should eql(u('http://localhost:3000/code/200'))
     end
 
     it 'should expose the URI from after any redirects' do 
-      @ok_resource.effective_uri.should == 'http://localhost:3000/code/200'
+      @ok_resource.effective_uri.should eql(u('http://localhost:3000/code/200'))
     end
 
     it 'should set the user agent string on the default header' do
@@ -24,7 +27,6 @@ describe Resourceful do
     end
 
     describe "GET" do
-
       it "should return a response for success response" do
         @ok_resource.get.should be_kind_of(Resourceful::Response)
       end
