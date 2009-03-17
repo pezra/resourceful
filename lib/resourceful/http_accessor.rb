@@ -30,39 +30,61 @@ module Resourceful
   # acts a collection of all the resources available via HTTP.
   class HttpAccessor
     
+    ##
     # A logger object to which messages about the activities of this
     # object will be written.  This should be an object that responds
     # to +#info(message)+ and +#debug(message)+.  
     #
     # Errors will not be logged.  Instead an exception will be raised
     # and the application code should log it if appropriate.
-    attr_accessor :logger, :cache_manager
+    attr_accessor :logger
+
+    ##
+    attr_accessor :cache_manager
     
+    ##
+    # 
     attr_reader :auth_manager
-    attr_reader :user_agent_tokens  
     
+    ##
+    # List of all User-Agent tokens that will be included in requests made by this accessor.
+    attr_reader :user_agent_tokens  
+
+    ##
+    # The adapter this accessor will use to make the actual HTTP requests.
+    attr_reader :http_adapter
+
+
     INIT_OPTIONS = OptionsInterpreter.new do 
-      option(:logger, :default => Resourceful::BitBucketLogger.new)
+      option(:logger, :default => BitBucketLogger.new)
       option(:user_agent, :default => []) {|ua| [ua].flatten}
       option(:cache_manager, :default => NullCacheManager.new)
       option(:authenticator)
       option(:authenticators, :default => [])
+      option(:http_adapter, :default => lambda{RdHttpAdapter.new})
     end
     
     # Initializes a new HttpAccessor.  Valid options:
     #
-    #  +:logger+:: A Logger object that the new HTTP accessor should
+    #  +:logger+
+    #  : A Logger object that the new HTTP accessor should
     #    send log messages
     #
-    #  +:user_agent+:: One or more additional user agent tokens to
+    #  +:user_agent+
+    #  : One or more additional user agent tokens to
     #    added to the user agent string.
     #
-    #  +:cache_manager+:: The cache manager this accessor should use.
+    #  +:cache_manager+
+    #  : The cache manager this accessor should use.
     #
-    #  +:authenticator+:: Add a single authenticator for this accessor.
+    #  +:authenticator+
+    #  : Add a single authenticator for this accessor.
     #
-    #  +:authenticators+:: Enumerable of the authenticators for this
-    #    accessor.
+    #  +:authenticators+
+    #  : Enumerable of the authenticators for this accessor.
+    #
+    #  +:http_adapter+
+    #  : The AbstractHttpAdapter the new accessor should use to access the network.
     def initialize(options = {})
       @user_agent_tokens = [RESOURCEFUL_USER_AGENT_TOKEN]
       
@@ -71,6 +93,7 @@ module Resourceful
         self.logger = opts[:logger]
         @auth_manager = AuthenticationManager.new()
         @cache_manager = opts[:cache_manager]
+        @http_adapter = opts[:http_adapter]
         
         add_authenticator(opts[:authenticator]) if opts[:authenticator]
         opts[:authenticators].each { |a| add_authenticator(a) }
@@ -94,11 +117,6 @@ module Resourceful
     # Adds an Authenticator to the set used by the accessor.
     def add_authenticator(an_authenticator)
       auth_manager.add_auth_handler(an_authenticator)
-    end
-
-    def http_adapter
-      RdHttpAdapter.new
-#      return NetHttpAdapter
     end
   end
 end

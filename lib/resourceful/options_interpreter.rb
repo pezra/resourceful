@@ -1,7 +1,7 @@
 require 'set'
 
 module Resourceful
-  # Class that supports a declarative way to pick apart an options
+  # Class that provides a declarative way to pick apart an options
   # hash.
   #
   #     OptionsInterpreter.new do 
@@ -54,8 +54,12 @@ module Resourceful
     def option(name, opts = {}, &block)
 
       passed_value_fetcher = if opts[:default] 
-                               default_value = opts[:default]
-                               lambda{|options_hash| options_hash[name] || default_value}
+                               default_value_generator = if opts[:default].respond_to?(:call)
+                                                           opts[:default]
+                                                         else
+                                                           lambda{opts[:default]}
+                                                         end
+                               lambda{|options_hash| options_hash[name] || default_value_generator.call}
                              else
                                lambda{|options_hash| options_hash[name]}
                              end
