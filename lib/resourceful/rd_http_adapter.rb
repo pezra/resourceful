@@ -13,6 +13,7 @@ module Resourceful
     HTTP_HEADER_FIELD_LINE="%s: %s\r\n" 
     CHUNK_SIZE= 1024 * 16
 
+
     # Make the specified request and return the parsed info from the response
     #
     # @param request  

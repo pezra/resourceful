@@ -61,7 +61,7 @@ module Resourceful
       option(:cache_manager, :default => NullCacheManager.new)
       option(:authenticator)
       option(:authenticators, :default => [])
-      option(:http_adapter, :default => lambda{RdHttpAdapter.new})
+      option(:http_adapter, :default => lambda{NetHttpAdapter.new})
     end
     
     # Initializes a new HttpAccessor.  Valid options:
