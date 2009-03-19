@@ -6,6 +6,8 @@ require 'resourceful/abstract_http_adapter'
 require 'forwardable'
 require 'facets/memoize'
 require 'openssl'
+require 'resourceful/options_interpretation'
+require 'facets/blank'
 
 module Resourceful
 
@@ -14,7 +16,25 @@ module Resourceful
     HTTP_REQUEST_START_LINE="%s %s HTTP/1.1\r\n"
     HTTP_HEADER_FIELD_LINE="%s: %s\r\n" 
     CHUNK_SIZE= 1024 * 16
+    
+    include OptionsInterpretation
 
+
+    # Creates a new RdHttpAdapter
+    #
+    # @param [Hash] opts
+    #  ':proxy'
+    #  :: The host name and port of the proxy server that should be used.
+    def initialize(opts = {})
+      extract_opts(opts) do |opts|
+        @proxy_host = opts.extract(:proxy_host, :required => false)
+        @proxy_port = opts.extract(:proxy_port) if @proxy_host
+      end
+    end
+
+    def use_proxy?(request)
+      @proxy_host and !(/https/i === request.uri.scheme)
+    end
 
     # Make the specified request and return the parsed info from the response
     #
@@ -23,13 +43,30 @@ module Resourceful
     # @return [ResponseStruct]  
     #   The response from the server.
     def make_request(request)
-      conn = ServerLink.new(request.uri.host, request.uri.inferred_port, /https/i === request.uri.scheme)
+      host, port = if use_proxy?(request)
+                     [@proxy_host, @proxy_port]
+                   else
+                     [request.uri.host, request.uri.inferred_port]
+                   end
+      conn = ServerLink.new(host, port, /https/i === request.uri.scheme)
 
       if request.body
         request.header['Content-Length'] = request.body.length
       end
+      
+      req_uri = if use_proxy?(request)
+                  request.uri.to_s
+                else
+                  relativize_uri(request.uri)
+                end
 
-      conn.send_request(request.method, request.uri, request.body, request.header)
+      request.header['Host'] = if request.uri.inferred_port == 80
+                                 request.uri.host
+                               else 
+                                 "#{request.uri.host}:#{request.uri.port}"
+                               end
+
+      conn.send_request(request.method, req_uri, request.body, request.header)
       resp = conn.read_response
 
       ResponseStruct.new.tap {|r|
@@ -44,6 +81,23 @@ module Resourceful
     end
 
     protected
+
+    def relativize_uri(uri)
+      "".tap do |u|
+        u << if uri.path.blank?
+               '/'
+             else
+               uri.path
+             end
+        u << ('?' + uri.query) if uri.query
+      end
+    end
+
+    ##
+    attr_reader :proxy_host
+
+    ##
+    attr_reader :proxy_port
     
     def parser
       Resourceful::HttpClientParser.new
@@ -79,6 +133,9 @@ module Resourceful
       ##
       attr_reader :tcp_conn
 
+      ##
+      attr_reader :proxy_link
+
       # @param [String] host  
       #   The name of the host to connect to.
       # @param [Integer] port 
@@ -89,7 +146,7 @@ module Resourceful
         @host = host
         @port = port
         @use_ssl = use_ssl
-
+        
         socket = TCPSocket.new(host, port)
         if use_ssl
           socket = OpenSSL::SSL::SSLSocket.new(socket).tap{ |ssl|
@@ -131,17 +188,9 @@ module Resourceful
       #   The, verbatim, HTTP request header.
       def build_request_header(method, uri, header_fields)
         req = StringIO.new
-        relative_uri = uri.path.blank? ? '/' : uri.path
-        relative_uri << '?' + uri.query if uri.query
 
-        req.write(HTTP_REQUEST_START_LINE % [method.to_s.upcase, relative_uri])
+        req.write(HTTP_REQUEST_START_LINE % [method.to_s.upcase, uri])
         
-        header_fields['Host'] = if uri.inferred_port == 80
-                                  uri.host
-                                else 
-                                  "#{uri.host}:#{uri.port}"
-                                end
-
         header_fields.each do |k, v|
           if v.kind_of?(Array)
             v.each {|sub_v| req.write(HTTP_HEADER_FIELD_LINE % [k,sub_v])}

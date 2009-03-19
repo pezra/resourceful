@@ -5,6 +5,24 @@ require 'resourceful/rd_http_adapter'
 require 'facets'
 
 describe Resourceful::RdHttpAdapter do
+  it "should accept proxy options" do
+    lambda{
+      Resourceful::RdHttpAdapter.new(:proxy_host => 'localhost', :proxy_port => 3128)
+    }.should_not raise_error
+  end 
+
+  it "should not accept proxy_port w/o proxy_host option" do
+    lambda{
+      Resourceful::RdHttpAdapter.new(:proxy_port => 3128)
+    }.should raise_error
+  end 
+
+  it "should not accept proxy_host w/o proxy_port option" do
+    lambda{
+      Resourceful::RdHttpAdapter.new(:proxy_host => 'localhost')
+    }.should raise_error
+  end 
+  
   describe "#make_request" do
     BASIC_HTTP_RESPONSE = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello"
     NONSTD_PORT_URL = Addressable::URI.parse("http://foo.invalid:8080/")
@@ -61,6 +79,33 @@ describe Resourceful::RdHttpAdapter do
       @adapter.make_request(@request)
     end 
 
+    describe "w/ proxy" do
+      before do
+        @adapter = Resourceful::RdHttpAdapter.new(:proxy_host => 'bar.invalid', :proxy_port => 3128)
+      end
+
+      it "should create a socket to proxy host" do
+        TCPSocket.should_receive(:new).with("bar.invalid", anything)
+        
+        @adapter.make_request(@request)
+      end 
+
+      it "should create a socket to proxy port" do
+        TCPSocket.should_receive(:new).with(anything, 3128)
+        
+        @adapter.make_request(@request)
+      end 
+
+      it "should ignore proxy for HTTPS requests" do
+        @request.stub!(:uri).and_return(STD_PORT_HTTPS_URL)
+        TCPSocket.should_receive(:new).with('foo.invalid', 443)
+        @server_conn.stub!(:sync_close=)
+        @server_conn.should_receive(:connect)
+        OpenSSL::SSL::SSLSocket.should_receive(:new).with(@server_conn).and_return(@server_conn)
+        
+        @adapter.make_request(@request)
+      end 
+    end 
 
     def self.it_should_send_correct_method(method)
       it "should send correct request method for #{method} requests" do
