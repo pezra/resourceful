@@ -9,6 +9,7 @@ describe Resourceful::RdHttpAdapter do
     BASIC_HTTP_RESPONSE = "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nHello"
     NONSTD_PORT_URL = Addressable::URI.parse("http://foo.invalid:8080/")
     STD_PORT_URL = Addressable::URI.parse("http://foo.invalid/")
+    STD_PORT_HTTPS_URL = Addressable::URI.parse("https://foo.invalid/")
     
     before do
       @adapter = Resourceful::RdHttpAdapter.new
@@ -44,6 +45,22 @@ describe Resourceful::RdHttpAdapter do
 
       @adapter.make_request(@request)
     end 
+
+    it "should create a SSL wrapper for socket to if HTTPS" do
+      @request.stub!(:uri).and_return(STD_PORT_HTTPS_URL)
+      @server_conn.stub!(:sync_close=)
+      @server_conn.should_receive(:connect)
+      OpenSSL::SSL::SSLSocket.should_receive(:new).with(@server_conn).and_return(@server_conn)
+
+      @adapter.make_request(@request)
+    end 
+
+    it "should not create a SSL wrapper for socket to if HTTP" do
+      OpenSSL::SSL::SSLSocket.should_not_receive(:new)
+
+      @adapter.make_request(@request)
+    end 
+
 
     def self.it_should_send_correct_method(method)
       it "should send correct request method for #{method} requests" do

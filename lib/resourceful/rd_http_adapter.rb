@@ -4,6 +4,8 @@ require 'resourceful/exceptions'
 require 'stringio'
 require 'resourceful/abstract_http_adapter'
 require 'forwardable'
+require 'facets/memoize'
+require 'openssl'
 
 module Resourceful
 
@@ -21,7 +23,7 @@ module Resourceful
     # @return [ResponseStruct]  
     #   The response from the server.
     def make_request(request)
-      conn = HttpConnection.new(request.uri.host, request.uri.port || 80)
+      conn = HttpConnection.new(request.uri.host, request.uri.inferred_port, /https/i === request.uri.scheme)
 
       if request.body
         request.header['Content-Length'] = request.body.length
@@ -44,8 +46,9 @@ module Resourceful
     protected
     
     def parser
-      @parser ||= Resourceful::HttpClientParser.new
+      Resourceful::HttpClientParser.new
     end
+    memoize :parser
 
     # Parses a URI string into a Addressable::URI object (if needed)
     #
@@ -63,19 +66,38 @@ module Resourceful
 
     class HttpConnection
       extend Forwardable
-
+      
+      ##
       attr_reader :host
+      
+      ##
       attr_reader :port
+      
+      ##
+      attr_reader :use_ssl
+
+      ##
       attr_reader :tcp_conn
 
       # @param [String] host  
       #   The name of the host to connect to.
       # @param [Integer] port 
       #   The port to connect to.
-      def initialize(host, port)
+      # @param [boolean] use_ssl
+      #   When true secure the TCP connect using SSL. Default: false
+      def initialize(host, port, use_ssl = false)
         @host = host
         @port = port
-        @tcp_conn = PushBackIo.new(TCPSocket.new(host, port))        
+        @use_ssl = use_ssl
+
+        socket = TCPSocket.new(host, port)
+        if use_ssl
+          socket = OpenSSL::SSL::SSLSocket.new(socket).tap{ |ssl|
+            ssl.sync_close = true
+            ssl.connect
+          }
+        end
+        @tcp_conn = PushBackIo.new(socket)        
       end
 
       def send_request(method, uri, body, header)
