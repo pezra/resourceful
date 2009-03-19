@@ -23,7 +23,7 @@ module Resourceful
     # @return [ResponseStruct]  
     #   The response from the server.
     def make_request(request)
-      conn = HttpConnection.new(request.uri.host, request.uri.inferred_port, /https/i === request.uri.scheme)
+      conn = ServerLink.new(request.uri.host, request.uri.inferred_port, /https/i === request.uri.scheme)
 
       if request.body
         request.header['Content-Length'] = request.body.length
@@ -64,7 +64,7 @@ module Resourceful
     end
 
 
-    class HttpConnection
+    class ServerLink
       extend Forwardable
       
       ##
@@ -131,7 +131,7 @@ module Resourceful
       #   The, verbatim, HTTP request header.
       def build_request_header(method, uri, header_fields)
         req = StringIO.new
-        relative_uri = uri.path
+        relative_uri = uri.path.blank? ? '/' : uri.path
         relative_uri << '?' + uri.query if uri.query
 
         req.write(HTTP_REQUEST_START_LINE % [method.to_s.upcase, relative_uri])

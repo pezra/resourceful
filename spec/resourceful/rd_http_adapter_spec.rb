@@ -81,6 +81,12 @@ describe Resourceful::RdHttpAdapter do
       request_start_line.should match(%r{ / }i)
     end
 
+    it "should send correct request uri for URI with no path" do
+      @request.stub!(:uri).and_return(Addressable::URI.parse('http://foo.invalid'))
+      @adapter.make_request(@request)
+      request_start_line.should match(%r{ / }i)
+    end
+
     it "should send correct Host header for implicit port" do
       @adapter.make_request(@request)
       request_lines.should include("Host: foo.invalid")
