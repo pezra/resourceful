@@ -1,4 +1,3 @@
-require 'http11_client/http11_client'
 require 'resourceful/push_back_io'
 require 'resourceful/exceptions'
 require 'stringio'
@@ -100,6 +99,8 @@ module Resourceful
     attr_reader :proxy_port
     
     def parser
+      require 'http11_client/http11_client'
+
       Resourceful::HttpClientParser.new
     end
     memoize :parser
