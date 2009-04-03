@@ -4,6 +4,9 @@ require Pathname(__FILE__).dirname + '../spec_helper'
 require 'resourceful/rd_http_adapter'
 require 'facets'
 
+if defined?(Resourceful::HttpClientParser)
+
+
 describe Resourceful::RdHttpAdapter do
   it "should accept proxy options" do
     lambda{
@@ -434,3 +437,5 @@ HEAD
   end 
 
 end 
+
+end

@@ -207,6 +207,8 @@ module Resourceful
 
       # Reads and parses header from `conn`
       def read_and_parse_header
+        require 'http11_client/http11_client'
+
         parser.reset
         resp = ParserOutput.new
         data = tcp_conn.readpartial(CHUNK_SIZE)
