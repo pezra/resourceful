@@ -27,7 +27,7 @@ module Resourceful
       uri = uri.is_a?(Addressable::URI) ? uri : Addressable::URI.parse(uri)
 
       req = net_http_request_class(method).new(uri.absolute_path)
-      header.each { |k,v| req[k] = v } if header
+      header.each_field { |k,v| req[k] = v } if header
       https = ("https" == uri.scheme)
       conn = Net::HTTP.Proxy(*proxy_details).new(uri.host, uri.port || (https ? 443 : 80))
       conn.use_ssl = https

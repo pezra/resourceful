@@ -1,12 +1,19 @@
+Manifest
 spec/spec.opts
-spec/simple_http_server.rb
-spec/simple_http_server_spec.rb
-spec/acceptance_spec.rb
+spec/simple_sinatra_server_spec.rb
+spec/simple_sinatra_server.rb
+spec/acceptance/header_spec.rb
+spec/acceptance/caching_spec.rb
+spec/acceptance/resource_spec.rb
+spec/acceptance/redirecting_spec.rb
+spec/acceptance/authorization_spec.rb
 spec/acceptance_shared_specs.rb
 spec/spec_helper.rb
+spec/old_acceptance_specs.rb
 README.markdown
 resourceful.gemspec
 lib/resourceful/cache_manager.rb
+lib/resourceful/exceptions.rb
 lib/resourceful/net_http_adapter.rb
 lib/resourceful/stubbed_resource_proxy.rb
 lib/resourceful/header.rb
@@ -21,4 +28,3 @@ lib/resourceful/memcache_cache_manager.rb
 lib/resourceful.rb
 Rakefile
 MIT-LICENSE
-Manifest

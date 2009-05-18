@@ -26,6 +26,12 @@ module Resourceful
       k.to_s.downcase.gsub(/^.|[-_\s]./) { |x| x.upcase }.gsub('_', '-')
     end
 
+    def each_field(&blk)
+      to_hash.each { |k,v|
+        blk.call capitalize(k), v
+      }
+    end
+
     HEADERS = %w[
       Accept
       Accept-Charset
