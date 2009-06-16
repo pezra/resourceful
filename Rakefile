@@ -12,7 +12,7 @@ begin
     p.email           = "psadauskas@gmail.com"
 
     p.ignore_pattern  = ["pkg/*", "tmp/*"]
-    p.dependencies    = ['addressable', 'httpauth', 'rspec', 'facets', 'andand']
+    p.dependencies    = [['addressable', '>= 2.1.0'], 'httpauth', 'rspec', 'facets', 'andand']
     p.development_dependencies = ['thin', 'yard', 'sinatra']
   end
 rescue LoadError => e
