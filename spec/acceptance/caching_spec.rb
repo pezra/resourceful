@@ -30,9 +30,7 @@ describe Resourceful do
     end
 
     def uri_for_code(code, params = {})
-      template = Addressable::Template.new("http://localhost:3000/code/{code}")
-      uri = template.expand("code" => code.to_s)
-
+      uri = Addressable::Template.new("http://localhost:3000/code/{code}").expand("code" => code.to_s)
       uri_plus_params(uri, params)
     end
 
