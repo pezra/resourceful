@@ -8,6 +8,9 @@ require 'openssl'
 require 'resourceful/options_interpretation'
 require 'facets/blank'
 
+require 'http11_client/http11_client'
+
+
 module Resourceful
 
   # A reasonable default HTTP adapter.
@@ -81,17 +84,6 @@ module Resourceful
 
     protected
 
-    def relativize_uri(uri)
-      "".tap do |u|
-        u << if uri.path.blank?
-               '/'
-             else
-               uri.path
-             end
-        u << ('?' + uri.query) if uri.query
-      end
-    end
-
     ##
     attr_reader :proxy_host
 
@@ -99,11 +91,15 @@ module Resourceful
     attr_reader :proxy_port
     
     def parser
-      require 'http11_client/http11_client'
-
       Resourceful::HttpClientParser.new
     end
     memoize :parser
+
+    def relativize_uri(a_uri)
+      a_uri.omit(:scheme,:authority,:fragment).tap {|u|
+        u.path = '/' if u.path.empty?
+      }.to_s
+    end
 
     # Parses a URI string into a Addressable::URI object (if needed)
     #
@@ -207,8 +203,6 @@ module Resourceful
 
       # Reads and parses header from `conn`
       def read_and_parse_header
-        require 'http11_client/http11_client'
-
         parser.reset
         resp = ParserOutput.new
         data = tcp_conn.readpartial(CHUNK_SIZE)
@@ -226,9 +220,10 @@ module Resourceful
       end
 
       def parser
-        @parser ||= Resourceful::HttpClientParser.new
+        Resourceful::HttpClientParser.new
       end
-      
+      memoize :parser
+
       # Used to process chunked headers and then read up their bodies.
       def read_chunked_header
         resp = read_and_parse_header
@@ -272,3 +267,4 @@ module Resourceful
     end
   end
 end
+

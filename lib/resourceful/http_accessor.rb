@@ -5,7 +5,11 @@ require 'resourceful/authentication_manager'
 require 'resourceful/cache_manager'
 require 'resourceful/resource'
 require 'resourceful/stubbed_resource_proxy'
+
+begin
 require 'resourceful/rd_http_adapter'
+rescue LoadError
+end
 
 module Resourceful
   # This is an imitation Logger used when no real logger is
