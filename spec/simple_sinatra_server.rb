@@ -13,7 +13,8 @@ end
 
 def set_request_header_in_body!
   response['Content-Type'] ||= "application/yaml"
-  request.env.to_yaml
+  headers = request.env.reject { |k,v| !v.is_a?(String) }
+  headers.to_yaml
 end
 
 get '/' do

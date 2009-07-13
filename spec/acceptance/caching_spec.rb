@@ -1,6 +1,7 @@
 
 require File.dirname(__FILE__) + '/../spec_helper'
 require 'resourceful'
+require 'addressable/template'
 
 describe Resourceful do
 
@@ -29,8 +30,8 @@ describe Resourceful do
     end
 
     def uri_for_code(code, params = {})
-      uri = Addressable::URI.expand_template("http://localhost:3000/code/{code}",
-                                             "code" => code.to_s)
+      template = Addressable::Template.new("http://localhost:3000/code/{code}")
+      uri = template.expand("code" => code.to_s)
 
       uri_plus_params(uri, params)
     end

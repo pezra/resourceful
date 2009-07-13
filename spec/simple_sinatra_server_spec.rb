@@ -63,7 +63,7 @@ end
 describe "/code/nnn" do
   it 'should respond with the code provided in the url' do
     # Just try a handful
-    [100, 200, 201, 301, 302, 304, 403, 404, 500].each do |code|
+    [200, 201, 301, 302, 304, 403, 404, 500].each do |code|
       get "/code/#{code}"
       @response.status.should == code
     end
