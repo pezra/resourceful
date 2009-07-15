@@ -86,7 +86,7 @@ module Resourceful
       @cached_response ||= begin
         @already_checked_cache = true
         resp = accessor.cache_manager.lookup(self)
-        logger.info("    Retrieved from cache")
+        logger.info("    Retrieved from cache") if resp
         resp
       end
     end
@@ -162,7 +162,6 @@ module Resourceful
     # Perform the request, with no magic handling of anything.
     def perform!
       @request_time = Time.now
-      logger.debug("DEBUG: Request Header: #{@header.inspect}")
 
       http_resp = NetHttpAdapter.make_request(@method, @resource.uri, @body, @header)
       @response = Resourceful::Response.new(uri, *http_resp)
