@@ -12,8 +12,8 @@ begin
     p.email           = "psadauskas@gmail.com"
 
     p.ignore_pattern  = ["pkg/*", "tmp/*"]
-    p.dependencies    = ['addressable', 'httpauth', 'rspec', 'facets', 'andand']
-    p.development_dependencies = ['thin', 'yard', 'sinatra']
+    p.dependencies    = ['addressable', 'httpauth']
+    p.development_dependencies = ['thin', 'yard', 'sinatra', 'rspec']
   end
 rescue LoadError => e
   puts "install 'echoe' gem to be able to build the gem"
