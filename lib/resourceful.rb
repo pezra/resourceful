@@ -12,7 +12,7 @@ require 'resourceful/http_accessor'
 
 # Resourceful is a library that provides a high level HTTP interface.
 module Resourceful
-  VERSION = "0.5.2"
+  VERSION = "0.5.3"
   RESOURCEFUL_USER_AGENT_TOKEN = "Resourceful/#{VERSION}(Ruby/#{RUBY_VERSION})"
 
 end
