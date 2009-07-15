@@ -1,7 +1,6 @@
 require "resourceful/cache_manager"
 
 require 'memcache'
-require 'facets/kernel/returning'
 
 module Resourceful
   class MemcacheCacheManager < AbstractCacheManager
@@ -45,9 +44,10 @@ module Resourceful
     def store(request, response)
       return unless response.cachable?
 
-      @memcache[request.to_mc_key] = returning(cache_entries_for(request)) do |entries|
-        entries[request] = response
-      end
+      entries = cache_entries_for(request)
+      entries[request] = response
+
+      @memcache[request.to_mc_key] = entries
     end
 
     # Invalidates a all cached entries for a uri. 

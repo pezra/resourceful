@@ -1,6 +1,4 @@
 require 'resourceful/header'
-require 'andand'
-require 'facets/kernel/returning'
 require 'digest/md5'
 
 module Resourceful
@@ -72,9 +70,9 @@ module Resourceful
     end
 
     def lookup(request)
-      returning(@collection[request.uri.to_s][request]) do |response|
-        response.authoritative = false if response
-      end
+      response = @collection[request.uri.to_s][request]
+      response.authoritative = false if response
+      response
     end
 
     def store(request, response)
@@ -104,9 +102,9 @@ module Resourceful
     end
 
     def lookup(request)
-      returning(cache_entries_for(request)[request]) do |response|
-        response.authoritative = false if response
-      end
+      response = cache_entries_for(request)[request]
+      response.authoritative = false if response
+      response
     end
 
     def store(request, response)
@@ -161,7 +159,8 @@ module Resourceful
     # @return [Resourceful::Response] 
     #   The cached response for the specified request if one is available.
     def [](request)
-      find { |an_entry| an_entry.valid_for?(request) }.andand.response 
+      entry = find { |entry| entry.valid_for?(request) }
+      entry.response if entry
     end
     
     # Saves an entry into the collection. Replaces any existing ones that could 

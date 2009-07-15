@@ -1,7 +1,5 @@
 require 'net/http'
 require 'time'
-require 'rubygems'
-require 'facets/kernel/ergo'
 require 'zlib'
 
 module Resourceful
@@ -86,7 +84,8 @@ module Resourceful
     end
 
     def body
-      case header['Content-Encoding'].ergo.first
+      encoding = header['Content-Encoding'] && header['Content-Encoding'].first
+      case encoding
       when nil
         # body is identity encoded; just return it
         @body
@@ -97,7 +96,7 @@ module Resourceful
         header.delete('Content-Encoding')
         @body
       else
-        raise UnsupportedContentCoding, "Resourceful does not support #{header['Content-Encoding'].ergo.first} content coding" 
+        raise UnsupportedContentCoding, "Resourceful does not support #{encoding} content coding" 
       end
     end
 
