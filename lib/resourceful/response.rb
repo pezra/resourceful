@@ -68,7 +68,8 @@ module Resourceful
     # Update our headers from a later 304 response
     def revalidate!(not_modified_response)
       header.merge!(not_modified_response.header)
-      request_time = not_modified_response.request_time
+      @request_time  = not_modified_response.request_time
+      @response_time = not_modified_response.response_time
       @authoritative = true
     end
 
