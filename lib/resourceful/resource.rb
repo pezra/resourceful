@@ -75,6 +75,9 @@ module Resourceful
       request(:get, nil, header)
     end
 
+    def head(header = {})
+      request(:head, nil, header)
+    end
     # :call-seq:
     #   post(data = "", :content_type => mime_type)
     #
