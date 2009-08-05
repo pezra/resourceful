@@ -33,7 +33,11 @@ module Resourceful
       conn.use_ssl = https
       begin 
         conn.start
-        res = conn.request(req, body)
+        res = if body
+                conn.request(req, body.read)
+              else
+                conn.request(req)
+              end
       ensure
         conn.finish if conn.started?
       end

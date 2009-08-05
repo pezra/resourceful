@@ -146,6 +146,8 @@ module Resourceful
 
     # Actually make the request
     def request(method, data, header)
+      data = StringIO.new(data) if data.kind_of?(String)
+
       log_request_with_time "#{method.to_s.upcase} [#{uri}]" do
         request = Request.new(method, self, data, default_header.merge(header))
         request.fetch_response
