@@ -50,7 +50,7 @@ module Resourceful
                    else
                      [request.uri.host, request.uri.inferred_port]
                    end
-      conn = ServerLink.new(host, port, /https/i === request.uri.scheme)
+      conn = ServerLink.new(host, port, :use_ssl => /https/i === request.uri.scheme)
 
       if request.body
         request.header['Content-Length'] = request.body.length
@@ -137,12 +137,12 @@ module Resourceful
       #   The name of the host to connect to.
       # @param [Integer] port 
       #   The port to connect to.
-      # @param [boolean] use_ssl
+      # @option [boolean] use_ssl
       #   When true secure the TCP connect using SSL. Default: false
-      def initialize(host, port, use_ssl = false)
+      def initialize(host, port, options = {})
         @host = host
         @port = port
-        @use_ssl = use_ssl
+        @use_ssl = options[:use_ssl]
         
         socket = TCPSocket.new(host, port)
         if use_ssl
@@ -154,16 +154,23 @@ module Resourceful
         @tcp_conn = PushBackIo.new(socket)        
       end
 
-      def send_request(method, uri, body, header)
+      # Write an HTTP request to the socket connection.
+      #
+      # @option [Numeric] timeout 
+      #   The time, in seconds, this method should be allowed to run before failing.
+      def send_request(method, uri, body, header, options = {})
         tcp_conn.write(build_request_header(method, uri, header))
         tcp_conn.write(body) if body
         tcp_conn.flush
       end
 
-      # Read http response
+      # Read http response.
+      #
+      # @option [Numeric] timeout 
+      #   The time, in seconds, this method should be allowed to run before failing.
       #
       # @return [ParserOutput]
-      def read_response
+      def read_response(options = {})
         read_and_parse_header.tap do |resp|
           if /chunked/i === resp['TRANSFER_ENCODING']
             resp.http_body = read_chunked_body(resp.http_body)

@@ -1,4 +1,4 @@
-# Copied from Rfuzz, w/ the bits I don't need removed.  Thanks Zed.
+# Copied from Rfuzz, w/ the bits I don't need removed.  Thanks Mr Shaw.
 require 'stringio'
 
 module Resourceful
@@ -34,6 +34,11 @@ module Resourceful
     end
     
     # Read from internal buffer. If that is empty read from secondary IO.
+    #
+    # @param [Numeric] maxlen
+    #   The maximum number of bytes to read and return
+    # @options [Numeric] timeout 
+    #   The time, in seconds, to read before giving up.
     def readpartial(maxlen)
       r = pop(maxlen)
       return r if r

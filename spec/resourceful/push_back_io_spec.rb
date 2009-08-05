@@ -90,6 +90,11 @@ describe Resourceful::PushBackIo do
     @pbio.should be_closed
   end
 
+  it "should fail with timout if timeout is execeed" do 
+    @secondary.stub!(:readpartial).and_return("this is part of the data on the socket"
+    
+  end
+
   describe "secondary w/o readpartial" do
     before do
       @secondary = stub('socket', :closed? => false)
