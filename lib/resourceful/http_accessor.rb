@@ -1,6 +1,6 @@
 require 'net/http'
 
-require 'resourceful/options_interpreter'
+require 'resourceful/options_interpretation'
 require 'resourceful/authentication_manager'
 require 'resourceful/cache_manager'
 require 'resourceful/resource'
@@ -28,7 +28,8 @@ module Resourceful
   # provided by the Resourceful library.  Conceptually this object
   # acts a collection of all the resources available via HTTP.
   class HttpAccessor
-    
+    include OptionsInterpretation
+
     # A logger object to which messages about the activities of this
     # object will be written.  This should be an object that responds
     # to +#info(message)+ and +#debug(message)+.  
@@ -40,13 +41,9 @@ module Resourceful
     attr_reader :auth_manager
     attr_reader :user_agent_tokens  
     
-    INIT_OPTIONS = OptionsInterpreter.new do 
-      option(:logger, :default => Resourceful::BitBucketLogger.new)
-      option(:user_agent, :default => []) {|ua| [ua].flatten}
-      option(:cache_manager, :default => NullCacheManager.new)
-      option(:authenticator)
-      option(:authenticators, :default => [])
-    end
+    ##
+    # The adapter this accessor will use to make the actual HTTP requests.
+    attr_reader :http_adapter
     
     # Initializes a new HttpAccessor.  Valid options:
     #
@@ -64,16 +61,18 @@ module Resourceful
     #    accessor.
     def initialize(options = {})
       @user_agent_tokens = [RESOURCEFUL_USER_AGENT_TOKEN]
-      
-      INIT_OPTIONS.interpret(options) do |opts|
-        @user_agent_tokens.push(*opts[:user_agent].reverse)
-        self.logger = opts[:logger]
-        @auth_manager = AuthenticationManager.new()
-        @cache_manager = opts[:cache_manager]
+      @auth_manager = AuthenticationManager.new()
+
+      extract_opts(options) do |opts|
+        @user_agent_tokens.push(*opts.extract(:user_agent, :default => []) {|ua| [ua].flatten})
         
-        add_authenticator(opts[:authenticator]) if opts[:authenticator]
-        opts[:authenticators].each { |a| add_authenticator(a) }
-      end     
+        self.logger    = opts.extract(:logger, :default => BitBucketLogger.new)
+        @cache_manager = opts.extract(:cache_manager, :default => NullCacheManager.new)
+        @http_adapter  = opts.extract(:http_adapter, :default => lambda{NetHttpAdapter.new})
+        
+        opts.extract(:authenticator, :required => false).tap{|a| add_authenticator(a) if a}
+        opts.extract(:authenticators, :default => []).each { |a| add_authenticator(a) }
+      end
     end
     
     # Returns the string that identifies this HTTP accessor.  If you

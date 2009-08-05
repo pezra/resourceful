@@ -30,7 +30,7 @@ describe Resourceful do
     end
 
     def uri_for_code(code, params = {})
-      uri = Addressable::Template.new("http://localhost:3000/code/{code}").expand("code" => code.to_s)
+      uri = Addressable::Template.new("http://localhost:42682/code/{code}").expand("code" => code.to_s)
       uri_plus_params(uri, params)
     end
 
@@ -119,7 +119,7 @@ describe Resourceful do
 
       it "should be authoritative if the response is directly from the server" do
         resource = @http.resource(
-          uri_plus_params('http://localhost:3000/', "Cache-Control" => 'max-age=10')
+          uri_plus_params('http://localhost:42682/', "Cache-Control" => 'max-age=10')
         )
 
         response  = resource.get
@@ -129,7 +129,7 @@ describe Resourceful do
       it "should be authoritative if a cached response was revalidated with the server" do
         now = Time.now.httpdate
         resource = @http.resource(
-          uri_plus_params('http://localhost:3000/cached', 
+          uri_plus_params('http://localhost:42682/cached', 
                           "modified" => now, 
                           "Cache-Control" => 'max-age=0')
         )
@@ -142,7 +142,7 @@ describe Resourceful do
       it "should not be authoritative if the cached response was not revalidated" do
         now = Time.now.httpdate
         resource = @http.resource(
-          uri_plus_params('http://localhost:3000/cached', 
+          uri_plus_params('http://localhost:42682/cached', 
                           "modified" => now, 
                           "Cache-Control" => 'max-age=10')
         )
@@ -160,7 +160,7 @@ describe Resourceful do
         now = Time.now.httpdate
 
         resource = @http.resource(
-          uri_plus_params('http://localhost:3000/cached', 
+          uri_plus_params('http://localhost:42682/cached', 
                           "modified" => now, 
                           "Cache-Control" => 'max-age=0')
         )

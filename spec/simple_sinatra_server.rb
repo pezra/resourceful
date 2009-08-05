@@ -69,6 +69,6 @@ get '/cached' do
 end
 
 Sinatra::Default.set(
-  :port => 3000
+  :port => 42682
 )
 
