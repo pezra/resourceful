@@ -21,31 +21,50 @@ end
 
 require 'spec/rake/spectask'
 
-desc 'Run all specs'
+desc 'Run all acceptance specs'
+
 Spec::Rake::SpecTask.new(:spec) do |t|
   t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
   t.libs << 'lib'
-  t.spec_files = FileList['spec/acceptance/*_spec.rb'] 
+  t.spec_files = FileList['spec/**/*_spec.rb'] 
 end
 
-desc 'Run the specs for the server'
-Spec::Rake::SpecTask.new('spec:server') do |t|
-  t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
-  t.libs << 'lib'
-  t.spec_files = FileList['spec/simple_sinatra_server_spec.rb'] 
-end
-
-begin 
-  require 'spec/simple_sinatra_server'
-  desc "Run the sinatra echo server, with loggin" 
-  task :server do
-    Sinatra::Default.set(
-      :run => true,
-      :logging => true
-    )
+namespace :spec do 
+  desc 'Run all acceptance specs'
+  Spec::Rake::SpecTask.new(:acceptance) do |t|
+    t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
+    t.libs << 'lib'
+    t.spec_files = FileList['spec/acceptance/*_spec.rb'] 
   end
-rescue LoadError => e
-  puts "Install 'sinatra' gem to run the server"
+
+  desc 'Run all unit specs'
+  Spec::Rake::SpecTask.new(:unit) do |t|
+    t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
+    t.libs << 'lib'
+    t.spec_files = FileList['spec/**/*_spec.rb'] - (FileList['spec/acceptance/*_spec.rb'] + FileList['spec/simple_sinatra_server_spec.rb'] )
+  end
+  
+  desc 'Run the specs for the server'
+  Spec::Rake::SpecTask.new('server') do |t|
+    t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
+    t.libs << 'lib'
+    t.spec_files = FileList['spec/simple_sinatra_server_spec.rb'] 
+  end
+end
+
+task :server do 
+  begin 
+    require 'spec/simple_sinatra_server'
+    desc "Run the sinatra echo server, with loggin" 
+    task :server do
+      Sinatra::Default.set(
+                           :run => true,
+                           :logging => true
+                           )
+    end
+  rescue LoadError => e
+    puts "Install 'sinatra' gem to run the server"
+  end
 end
 
 desc 'Default: Run Specs'
