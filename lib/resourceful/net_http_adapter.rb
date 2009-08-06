@@ -23,7 +23,7 @@ module Resourceful
     # Make an HTTP request using the standard library net/http.
     #
     # Will use a proxy defined in the http_proxy environment variable, if set.
-    def self.make_request(method, uri, body = nil, header = nil)
+    def make_request(method, uri, body = nil, header = nil)
       uri = uri.is_a?(Addressable::URI) ? uri : Addressable::URI.parse(uri)
 
       req = net_http_request_class(method).new(uri.absolute_path)
@@ -53,12 +53,12 @@ module Resourceful
     private
 
     # Parse proxy details from http_proxy environment variable
-    def self.proxy_details
+    def proxy_details
       proxy = Addressable::URI.parse(ENV["http_proxy"])
       [proxy.host, proxy.port, proxy.user, proxy.password] if proxy
     end
 
-    def self.net_http_request_class(method)
+    def net_http_request_class(method)
       case method
       when :get     then Net::HTTP::Get
       when :head    then Net::HTTP::Head

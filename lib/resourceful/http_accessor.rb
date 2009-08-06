@@ -47,18 +47,25 @@ module Resourceful
     
     # Initializes a new HttpAccessor.  Valid options:
     #
-    #  +:logger+:: A Logger object that the new HTTP accessor should
-    #    send log messages
+    #  `:logger`
+    #  :    A Logger object that the new HTTP accessor should send log messages
     #
-    #  +:user_agent+:: One or more additional user agent tokens to
-    #    added to the user agent string.
+    #  `:user_agent`
+    #  :    One or more additional user agent tokens to added to the user agent string.
     #
-    #  +:cache_manager+:: The cache manager this accessor should use.
+    #  `:cache_manager`
+    #  :    The cache manager this accessor should use.
     #
-    #  +:authenticator+:: Add a single authenticator for this accessor.
+    #  `:authenticator`
+    #  :    Add a single authenticator for this accessor.
     #
-    #  +:authenticators+:: Enumerable of the authenticators for this
-    #    accessor.
+    #  `:authenticators`
+    #  :    Enumerable of the authenticators for this accessor.
+    #
+    #  `http_adapter`
+    #  :    The HttpAdapter to be used by this accessor
+    #
+    # 
     def initialize(options = {})
       @user_agent_tokens = [RESOURCEFUL_USER_AGENT_TOKEN]
       @auth_manager = AuthenticationManager.new()
