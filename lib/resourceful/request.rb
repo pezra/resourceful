@@ -163,7 +163,7 @@ module Resourceful
     def perform!
       @request_time = Time.now
 
-      http_resp = NetHttpAdapter.make_request(@method, @resource.uri, @body, @header)
+      http_resp = adapter.make_request(@method, @resource.uri, @body, @header)
       @response = Resourceful::Response.new(uri, *http_resp)
       @response.request_time = @request_time
       @response.authoritative = true
@@ -224,6 +224,10 @@ module Resourceful
 
     def logger
       resource.logger
+    end
+
+    def adapter
+      accessor.http_adapter
     end
   end
 

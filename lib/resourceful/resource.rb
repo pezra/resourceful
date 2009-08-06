@@ -5,7 +5,6 @@ module Resourceful
 
   class Resource
     attr_reader :accessor
-    attr_accessor :default_header
 
     # Build a new resource for a uri
     #
@@ -29,6 +28,10 @@ module Resourceful
       @uris.first
     end
     alias uri effective_uri
+
+    def default_header(temp_defaults = {})
+      temp_defaults.merge(@default_header)
+    end
 
     # Returns the host for this Resource's current uri
     def host
@@ -95,7 +98,6 @@ module Resourceful
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
     def post(data = nil, header = {})
-      check_content_type_exists(data, header)
       request(:post, data, header)
     end
 
@@ -116,7 +118,6 @@ module Resourceful
     # @raise [UnsuccessfulHttpRequestError] unless the request is a
     #   success, ie the final request returned a 2xx response code
     def put(data, header = {})
-      check_content_type_exists(data, header)
       request(:put, data, header)
     end
 
@@ -137,15 +138,24 @@ module Resourceful
     private
 
     # Ensures that the request has a content type header
-    # TODO Move this to request
-    def check_content_type_exists(body, header)
-      if body
-        raise MissingContentType unless header.has_key?(:content_type) or default_header.has_key?(:content_type)
+    def ensure_content_type(body, header)
+      return if header.has_key?(:content_type) 
+      
+      if body.respond_to?(:content_type)
+        header[:content_type] = body.content_type
+        return
       end
+      
+      return if default_header.has_key?(:content_type) 
+
+      # could not figure it out
+      raise MissingContentType
     end
 
     # Actually make the request
     def request(method, data, header)
+      ensure_content_type(data, header) if data
+
       data = StringIO.new(data) if data.kind_of?(String)
 
       log_request_with_time "#{method.to_s.upcase} [#{uri}]" do
