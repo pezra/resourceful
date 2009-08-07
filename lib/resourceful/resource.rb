@@ -155,11 +155,15 @@ module Resourceful
     # Actually make the request
     def request(method, data, header)
       ensure_content_type(data, header) if data
+      header = default_header.merge(header)
 
       data = StringIO.new(data) if data.kind_of?(String)
 
-      log_request_with_time "#{method.to_s.upcase} [#{uri}]" do
-        request = Request.new(method, self, data, default_header.merge(header))
+      logger.debug { header.map {|k,v| "#{k}: #{v}"}.join("\n\t\t") }
+      logger.debug { data = StringIO.new(data.read); data.string } if data
+      
+      log_request_with_time "#{method.to_s.upcase} [#{uri}]" do        
+        request = Request.new(method, self, data, header)
         request.fetch_response
       end
     end

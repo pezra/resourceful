@@ -10,6 +10,10 @@ require 'resourceful/util'
 require 'resourceful/header'
 require 'resourceful/http_accessor'
 
+module Resourceful
+  autoload :MultipartFormData, 'resourceful/multipart_form_data'
+end
+
 # Resourceful is a library that provides a high level HTTP interface.
 module Resourceful
   VERSION = "0.5.4"
