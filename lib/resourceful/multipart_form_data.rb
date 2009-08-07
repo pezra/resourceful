@@ -21,8 +21,10 @@ module Resourceful
 
     def read
       StringIO.new.tap do |out|
+        first = true
         form_data.each do |key, val|
-          out << "\r\n--" << boundary
+          out << "\r\n" unless first
+          out << "--" << boundary
           out << "\r\nContent-Disposition: form-data; name=\"#{key}\""
           if val.kind_of?(FileParamValue)
             out << "; filename=\"#{val.file_name}\""
@@ -34,6 +36,7 @@ module Resourceful
           else
             out << val.to_s
           end
+          first = false
         end
         out << "\r\n--#{boundary}--"
       end.string

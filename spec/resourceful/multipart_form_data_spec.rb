@@ -29,7 +29,6 @@ describe Resourceful::MultipartFormData do
       
       boundary = /boundary=(\w+)/.match(@form_data.content_type)[1]
       @form_data.read.should eql(<<MPFD[0..-2])
-\r
 --#{boundary}\r
 Content-Disposition: form-data; name="foo"\r
 \r
@@ -62,7 +61,6 @@ MPFD
       
           boundary = /boundary=(\w+)/.match(@form_data.content_type)[1]
           @form_data.read.should eql(<<MPFD[0..-2])
-\r
 --#{boundary}\r
 Content-Disposition: form-data; name="foo"; filename="#{File.basename(file_to_upload.path)}"\r
 Content-Type: application/octet-stream\r
