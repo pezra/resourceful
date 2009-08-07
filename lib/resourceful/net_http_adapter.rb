@@ -23,6 +23,10 @@ module Resourceful
     # Make an HTTP request using the standard library net/http.
     #
     # Will use a proxy defined in the http_proxy environment variable, if set.
+    #
+    # @param [#read] body
+    #   An IO-ish thing containing the body of the request
+    #
     def make_request(method, uri, body = nil, header = nil)
       uri = uri.is_a?(Addressable::URI) ? uri : Addressable::URI.parse(uri)
 
