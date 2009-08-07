@@ -14,6 +14,7 @@ begin
     p.ignore_pattern  = ["pkg/*", "tmp/*"]
     p.dependencies    = [['addressable', '>= 2.1.0'], 'httpauth']
     p.development_dependencies = ['thin', 'yard', 'sinatra', 'rspec']
+    p.retain_gemspec  = true
   end
 rescue LoadError => e
   puts "install 'echoe' gem to be able to build the gem"
