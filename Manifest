@@ -1,12 +1,12 @@
-#Rakefile#
 lib/resourceful/authentication_manager.rb
 lib/resourceful/cache_manager.rb
 lib/resourceful/exceptions.rb
 lib/resourceful/header.rb
 lib/resourceful/http_accessor.rb
 lib/resourceful/memcache_cache_manager.rb
+lib/resourceful/multipart_form_data.rb
 lib/resourceful/net_http_adapter.rb
-lib/resourceful/options_interpreter.rb
+lib/resourceful/options_interpretation.rb
 lib/resourceful/request.rb
 lib/resourceful/resource.rb
 lib/resourceful/response.rb
@@ -26,7 +26,8 @@ spec/acceptance/resource_spec.rb
 spec/acceptance_shared_specs.rb
 spec/caching_spec.rb
 spec/old_acceptance_specs.rb
-spec/resourceful/rd_http_adapter/http_response_parser_spec.rb
+spec/resourceful/multipart_form_data_spec.rb
+spec/resourceful/resource_spec.rb
 spec/simple_sinatra_server.rb
 spec/simple_sinatra_server_spec.rb
 spec/spec.opts
