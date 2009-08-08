@@ -1,15 +1,8 @@
 
 module Resourceful
   class MultipartFormData
+    include FormData
     FileParamValue = Struct.new(:content, :file_name, :content_type)
-
-    def initialize()
-      @form_data = []
-    end
-
-    def add(name, value)
-      form_data << [name, value]
-    end
 
     def add_file(name, file_name, content_type="application/octet-stream")
       add(name, FileParamValue.new(File.new(file_name, 'r'), File.basename(file_name), content_type))
@@ -43,7 +36,6 @@ module Resourceful
     end
 
     protected
-    attr_reader :form_data
 
     def boundary
       @boundary ||= (0..30).map{BOUNDARY_CHARS[rand(BOUNDARY_CHARS.length)]}.join

@@ -11,7 +11,9 @@ require 'resourceful/header'
 require 'resourceful/http_accessor'
 
 module Resourceful
+  autoload :FormData, 'resourceful/form_data'
   autoload :MultipartFormData, 'resourceful/multipart_form_data'
+  autoload :UrlencodedFormData, 'resourceful/urlencoded_form_data'
 end
 
 # Resourceful is a library that provides a high level HTTP interface.
