@@ -33,7 +33,8 @@ module Resourceful
       req = net_http_request_class(method).new(uri.absolute_path)
       header.each_field { |k,v| req[k] = v } if header
       https = ("https" == uri.scheme)
-      conn = Net::HTTP.Proxy(*proxy_details).new(uri.host, uri.port || (https ? 443 : 80))
+      conn_class = proxy_details ? Net::HTTP.Proxy(*proxy_details) : Net::HTTP
+      conn = conn_class.new(uri.host, uri.port || (https ? 443 : 80))
       conn.use_ssl = https
       begin 
         conn.start

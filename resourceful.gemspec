@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 1.2") if s.respond_to? :required_rubygems_version=
   s.authors = ["Paul Sadauskas"]
-  s.date = %q{2009-08-07}
+  s.date = %q{2009-08-12}
   s.description = %q{An HTTP library for Ruby that takes advantage of everything HTTP has to offer.}
   s.email = %q{psadauskas@gmail.com}
   s.extra_rdoc_files = ["lib/resourceful/authentication_manager.rb", "lib/resourceful/cache_manager.rb", "lib/resourceful/exceptions.rb", "lib/resourceful/header.rb", "lib/resourceful/http_accessor.rb", "lib/resourceful/memcache_cache_manager.rb", "lib/resourceful/multipart_form_data.rb", "lib/resourceful/net_http_adapter.rb", "lib/resourceful/options_interpretation.rb", "lib/resourceful/request.rb", "lib/resourceful/resource.rb", "lib/resourceful/response.rb", "lib/resourceful/stubbed_resource_proxy.rb", "lib/resourceful/util.rb", "lib/resourceful.rb", "README.markdown"]
