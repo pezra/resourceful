@@ -11,7 +11,12 @@ module Resourceful
     end
 
     def [](k)
-      super capitalize(k)
+      val = super capitalize(k)
+      if val.nil? or val.kind_of?(Enumerable)
+        val
+      else
+        [val]
+      end
     end
 
     def []=(k, v)

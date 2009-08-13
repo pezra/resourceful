@@ -205,7 +205,7 @@ module Resourceful
 
     # Does this request force us to revalidate the cache?
     def forces_revalidation?
-      if max_age == 0 || header.cache_control && cc.include?('no-cache')
+      if max_age == 0 || skip_cache?
         logger.info("    Client forced revalidation")
         true
       else 
