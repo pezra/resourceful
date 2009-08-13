@@ -12,7 +12,7 @@ module Resourceful
 
     def [](k)
       val = super capitalize(k)
-      if val.nil? or val.kind_of?(Enumerable)
+      if val.nil? or val.kind_of?(Array)
         val
       else
         [val]
