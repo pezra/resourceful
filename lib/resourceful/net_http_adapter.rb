@@ -30,6 +30,11 @@ module Resourceful
     def make_request(method, uri, body = nil, header = nil)
       uri = uri.is_a?(Addressable::URI) ? uri : Addressable::URI.parse(uri)
 
+      if [:put, :post].include? method
+        body = body ? body.read : ""
+        header[:content_length] = body.size 
+      end
+
       req = net_http_request_class(method).new(uri.absolute_path)
       header.each_field { |k,v| req[k] = v } if header
       https = ("https" == uri.scheme)
@@ -39,7 +44,7 @@ module Resourceful
       begin 
         conn.start
         res = if body
-                conn.request(req, body.read)
+                conn.request(req, body)
               else
                 conn.request(req)
               end

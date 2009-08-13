@@ -1,3 +1,4 @@
+require 'resourceful/form_data'
 require 'cgi'
 
 module Resourceful

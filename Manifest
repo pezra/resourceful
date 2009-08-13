@@ -1,6 +1,7 @@
 lib/resourceful/authentication_manager.rb
 lib/resourceful/cache_manager.rb
 lib/resourceful/exceptions.rb
+lib/resourceful/form_data.rb
 lib/resourceful/header.rb
 lib/resourceful/http_accessor.rb
 lib/resourceful/memcache_cache_manager.rb
@@ -11,6 +12,7 @@ lib/resourceful/request.rb
 lib/resourceful/resource.rb
 lib/resourceful/response.rb
 lib/resourceful/stubbed_resource_proxy.rb
+lib/resourceful/urlencoded_form_data.rb
 lib/resourceful/util.rb
 lib/resourceful.rb
 Manifest
@@ -28,6 +30,7 @@ spec/caching_spec.rb
 spec/old_acceptance_specs.rb
 spec/resourceful/multipart_form_data_spec.rb
 spec/resourceful/resource_spec.rb
+spec/resourceful/urlencoded_form_data_spec.rb
 spec/simple_sinatra_server.rb
 spec/simple_sinatra_server_spec.rb
 spec/spec.opts

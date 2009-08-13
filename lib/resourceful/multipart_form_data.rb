@@ -1,3 +1,4 @@
+require 'resourceful/form_data'
 
 module Resourceful
   class MultipartFormData

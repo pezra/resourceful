@@ -11,7 +11,6 @@ require 'resourceful/header'
 require 'resourceful/http_accessor'
 
 module Resourceful
-  autoload :FormData, 'resourceful/form_data'
   autoload :MultipartFormData, 'resourceful/multipart_form_data'
   autoload :UrlencodedFormData, 'resourceful/urlencoded_form_data'
 end
@@ -20,5 +19,4 @@ end
 module Resourceful
   VERSION = "0.5.4"
   RESOURCEFUL_USER_AGENT_TOKEN = "Resourceful/#{VERSION}(Ruby/#{RUBY_VERSION})"
-
 end
