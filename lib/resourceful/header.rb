@@ -1,8 +1,32 @@
 require 'resourceful/options_interpretation'
 require 'set'
 
-# A case-normalizing Hash, adjusting on [] and []=.
-# Shamelessly swiped from Rack
+# Represents the header fields of an HTTP message.  To access a field
+# you can use `#[]` and `#[]=`.  For example, to get the content type
+# of a response you can do
+# 
+#     response.header['Content-Type']  # => "application/xml"
+#
+# Lookups and modifications done in this way are case insensitive, so
+# 'Content-Type', 'content-type' and :content_type are all equivalent.
+#
+# Multi-valued fields
+# -------------------
+#
+# Multi-value fields (e.g. Accept) are always returned as an Array
+# regardless of the number of values, if the field is present.
+# Single-value fields (e.g. Content-Type) are always returned as
+# strings.
+#
+# (This behavior is new in 0.6 and may be slightly incompatible with
+# the way previous versions worked in some situations.)
+#
+# For example
+#
+#     h = Resourceful::Header.new
+#     h['Accept'] = "application/xml"
+#     h['Accept']                      # => ["application/xml"]
+#
 module Resourceful
   class Header
     include Enumerable
