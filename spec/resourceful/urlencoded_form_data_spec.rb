@@ -12,6 +12,12 @@ describe Resourceful::UrlencodedFormData do
     @form_data.content_type.should match(/^application\/x-www-form-urlencoded$/i)
   end
 
+  describe "instantiation" do 
+    it "should be creatable with hash" do 
+      Resourceful::UrlencodedFormData.new(:foo => 'testing').read.should eql("foo=testing")
+    end
+  end
+
   describe "with simple parameters" do 
     it "should all simple parameters to be added" do 
       @form_data.add(:foo, "testing")
@@ -34,6 +40,5 @@ describe Resourceful::UrlencodedFormData do
       @form_data.add('foo=bar', 'this')      
       @form_data.read.should eql("foo%3Dbar=this")
     end
-
   end
 end

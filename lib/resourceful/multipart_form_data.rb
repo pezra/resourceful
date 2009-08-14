@@ -1,8 +1,7 @@
-require 'resourceful/form_data'
+require 'resourceful/abstract_form_data'
 
 module Resourceful
-  class MultipartFormData
-    include FormData
+  class MultipartFormData < AbstractFormData
     FileParamValue = Struct.new(:content, :file_name, :content_type)
 
     def add_file(name, file_name, content_type="application/octet-stream")

@@ -58,8 +58,17 @@ Post a URL encoded form
 
      require 'resourceful'
      http = Resourceful::HttpAccessor.new
-     resp = http.resource('http://mysite.example/service').
-              post('hostname=test&level=super', :content_type => 'application/x-www-form-urlencoded')
+     resp = http.resource('http://mysite.example/service'). 
+              post(Resourceful::UrlencodedFormData.new(:hostname => 'test', :level => 'super'))
+
+Post a Mulitpart form with a file
+-----------------------
+
+     require 'resourceful'
+     http = Resourceful::HttpAccessor.new
+     form_data = Resourceful::MultipartFormData.new(:username => 'me')
+     form_data.add_file('avatar', '/tmp/my_avatar.png', 'image/png')
+     resp = http.resource('http://mysite.example/service').post(form_data)
 
 Put an XML document
 -------------------

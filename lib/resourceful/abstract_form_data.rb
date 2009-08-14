@@ -1,12 +1,15 @@
 module Resourceful
-  module FormData
-    def initialize()
+  class AbstractFormData
+    def initialize(contents = {})
       @form_data = []
-      super
+      
+      contents.each do |k,v|
+        add(k, v)
+      end
     end
 
     def add(name, value)
-      form_data << [name, value]
+      form_data << [name.to_s, value]
     end
 
     protected

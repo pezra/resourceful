@@ -1,9 +1,8 @@
-require 'resourceful/form_data'
+require 'resourceful/abstract_form_data'
 require 'cgi'
 
 module Resourceful
-  class UrlencodedFormData
-    include FormData
+  class UrlencodedFormData < AbstractFormData
 
     def content_type
       "application/x-www-form-urlencoded"
