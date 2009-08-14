@@ -1,7 +1,18 @@
-Version 0.5.5
+Version 0.6.0
 =============
+
  * Improved support for multi-valued header fields. (Peter Williams)
  * Added convenience mechanisms for making URL encoded and multipart form data requests. (Peter Williams)
  * Ruby 1.9 support (Peter Williams)
+
+Compatibility issues
+--------------------
+
+ * The semantics of the Resourceful::Header API have changed slightly.
+   Previously, any header might return a string or an array.  Now
+   fields are either "single-value" and always return a string, or
+   "multi-value" and always return an array.  See API doc for more
+   details.
+
 
 
