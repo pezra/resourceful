@@ -17,6 +17,6 @@ end
 
 # Resourceful is a library that provides a high level HTTP interface.
 module Resourceful
-  VERSION = "0.5.4"
+  VERSION = "0.6.0"
   RESOURCEFUL_USER_AGENT_TOKEN = "Resourceful/#{VERSION}(Ruby/#{RUBY_VERSION})"
 end
