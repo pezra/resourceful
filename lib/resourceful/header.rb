@@ -16,7 +16,9 @@ require 'set'
 # Multi-value fields (e.g. Accept) are always returned as an Array
 # regardless of the number of values, if the field is present.
 # Single-value fields (e.g. Content-Type) are always returned as
-# strings.
+# strings. The multi/single valueness of a header field is determined
+# by the way it is defined in the HTTP spec.  Unknown fields are
+# treated as multi-valued.
 #
 # (This behavior is new in 0.6 and may be slightly incompatible with
 # the way previous versions worked in some situations.)
@@ -167,6 +169,12 @@ module Resourceful
           end                     # end
         RUBY
       end
+
+      def gen_canonical_name_const(klass)
+        const_name = name.upcase.gsub('-', '_')
+        
+        klass.const_set(const_name, name)
+      end
     end
  
     @@header_field_defs = Set.new
@@ -178,6 +186,7 @@ module Resourceful
 
       hfd.gen_getter(self)
       hfd.gen_setter(self)
+      hfd.gen_canonical_name_const(self)
     end
 
     def self.hop_by_hop_headers
@@ -230,7 +239,7 @@ module Resourceful
     header_field('Proxy-Authenticate', :hop_by_hop => true)
     header_field('Proxy-Authorization', :hop_by_hop => true)
     header_field('Range')
-    header_field('Refer er')
+    header_field('Referer')
     header_field('Retry-After')
     header_field('Server')
     header_field('TE', :repeatable => true, :hop_by_hop => true)
