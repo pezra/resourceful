@@ -1,0 +1,7 @@
+Version 0.5.5
+=============
+ * Improved support for multi-valued header fields. (Peter Williams)
+ * Added convenience mechanisms for making URL encoded and multipart form data requests. (Peter Williams)
+ * Ruby 1.9 support (Peter Williams)
+
+
