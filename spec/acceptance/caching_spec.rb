@@ -104,7 +104,7 @@ describe Resourceful do
 
       it 'should revalidate the cached response if the response is expired' do
         in_the_past = (Time.now - 60).httpdate
-        resource = @http.resource(uri_for_code(200, "Expire" => in_the_past))
+        resource = @http.resource(uri_for_code(200, "Expires" => in_the_past))
 
         resp = resource.get
         resp.should be_expired

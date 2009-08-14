@@ -30,7 +30,7 @@ module Resourceful
     alias uri effective_uri
 
     def default_header(temp_defaults = {})
-      temp_defaults.merge(@default_header)
+      @default_header.merge(temp_defaults)
     end
 
     # Returns the host for this Resource's current uri
@@ -139,14 +139,14 @@ module Resourceful
 
     # Ensures that the request has a content type header
     def ensure_content_type(body, header)
-      return if header.has_key?(:content_type) 
+      return if header.has_key?('Content-Type') 
       
       if body.respond_to?(:content_type)
-        header[:content_type] = body.content_type
+        header['Content-Type'] = body.content_type
         return
       end
       
-      return if default_header.has_key?(:content_type) 
+      return if default_header.has_key?('Content-Type') 
 
       # could not figure it out
       raise MissingContentType
@@ -154,8 +154,8 @@ module Resourceful
 
     # Actually make the request
     def request(method, data, header)
-      ensure_content_type(data, header) if data
       header = default_header.merge(header)
+      ensure_content_type(data, header) if data
 
       data = StringIO.new(data) if data.kind_of?(String)
 

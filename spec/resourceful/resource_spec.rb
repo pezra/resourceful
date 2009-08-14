@@ -10,7 +10,7 @@ module Resourceful
     
     describe "POSTing" do 
       it "should use bodies content type as the request content-type if it is known" do 
-        @http_adapter.should_receive(:make_request).with(anything, anything, anything, hash_including('Content-Type' => ['application/x-special-type'])).and_return([200, {}, ""])
+        @http_adapter.should_receive(:make_request).with(anything, anything, anything, hash_including('Content-Type' => 'application/x-special-type')).and_return([200, {}, ""])
         body = stub(:body, :content_type => 'application/x-special-type', :read => "hello there")
         @resource.post(body)
       end

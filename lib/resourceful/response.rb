@@ -26,8 +26,8 @@ module Resourceful
       if header['Cache-Control'] and header['Cache-Control'].first.include?('max-age')
         max_age = header['Cache-Control'].first.split(',').grep(/max-age/).first.split('=').last.to_i
         return true if current_age > max_age
-      elsif header['Expire']
-        return true if Time.httpdate(header['Expire'].first) < Time.now
+      elsif header['Expires']
+        return true if Time.httpdate(header['Expires']) < Time.now
       end
 
       false
@@ -75,8 +75,8 @@ module Resourceful
 
     # Algorithm taken from RCF2616#13.2.3
     def current_age
-      age_value   = header['Age'] ? header['Age'].first.to_i : 0
-      date_value  = Time.httpdate(header['Date'].first)
+      age_value   = header['Age'] || 0
+      date_value  = Time.httpdate(header['Date'])
       now         = Time.now
 
       apparent_age = [0, response_time - date_value].max
@@ -85,7 +85,7 @@ module Resourceful
     end
 
     def body
-      encoding = header['Content-Encoding'] && header['Content-Encoding'].first
+      encoding = header['Content-Encoding']
       case encoding
       when nil
         # body is identity encoded; just return it
