@@ -52,10 +52,13 @@ module Resourceful
       self.class.new(@raw_fields.dup)
     end
 
+
+    # Class to handle the details of each type of field.
     class HeaderFieldDef
       include Comparable
       include OptionsInterpretation
 
+      ##
       attr_reader :name
 
       def initialize(name, options = {})
@@ -102,9 +105,14 @@ module Resourceful
         name <=> another.name
       end
 
+      def ==(another)
+        name_pattern === another.name
+      end
+      alias eql? ==
+
       def ===(another)
         if another.kind_of?(HeaderFieldDef)
-          name == another.name
+          self == another
         else
           name_pattern === another
         end
