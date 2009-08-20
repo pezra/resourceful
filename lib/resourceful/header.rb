@@ -1,4 +1,4 @@
-require 'resourceful/options_interpretation'
+require 'options'
 require 'set'
 
 # Represents the header fields of an HTTP message.  To access a field
@@ -82,18 +82,17 @@ module Resourceful
     # Class to handle the details of each type of field.
     class HeaderFieldDef
       include Comparable
-      include OptionsInterpretation
 
       ##
       attr_reader :name
 
       def initialize(name, options = {})
         @name = name
-        extract_opts(options) do |opts|
-          @repeatable = opts.extract(:repeatable, :default => false)
-          @hop_by_hop = opts.extract(:hop_by_hop, :default => false)
-          @modifiable = opts.extract(:modifiable, :default => true)
-        end
+        options = Options.for(options).validate(:repeatable, :hop_by_hop, :modifiable)
+        
+        @repeatable = options.getopt(:repeatable, :default => false)
+        @hop_by_hop = options.getopt(:hop_by_hop, :default => false)
+        @modifiable = options.getopt(:modifiable, :default => true)
       end
 
       def repeatable?
