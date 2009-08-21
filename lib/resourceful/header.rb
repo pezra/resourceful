@@ -90,9 +90,9 @@ module Resourceful
         @name = name
         options = Options.for(options).validate(:repeatable, :hop_by_hop, :modifiable)
         
-        @repeatable = options.getopt(:repeatable, :default => false)
-        @hop_by_hop = options.getopt(:hop_by_hop, :default => false)
-        @modifiable = options.getopt(:modifiable, :default => true)
+        @repeatable = options.getopt(:repeatable) || false
+        @hop_by_hop = options.getopt(:hop_by_hop) || false
+        @modifiable = options.getopt(:modifiable) || true
       end
 
       def repeatable?

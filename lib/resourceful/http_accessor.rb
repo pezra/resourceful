@@ -72,9 +72,9 @@ module Resourceful
 
       
       @user_agent_tokens.push(*Array(options.getopt(:user_agent)).flatten.reverse)
-      self.logger    = options.getopt(:logger, :default => BitBucketLogger.new)
-      @cache_manager = options.getopt(:cache_manager, :default => NullCacheManager.new)
-      @http_adapter  = options.getopt(:http_adapter, :default => lambda{NetHttpAdapter.new})
+      self.logger    = options.getopt(:logger) || BitBucketLogger.new
+      @cache_manager = options.getopt(:cache_manager) || NullCacheManager.new
+      @http_adapter  = options.getopt(:http_adapter) || NetHttpAdapter.new
       
       Array(options.getopt([:authenticator, :authenticators])).flatten.each do |an_authenticator|
         add_authenticator(an_authenticator)
