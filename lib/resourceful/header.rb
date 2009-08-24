@@ -57,7 +57,20 @@ module Resourceful
     def each(&blk)
       @raw_fields.each(&blk)
     end
-    alias each_field each
+
+    # Iterates through the fields with values provided as message
+    # ready strings.
+    def each_field(&blk)
+      each do |k,v|
+        str_v = if field_def(k).multivalued?
+                  v.join(', ')
+                else
+                  v.to_s
+                end
+
+        yield k, str_v
+      end
+    end
 
     def merge!(another)
       another.each do |k,v|
@@ -98,6 +111,7 @@ module Resourceful
       def repeatable?
         @repeatable
       end
+      alias multivalued? repeatable?
 
       def hop_by_hop?
         @hop_by_hop
