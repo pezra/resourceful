@@ -79,7 +79,7 @@ module Resourceful
       }.should raise_error(ArgumentError, 'Host field may only have one value')
     end
 
-    it "#each_field should iterate through all header fields and values as strings" do 
+    it "should provide #each_fields to iterate through all header fields and values as strings" do 
       field_names = []
       Header.new('Accept' => "this", :content_type => "that", 'pragma' => 'test').each_field do |fname, _|
         field_names << fname
@@ -89,6 +89,21 @@ module Resourceful
       field_names.should include('Content-Type')
       field_names.should include('Pragma')
       field_names.should have(3).items
+    end
+
+    Spec::Matchers.define :have_pair do |name, value|
+      match do |header_hash|
+        header_hash.has_key?(name)
+        header_hash[name] == value
+      end
+    end
+    
+    it "should provide #to_hash as a way to dump the header fields" do 
+      Header.new('Accept' => "this", :content_type => "that", 'date' => 'today').to_hash.tap do |h|
+        h.should have_pair('Accept', ['this'])
+        h.should have_pair('Content-Type', 'that')
+        h.should have_pair('Date', 'today')
+      end
     end
 
     describe "multi-valued fields" do
