@@ -2,10 +2,12 @@ require 'rubygems'
 require 'spec'
 require 'pp'
 
-$LOAD_PATH << File.join(File.dirname(__FILE__), "..", "lib")
+__DIR__ = File.dirname(__FILE__)
+
+$LOAD_PATH << File.join(__DIR__, "..", "lib")
 require 'resourceful'
 
-$LOAD_PATH << File.dirname(__FILE__) # ./spec
+$LOAD_PATH << __DIR__ # ./spec
 
 # Spawn the server in another process
 

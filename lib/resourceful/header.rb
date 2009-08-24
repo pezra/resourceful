@@ -53,6 +53,7 @@ module Resourceful
     def has_key?(k)
       field_def(k).exists_in?(@raw_fields)
     end
+    alias has_field? has_key?
 
     def each(&blk)
       @raw_fields.each(&blk)
@@ -126,8 +127,8 @@ module Resourceful
       end
 
       def set_to(value, raw_fields_hash)
-        raw_fields_hash[name] = if repeatable?
-                                  Array(value)
+        raw_fields_hash[name] = if multivalued?
+                                  Array(value).map{|v| v.split(/,\s*/)}.flatten
                                 elsif value.kind_of?(Array)
                                   raise ArgumentError, "#{name} field may only have one value" if value.size > 1
                                   value.first

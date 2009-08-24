@@ -112,8 +112,12 @@ module Resourceful
           accept.should eql(['application/foo', 'application/bar'])
       end
 
+      it "should be instantiatable w/ repeated multi-valued header fields w/ multiple values" do
+        Header.new('Accept' => ['application/foo, application/bar', 'text/plain']).
+          accept.should eql(['application/foo', 'application/bar', 'text/plain'])
+      end
+
       it "should be instantiatable w/ multi-valued header fields w/ multiple values" do
-        pending
         Header.new('Accept' => 'application/foo, application/bar').
           accept.should eql(['application/foo', 'application/bar'])
       end
