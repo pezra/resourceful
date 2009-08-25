@@ -91,19 +91,22 @@ module Resourceful
       field_names.should have(3).items
     end
 
-    Spec::Matchers.define :have_pair do |name, value|
-      match do |header_hash|
-        header_hash.has_key?(name)
-        header_hash[name] == value
-      end
-    end
-    
     it "should provide #to_hash as a way to dump the header fields" do 
       Header.new('Accept' => "this", :content_type => "that", 'date' => 'today').to_hash.tap do |h|
         h.should have_pair('Accept', ['this'])
         h.should have_pair('Content-Type', 'that')
         h.should have_pair('Date', 'today')
       end
+    end
+
+    it "should provide a list of hop-by-hop fields" do
+      Header.header_field('X-Hop-By-Hop-Header', :hop_by_hop => true)
+      Header.hop_by_hop_fields.should include('X-Hop-By-Hop-Header')
+    end
+
+    it "should provide a list of not modified fields" do
+      Header.header_field('X-Dont-Modify-Me', :modifiable => false)
+      Header.non_modifiable_fields.should include('X-Dont-Modify-Me')
     end
 
     describe "multi-valued fields" do
@@ -139,6 +142,12 @@ module Resourceful
         end
       end
     end
-    
+
+    Spec::Matchers.define :have_pair do |name, value|
+      match do |header_hash|
+        header_hash.has_key?(name)
+        header_hash[name] == value
+      end
+    end    
   end
 end

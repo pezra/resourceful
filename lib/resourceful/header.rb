@@ -101,13 +101,14 @@ module Resourceful
       ##
       attr_reader :name
       
+      
       def initialize(name, options = {})
         @name = name
         options = Options.for(options).validate(:repeatable, :hop_by_hop, :modifiable)
         
-        @repeatable = options.getopt(:repeatable) || false
+        @repeatable = options.getopt([:repeatable, :multivalue, :multivalued]) || false
         @hop_by_hop = options.getopt(:hop_by_hop) || false
-        @modifiable = options.getopt(:modifiable) || true
+        @modifiable = options.getopt(:modifiable, true)
       end
       
       def repeatable?
@@ -147,7 +148,7 @@ module Resourceful
       end
       
       def ==(another)
-        name_pattern === another.name
+        name_pattern === another.to_s
       end
       alias eql? ==
         
@@ -207,7 +208,21 @@ module Resourceful
     
     @@known_fields = Set.new
     @@known_fields_lookup = Hash.new
-    
+
+    # Declares a common header field.  Header fields do not have to be
+    # defined this way but accessing them is easier, safer and faster
+    # if you do.  Declaring a field does the following things:
+    #
+    #  * defines accessor methods (e.g. `#content_type` and
+    #    `#content_type=`) on `Header`
+    #  
+    #  * defines constant that can be used to reference there field
+    #    name (e.g. `some_header[Header::CONTENT_TYPE]`)
+    #  
+    #  * includes the field in the appropriate *_fields groups (e.g. `Header.non_modifiable_fields`)
+    #
+    #  * provides improved multiple value parsing
+    #
     def self.header_field(name, options = {})
       hfd = FieldDesc.new(name, options)
       
@@ -219,11 +234,11 @@ module Resourceful
       include(hfd.accessor_module)
     end
     
-    def self.hop_by_hop_headers
+    def self.hop_by_hop_fields
       @@known_fields.select{|hfd| hfd.hop_by_hop?}
     end
     
-    def self.non_modifiable_headers
+    def self.non_modifiable_fields
       @@known_fields.reject{|hfd| hfd.modifiable?}
     end
     
