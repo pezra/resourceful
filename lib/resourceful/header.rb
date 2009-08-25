@@ -93,7 +93,6 @@ module Resourceful
       self.class.new(@raw_fields.dup)
     end
 
-
     # Class to handle the details of each type of field.
     class FieldDesc
       include Comparable
@@ -101,7 +100,25 @@ module Resourceful
       ##
       attr_reader :name
       
-      
+      # Create a new header field descriptor.
+      #
+      # @param [String] name  The canonical name of this field.
+      #
+      # @param [Hash] options hash containing extra information about
+      #   this header fields.  Valid keys are:
+      #   
+      #     `:multivalued`
+      #     `:multivalue`
+      #     `:repeatable`
+      #     :   Values of this field are comma separated list of values.  
+      #         (n#VALUE per HTTP spec.) Default: false
+      #
+      #     `:hop_by_hop`
+      #     :   True if the header is a hop-by-hop header. Default: false
+      #
+      #     `:modifiable`
+      #     :   False if the header should not be modified by intermediates or caches. Default: true
+      #
       def initialize(name, options = {})
         @name = name
         options = Options.for(options).validate(:repeatable, :hop_by_hop, :modifiable)
@@ -223,6 +240,25 @@ module Resourceful
     #
     #  * provides improved multiple value parsing
     #
+    # Create a new header field descriptor.
+    #
+    # @param [String] name  The canonical name of this field.
+    #
+    # @param [Hash] options hash containing extra information about
+    #   this header fields.  Valid keys are:
+    #   
+    #     `:multivalued`
+    #     `:multivalue`
+    #     `:repeatable`
+    #     :   Values of this field are comma separated list of values.  
+    #         (n#VALUE per HTTP spec.) Default: false
+    #
+    #     `:hop_by_hop`
+    #     :   True if the header is a hop-by-hop header. Default: false
+    #
+    #     `:modifiable`
+    #     :   False if the header should not be modified by intermediates or caches. Default: true
+    #
     def self.header_field(name, options = {})
       hfd = FieldDesc.new(name, options)
       
@@ -241,7 +277,9 @@ module Resourceful
     def self.non_modifiable_fields
       @@known_fields.reject{|hfd| hfd.modifiable?}
     end
-    
+
+    protected
+
     # ---
     #
     # We have to fall back on a slow iteration to find the header
