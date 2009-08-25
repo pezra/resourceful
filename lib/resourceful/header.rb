@@ -1,5 +1,6 @@
 require 'options'
 require 'set'
+require 'facets/memoize'
 
 # Represents the header fields of an HTTP message.  To access a field
 # you can use `#[]` and `#[]=`.  For example, to get the content type
@@ -94,12 +95,12 @@ module Resourceful
 
 
     # Class to handle the details of each type of field.
-    class HeaderFieldDef
+    class FieldDesc
       include Comparable
-
+      
       ##
       attr_reader :name
-
+      
       def initialize(name, options = {})
         @name = name
         options = Options.for(options).validate(:repeatable, :hop_by_hop, :modifiable)
@@ -108,24 +109,24 @@ module Resourceful
         @hop_by_hop = options.getopt(:hop_by_hop) || false
         @modifiable = options.getopt(:modifiable) || true
       end
-
+      
       def repeatable?
         @repeatable
       end
       alias multivalued? repeatable?
-
+      
       def hop_by_hop?
         @hop_by_hop
       end
-
+      
       def modifiable?
         @modifiable
       end
-
+      
       def get_from(raw_fields_hash)
         raw_fields_hash[name]
       end
-
+      
       def set_to(value, raw_fields_hash)
         raw_fields_hash[name] = if multivalued?
                                   Array(value).map{|v| v.split(/,\s*/)}.flatten
@@ -136,86 +137,105 @@ module Resourceful
                                   value
                                 end
       end
-
+      
       def exists_in?(raw_fields_hash)
         raw_fields_hash.has_key?(name)
       end
-
+      
       def <=>(another)
         name <=> another.name
       end
-
+      
       def ==(another)
         name_pattern === another.name
       end
       alias eql? ==
-
+        
       def ===(another)
-        if another.kind_of?(HeaderFieldDef)
+        if another.kind_of?(FieldDesc)
           self == another
         else
           name_pattern === another
         end
       end
-
+      
       def name_pattern
-        Regexp.new('^' + name.gsub('-', '[_-]') + '$', Regexp::IGNORECASE)
+        @name_pattern ||= Regexp.new('^' + name.gsub('-', '[_-]') + '$', Regexp::IGNORECASE)
       end
-
+      
       def methodized_name
-        name.downcase.gsub('-', '_')
+        @methodized_name ||= name.downcase.gsub('-', '_')
       end
-
-      alias to_s name
-
-      def gen_setter(klass)
-        klass.class_eval <<-RUBY
-          def #{methodized_name}=(val)  # def accept=(val)
-            self['#{name}'] = val       #   self['Accept'] = val
-          end                           # end
-        RUBY
-      end
-
-      def gen_getter(klass)
-        klass.class_eval <<-RUBY
-          def #{methodized_name}  # def accept
-            self['#{name}']       #   self['Accept']
-          end                     # end
-        RUBY
-      end
-
-      def gen_canonical_name_const(klass)
-        const_name = name.upcase.gsub('-', '_')
         
-        klass.const_set(const_name, name)
+      def constantized_name
+        @constantized_name ||= name.upcase.gsub('-', '_')
       end
-    end
- 
-    @@header_field_defs = Set.new
+      
+      alias to_s name
+      
+      def accessor_module 
+        @accessor_module ||= begin
+                               Module.new.tap{|m| m.module_eval(<<-RUBY)}
+                                 #{constantized_name} = '#{name}'
+  
+                                 def #{methodized_name}        # def accept
+                                   self[#{constantized_name}]  #   self[ACCEPT]
+                                 end                           # end
+         
+                                 def #{methodized_name}=(val)        # def accept=(val)
+                                   self[#{constantized_name}] = val  #   self[ACCEPT] = val
+                                 end                                 # end
+                               RUBY
+                             end
+      end
 
+      def hash
+        @name.hash
+      end
+        
+      # Yields each commonly used lookup key for this header field.
+      def lookup_keys(&blk)
+        yield name
+        yield name.upcase
+        yield name.downcase
+        yield methodized_name
+        yield methodized_name.to_sym
+        yield constantized_name
+        yield constantized_name.to_sym
+      end
+    end # FieldDesc
+    
+    @@known_fields = Set.new
+    @@known_fields_lookup = Hash.new
+    
     def self.header_field(name, options = {})
-      hfd = HeaderFieldDef.new(name, options)
+      hfd = FieldDesc.new(name, options)
+      
+      @@known_fields << hfd      
+      hfd.lookup_keys do |a_key|
+        @@known_fields_lookup[a_key] = hfd
+      end
 
-      @@header_field_defs << hfd
-
-      hfd.gen_getter(self)
-      hfd.gen_setter(self)
-      hfd.gen_canonical_name_const(self)
-    end
-
-    def self.hop_by_hop_headers
-      @@header_field_defs.select{|hfd| hfd.hop_by_hop?}
-    end
-
-    def self.non_modifiable_headers
-      @@header_field_defs.reject{|hfd| hfd.repeatable?}
+      include(hfd.accessor_module)
     end
     
-    def field_def(name)
-      @@header_field_defs.find{|hfd| hfd === name} || 
-        HeaderFieldDef.new(name.to_s.downcase.gsub(/^.|[-_\s]./) { |x| x.upcase }.gsub('_', '-'), :repeatable => true)
+    def self.hop_by_hop_headers
+      @@known_fields.select{|hfd| hfd.hop_by_hop?}
     end
-
+    
+    def self.non_modifiable_headers
+      @@known_fields.reject{|hfd| hfd.modifiable?}
+    end
+    
+    # ---
+    #
+    # We have to fall back on a slow iteration to find the header
+    # field some times because field names are
+    def field_def(name)
+      @@known_fields_lookup[name] ||  # the fast way
+        @@known_fields.find{|hfd| hfd === name} ||  # the slow way
+        FieldDesc.new(name.to_s.downcase.gsub(/^.|[-_\s]./) { |x| x.upcase }.gsub('_', '-'), :repeatable => true)  # make up as we go
+    end
 
     header_field('Accept', :repeatable => true)
     header_field('Accept-Charset', :repeatable => true)

@@ -12,7 +12,7 @@ module Resourceful
       end
 
       it "should have accessor method `#{meth_name}` for header `#{name}`" do 
-        Resourceful::Header.instance_methods.should include(:#{meth_name})
+        Resourceful::Header.new.should respond_to(:#{meth_name})
       end
 
     RUBY
