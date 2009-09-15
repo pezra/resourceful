@@ -85,7 +85,7 @@ module Resourceful
     end
 
     def body
-      encoding = header['Content-Encoding']
+      encoding = header['Content-Encoding'] && header['Content-Encoding'].first
       case encoding
       when nil
         # body is identity encoded; just return it
