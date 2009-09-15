@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{resourceful}
-  s.version = "0.6.0"
+  s.version = "0.6.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 1.2") if s.respond_to? :required_rubygems_version=
   s.authors = ["Paul Sadauskas"]
-  s.date = %q{2009-08-14}
+  s.date = %q{2009-09-15}
   s.description = %q{An HTTP library for Ruby that takes advantage of everything HTTP has to offer.}
   s.email = %q{psadauskas@gmail.com}
   s.extra_rdoc_files = ["lib/resourceful.rb", "lib/resourceful/net_http_adapter.rb", "lib/resourceful/options_interpretation.rb", "lib/resourceful/stubbed_resource_proxy.rb", "lib/resourceful/urlencoded_form_data.rb", "lib/resourceful/header.rb", "lib/resourceful/memcache_cache_manager.rb", "lib/resourceful/response.rb", "lib/resourceful/util.rb", "lib/resourceful/abstract_form_data.rb", "lib/resourceful/cache_manager.rb", "lib/resourceful/request.rb", "lib/resourceful/resource.rb", "lib/resourceful/exceptions.rb", "lib/resourceful/multipart_form_data.rb", "lib/resourceful/http_accessor.rb", "lib/resourceful/authentication_manager.rb", "README.markdown"]
