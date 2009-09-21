@@ -1,10 +1,10 @@
 require 'net/http'
 
-require 'resourceful/options_interpretation'
 require 'resourceful/authentication_manager'
 require 'resourceful/cache_manager'
 require 'resourceful/resource'
-require 'resourceful/stubbed_resource_proxy'
+
+require 'options'
 
 module Resourceful
   # This is an imitation Logger used when no real logger is
@@ -28,8 +28,6 @@ module Resourceful
   # provided by the Resourceful library.  Conceptually this object
   # acts a collection of all the resources available via HTTP.
   class HttpAccessor
-    include OptionsInterpretation
-
     # A logger object to which messages about the activities of this
     # object will be written.  This should be an object that responds
     # to +#info(message)+ and +#debug(message)+.  
@@ -67,18 +65,19 @@ module Resourceful
     #
     # 
     def initialize(options = {})
+      options = Options.for(options).validate(:logger, :user_agent, :cache_manager, :authenticator, :authenticators, :http_adapter)
+
       @user_agent_tokens = [RESOURCEFUL_USER_AGENT_TOKEN]
       @auth_manager = AuthenticationManager.new()
 
-      extract_opts(options) do |opts|
-        @user_agent_tokens.push(*opts.extract(:user_agent, :default => []) {|ua| [ua].flatten})
-        
-        self.logger    = opts.extract(:logger, :default => BitBucketLogger.new)
-        @cache_manager = opts.extract(:cache_manager, :default => NullCacheManager.new)
-        @http_adapter  = opts.extract(:http_adapter, :default => lambda{NetHttpAdapter.new})
-        
-        opts.extract(:authenticator, :required => false).tap{|a| add_authenticator(a) if a}
-        opts.extract(:authenticators, :default => []).each { |a| add_authenticator(a) }
+      
+      @user_agent_tokens.push(*Array(options.getopt(:user_agent)).flatten.reverse)
+      self.logger    = options.getopt(:logger) || BitBucketLogger.new
+      @cache_manager = options.getopt(:cache_manager) || NullCacheManager.new
+      @http_adapter  = options.getopt(:http_adapter) || NetHttpAdapter.new
+      
+      Array(options.getopt([:authenticator, :authenticators])).flatten.each do |an_authenticator|
+        add_authenticator(an_authenticator)
       end
     end
     

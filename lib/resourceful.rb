@@ -13,10 +13,11 @@ require 'resourceful/http_accessor'
 module Resourceful
   autoload :MultipartFormData, 'resourceful/multipart_form_data'
   autoload :UrlencodedFormData, 'resourceful/urlencoded_form_data'
+  autoload :StubbedResourceProxy, 'resourceful/stubbed_resource_proxy'
 end
 
 # Resourceful is a library that provides a high level HTTP interface.
 module Resourceful
-  VERSION = "0.6.1"
+  VERSION = "0.6.2"
   RESOURCEFUL_USER_AGENT_TOKEN = "Resourceful/#{VERSION}(Ruby/#{RUBY_VERSION})"
 end

@@ -23,11 +23,10 @@ module Resourceful
     #
     # @return true|false
     def expired?
-      if header['Cache-Control'] and header['Cache-Control'].first.include?('max-age')
-        max_age = header['Cache-Control'].first.split(',').grep(/max-age/).first.split('=').last.to_i
-        return true if current_age > max_age
-      elsif header['Expires']
-        return true if Time.httpdate(header['Expires']) < Time.now
+      if header.cache_control and m_age_str = header.cache_control.find{|cc| /^max-age=/ === cc}
+        return current_age > m_age_str[/\d+/].to_i
+      elsif header.expires
+        return Time.httpdate(header.expires) < Time.now
       end
 
       false
@@ -38,10 +37,8 @@ module Resourceful
     # @return true|false
     def stale?
       return true if expired?
-      if header['Cache-Control']
-        return true if header['Cache-Control'].include?('must-revalidate')
-        return true if header['Cache-Control'].include?('no-cache')
-      end
+      return false unless header.has_field?(Header::CACHE_CONTROL)
+      return true if header.cache_control.any?{|cc| /must-revalidate|no-cache/ === cc}
 
       false
     end
@@ -75,8 +72,8 @@ module Resourceful
 
     # Algorithm taken from RCF2616#13.2.3
     def current_age
-      age_value   = header['Age'] || 0
-      date_value  = Time.httpdate(header['Date'])
+      age_value   = header.age.to_i
+      date_value  = Time.httpdate(header.date)
       now         = Time.now
 
       apparent_age = [0, response_time - date_value].max

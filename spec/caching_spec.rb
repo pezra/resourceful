@@ -54,7 +54,7 @@ describe "Caching" do
 
       resp = @resource.get
       resp.headers['X-Updateme'].should == ["bar"]
-      resp.headers['Cache-Control'].should == ["private,max-age=0"]
+      resp.headers['Cache-Control'].should == ["private", "max-age=0"]
     end
 
   end
