@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{resourceful}
-  s.version = "0.6.3"
+  s.version = "0.6.4"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 1.2") if s.respond_to? :required_rubygems_version=
   s.authors = ["Paul Sadauskas"]
@@ -25,7 +25,7 @@ Gem::Specification.new do |s|
     if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<addressable>, [">= 2.1.0"])
       s.add_runtime_dependency(%q<httpauth>, [">= 0"])
-      s.add_runtime_dependency(%q<options>, [">= 2.2.0"])
+      s.add_runtime_dependency(%q<options>, [">= 2.1.0"])
       s.add_development_dependency(%q<thin>, [">= 0"])
       s.add_development_dependency(%q<yard>, [">= 0"])
       s.add_development_dependency(%q<sinatra>, [">= 0"])
@@ -33,7 +33,7 @@ Gem::Specification.new do |s|
     else
       s.add_dependency(%q<addressable>, [">= 2.1.0"])
       s.add_dependency(%q<httpauth>, [">= 0"])
-      s.add_dependency(%q<options>, [">= 2.2.0"])
+      s.add_dependency(%q<options>, [">= 2.1.0"])
       s.add_dependency(%q<thin>, [">= 0"])
       s.add_dependency(%q<yard>, [">= 0"])
       s.add_dependency(%q<sinatra>, [">= 0"])
@@ -42,7 +42,7 @@ Gem::Specification.new do |s|
   else
     s.add_dependency(%q<addressable>, [">= 2.1.0"])
     s.add_dependency(%q<httpauth>, [">= 0"])
-    s.add_dependency(%q<options>, [">= 2.2.0"])
+    s.add_dependency(%q<options>, [">= 2.1.0"])
     s.add_dependency(%q<thin>, [">= 0"])
     s.add_dependency(%q<yard>, [">= 0"])
     s.add_dependency(%q<sinatra>, [">= 0"])
