@@ -12,7 +12,7 @@ begin
     p.email           = "psadauskas@gmail.com"
 
     p.ignore_pattern  = ["pkg/*", "tmp/*"]
-    p.dependencies    = [['addressable', '>= 2.1.0'], 'httpauth', ['options', '>= 2.2.0']]
+    p.dependencies    = [['addressable', '>= 2.1.0'], 'httpauth', ['options', '>= 2.1.0']]
     p.development_dependencies = ['thin', 'yard', 'sinatra', 'rspec']
     p.retain_gemspec  = true
   end
