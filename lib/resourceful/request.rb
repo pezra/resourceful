@@ -123,6 +123,7 @@ module Resourceful
       logger.info("Authentication Required. Retrying with auth info")
       accessor.auth_manager.associate_auth_info(response)
       add_credentials!
+      @body.rewind if @body # Its a stringIO, and we already fed it to the adapter once, so rewind it when we try again
       response = fetch_response
     end
 

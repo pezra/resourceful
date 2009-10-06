@@ -84,6 +84,10 @@ module Resourceful
       self
     end
 
+    def delete(k)
+      @raw_fields.delete(field_def(k).name)
+    end
+
     def merge(another)
       self.class.new(self).merge!(another)
     end
