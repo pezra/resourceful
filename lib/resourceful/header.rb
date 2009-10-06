@@ -1,6 +1,5 @@
 require 'options'
 require 'set'
-require 'facets/memoize'
 
 # Represents the header fields of an HTTP message.  To access a field
 # you can use `#[]` and `#[]=`.  For example, to get the content type
@@ -49,6 +48,10 @@ module Resourceful
 
     def []=(k, v)
       field_def(k).set_to(v, @raw_fields)
+    end
+
+    def delete(k)
+      field_def(k).delete(@raw_fields)
     end
 
     def has_key?(k)
@@ -154,6 +157,10 @@ module Resourceful
                                 else
                                   value
                                 end
+      end
+      
+      def delete(raw_fields_hash)
+        raw_fields_hash.delete(name)
       end
       
       def exists_in?(raw_fields_hash)

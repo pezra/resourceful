@@ -82,7 +82,11 @@ module Resourceful
     end
 
     def body
-      encoding = header['Content-Encoding']
+      return @body if  header['Content-Encoding'].nil? or header['Content-Encoding'].empty?
+      raise(NotImplementedError, 'Chained encodings are not supported') if header['Content-Encoding'].length > 1
+
+      encoding = header['Content-Encoding'].first
+      
       case encoding
       when nil
         # body is identity encoded; just return it
