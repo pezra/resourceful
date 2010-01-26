@@ -1,7 +1,7 @@
-Version Next
+Version 1.0.0
 ============
  * Added .request() convenience method to Resourceful module.
-
+ * Added .get(), .post(), .put(), .delete() and .head() convenience method to Resourceful module
 
 Version 0.7.0
 =============
