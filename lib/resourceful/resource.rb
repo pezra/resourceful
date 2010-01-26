@@ -135,6 +135,19 @@ module Resourceful
       accessor.logger
     end
 
+    # Actually make the request
+    def request(method, data, header)
+      header = default_header.merge(header)
+      ensure_content_type(data, header) if data
+
+      data = StringIO.new(data) if data.kind_of?(String)
+
+      log_request_with_time "#{method.to_s.upcase} [#{uri}]" do
+        request = Request.new(method, self, data, header)
+        request.fetch_response
+      end
+    end
+
     private
 
     # Ensures that the request has a content type header
@@ -150,19 +163,6 @@ module Resourceful
 
       # could not figure it out
       raise MissingContentType
-    end
-
-    # Actually make the request
-    def request(method, data, header)
-      header = default_header.merge(header)
-      ensure_content_type(data, header) if data
-
-      data = StringIO.new(data) if data.kind_of?(String)
-
-      log_request_with_time "#{method.to_s.upcase} [#{uri}]" do
-        request = Request.new(method, self, data, header)
-        request.fetch_response
-      end
     end
 
     # Log it took the time to make the request
