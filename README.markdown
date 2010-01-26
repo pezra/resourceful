@@ -12,7 +12,7 @@ Features:
 
 More Info
 =========
- 
+
  * Source: [Github](http://github.com/paul/resourceful/tree/master)
  * Bug Tracking: [Lighthouse](http://resourceful.lighthouseapp.com)
  * Project Page: [Rubyforge](http://rubyforge.org/projects/resourceful/)
@@ -30,7 +30,7 @@ Simplest example
 ---------------
 
     require 'resourceful'
-    resp = Resourceful.request(:get, 'http://rubyforge.org')
+    resp = Resourceful.get('http://rubyforge.org')
     puts resp.body
 
 Get a page requiring HTTP Authentication
@@ -44,7 +44,7 @@ Get a page requiring HTTP Authentication
 Redirection based on callback results
 -------------------------------------
 
-Resourceful will by default follow redirects on read requests (GET and HEAD), but not for 
+Resourceful will by default follow redirects on read requests (GET and HEAD), but not for
 POST, etc. If you want to follow a redirect after a post, you will need to set the resource#on_redirect
 callback. If the callback evaluates to true, it will follow the redirect.
 
@@ -57,7 +57,7 @@ Post a URL encoded form
 
      require 'resourceful'
      http = Resourceful::HttpAccessor.new
-     resp = http.resource('http://mysite.example/service'). 
+     resp = http.resource('http://mysite.example/service').
               post(Resourceful::UrlencodedFormData.new(:hostname => 'test', :level => 'super'))
 
 Post a Mulitpart form with a file
@@ -76,7 +76,7 @@ Put an XML document
      http = Resourceful::HttpAccessor.new
      resp = http.resource('http://mysite.example/service').
               put('<?xml version="1.0"?><test/>', :content_type => 'application/xml')
-    
+
 Delete a resource
 -----------------
 
