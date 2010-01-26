@@ -26,6 +26,7 @@ spec/acceptance/caching_spec.rb
 spec/acceptance/header_spec.rb
 spec/acceptance/redirecting_spec.rb
 spec/acceptance/resource_spec.rb
+spec/acceptance/resourceful_spec.rb
 spec/acceptance_shared_specs.rb
 spec/caching_spec.rb
 spec/old_acceptance_specs.rb
