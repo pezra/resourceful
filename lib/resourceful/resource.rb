@@ -8,9 +8,9 @@ module Resourceful
 
     # Build a new resource for a uri
     #
-    # @param accessor<HttpAccessor> 
+    # @param accessor<HttpAccessor>
     #   The parent http accessor
-    # @param uri<String, Addressable::URI> 
+    # @param uri<String, Addressable::URI>
     #   The uri for the location of the resource
     def initialize(accessor, uri, default_header = {})
       @accessor, @uris = accessor, [uri]
@@ -22,7 +22,7 @@ module Resourceful
     # used to create the resource, but in the case of a permanent redirect, this
     # will always reflect the lastest uri.
     #
-    # @return Addressable::URI 
+    # @return Addressable::URI
     #   The current uri of the resource
     def effective_uri
       @uris.first
@@ -55,10 +55,10 @@ module Resourceful
     #   end
     #
     # @yieldparam callback<request, response>
-    #   The action to be executed when a request results in a redirect. Yields the 
+    #   The action to be executed when a request results in a redirect. Yields the
     #   current request and result objects to the callback.
     #
-    # @raise ArgumentError if called without a block 
+    # @raise ArgumentError if called without a block
     def on_redirect(&callback)
       if block_given?
         @on_redirect = callback
@@ -84,7 +84,7 @@ module Resourceful
     # :call-seq:
     #   post(data = "", :content_type => mime_type)
     #
-    # Performs a POST with the given data to the resource, following redirects as 
+    # Performs a POST with the given data to the resource, following redirects as
     # neccessary.
     #
     # @param [String] data
@@ -104,7 +104,7 @@ module Resourceful
     # :call-seq:
     #   put(data = "", :content_type => mime_type)
     #
-    # Performs a PUT with the given data to the resource, following redirects as 
+    # Performs a PUT with the given data to the resource, following redirects as
     # neccessary.
     #
     # @param [String] data
@@ -139,14 +139,14 @@ module Resourceful
 
     # Ensures that the request has a content type header
     def ensure_content_type(body, header)
-      return if header.has_key?('Content-Type') 
-      
+      return if header.has_key?('Content-Type')
+
       if body.respond_to?(:content_type)
         header['Content-Type'] = body.content_type
         return
       end
-      
-      return if default_header.has_key?('Content-Type') 
+
+      return if default_header.has_key?('Content-Type')
 
       # could not figure it out
       raise MissingContentType
@@ -159,10 +159,7 @@ module Resourceful
 
       data = StringIO.new(data) if data.kind_of?(String)
 
-      logger.debug { header.map {|k,v| "#{k}: #{v}"}.join("\n\t\t") }
-      logger.debug { data = StringIO.new(data.read); data.string } if data
-      
-      log_request_with_time "#{method.to_s.upcase} [#{uri}]" do        
+      log_request_with_time "#{method.to_s.upcase} [#{uri}]" do
         request = Request.new(method, self, data, header)
         request.fetch_response
       end

@@ -150,7 +150,7 @@ module Resourceful
       @entries.each(&block)
     end
     
-    # Looks of a Entry that could fullfil the request. Returns nil if none
+    # Looks for an Entry that could fullfil the request. Returns nil if none
     # was found.
     #
     # @param [Resourceful::Request] request
@@ -215,7 +215,9 @@ module Resourceful
     #   The request to do the lookup on. 
     def valid_for?(request)
       request.uri == @request_uri and 
-        @request_vary_headers.all? {|key, value| request.header[key] == value}
+        @request_vary_headers.all? {|key, value| 
+          request.header[key] == value
+        }
     end
 
     # Selects the headers from the request named by the response's Vary header
@@ -229,7 +231,7 @@ module Resourceful
       header = Resourceful::Header.new
 
       response.header['Vary'].each do |name|
-        header[name] = request.header[name]
+        header[name] = request.header[name] if request.header[name]
       end if response.header['Vary']
 
       header
