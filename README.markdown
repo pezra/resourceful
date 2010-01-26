@@ -30,8 +30,7 @@ Simplest example
 ---------------
 
     require 'resourceful'
-    http = Resourceful::HttpAccessor.new
-    resp = http.resource('http://rubyforge.org').get
+    resp = Resourceful.request(:get, 'http://rubyforge.org')
     puts resp.body
 
 Get a page requiring HTTP Authentication
