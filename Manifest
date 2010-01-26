@@ -1,4 +1,9 @@
 History.txt
+MIT-LICENSE
+Manifest
+README.markdown
+Rakefile
+lib/resourceful.rb
 lib/resourceful/abstract_form_data.rb
 lib/resourceful/authentication_manager.rb
 lib/resourceful/cache_manager.rb
@@ -11,14 +16,10 @@ lib/resourceful/net_http_adapter.rb
 lib/resourceful/request.rb
 lib/resourceful/resource.rb
 lib/resourceful/response.rb
+lib/resourceful/simple.rb
 lib/resourceful/stubbed_resource_proxy.rb
 lib/resourceful/urlencoded_form_data.rb
 lib/resourceful/util.rb
-lib/resourceful.rb
-Manifest
-MIT-LICENSE
-Rakefile
-README.markdown
 resourceful.gemspec
 spec/acceptance/authorization_spec.rb
 spec/acceptance/caching_spec.rb
@@ -34,6 +35,7 @@ spec/resourceful/multipart_form_data_spec.rb
 spec/resourceful/resource_spec.rb
 spec/resourceful/response_spec.rb
 spec/resourceful/urlencoded_form_data_spec.rb
+spec/resourceful_spec.rb
 spec/simple_sinatra_server.rb
 spec/simple_sinatra_server_spec.rb
 spec/spec.opts
