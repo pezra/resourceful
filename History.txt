@@ -1,3 +1,8 @@
+Version Next
+============
+ * Added .request() convenience method to Resourceful module.
+
+
 Version 0.7.0
 =============
  * Multiple values in a single header field are treated the same as repeated header fields. (Peter Williams)
