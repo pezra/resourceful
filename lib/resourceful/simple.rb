@@ -1,6 +1,6 @@
 module Resourceful
   module Simple
-    def request(method, uri, header = {}, data =nil)
+    def request(method, uri, header = {}, data = nil)
       default_accessor.resource(uri).request(method, data, header)
     end
     
