@@ -1,3 +1,9 @@
+Version NEXT
+============
+ * Added PromiscuousBasicAuthenticator to support basic authentication
+   with servers that do not return challenge headers.
+
+
 Version 1.0.0
 ============
  * Added .request() convenience method to Resourceful module.
