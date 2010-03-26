@@ -5,11 +5,11 @@ require 'lib/resourceful'
 begin
   require 'echoe'
 
-  Echoe.new('resourceful', Resourceful::VERSION) do |p|
+  Echoe.new('openlogic-resourceful', Resourceful::VERSION) do |p|
     p.description     = "An HTTP library for Ruby that takes advantage of everything HTTP has to offer."
     p.url             = "http://github.com/paul/resourceful"
-    p.author          = "Paul Sadauskas"
-    p.email           = "psadauskas@gmail.com"
+    p.author          = "OpenLogic"
+    p.email           = "engteam@openlogic.com"
 
     p.ignore_pattern  = ["pkg/*", "tmp/*"]
     p.dependencies    = [['addressable', '>= 2.1.0'], 'httpauth', ['options', '>= 2.1.1']]
