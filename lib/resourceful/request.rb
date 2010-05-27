@@ -102,16 +102,16 @@ module Resourceful
     def follow_redirect(response)
       raise MalformedServerResponse.new(self, response) unless response.header.location
       if response.moved_permanently?
-        new_uri = response.header.location.first
+        new_uri = response.header.location
         logger.info("    Permanently redirected to #{new_uri} - Storing new location.")
         resource.update_uri new_uri
         @header.host = resource.host
         response = fetch_response
       elsif response.see_other? # Always use GET for this redirect, regardless of initial method
-        redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
+        redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'])
         response = Request.new(:get, redirected_resource, body, header).fetch_response
       else
-        redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'].first)
+        redirected_resource = Resourceful::Resource.new(self.accessor, response.header['Location'])
         logger.info("    Redirected to #{redirected_resource.uri} - Caching new location.")
         response = Request.new(method, redirected_resource, body, header).fetch_response
       end
@@ -134,12 +134,12 @@ module Resourceful
 
     # Store the response to this request in the cache
     def store_in_cache(response)
-      # RFC2618 - 14.18 : A received message that does not have a Date header 
-      # field MUST be assigned one by the recipient if the message will be cached 
+      # RFC2618 - 14.18 : A received message that does not have a Date header
+      # field MUST be assigned one by the recipient if the message will be cached
       # by that recipient.
       response.header.date ||= response.response_time.httpdate
 
-      accessor.cache_manager.store(self, response) 
+      accessor.cache_manager.store(self, response)
     end
 
     # Invalidated the cache for this uri (eg, after a POST)
@@ -196,7 +196,7 @@ module Resourceful
     def set_validation_headers!(response)
       @header['If-None-Match'] = response.header['ETag'] if response.header.has_key?('ETag')
       @header['If-Modified-Since'] = response.header['Last-Modified'] if response.header.has_key?('Last-Modified')
-      @header['Cache-Control'] = 'max-age=0' if response.must_be_revalidated?    
+      @header['Cache-Control'] = 'max-age=0' if response.must_be_revalidated?
     end
 
     # @return [String]   The URI against which this request will be, or was, made.
@@ -209,7 +209,7 @@ module Resourceful
       if max_age == 0 || skip_cache?
         logger.info("    Client forced revalidation")
         true
-      else 
+      else
         false
       end
     end
