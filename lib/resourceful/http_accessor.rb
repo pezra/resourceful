@@ -23,26 +23,26 @@ module Resourceful
     def info(*args); puts args; end
     def debug(*args); puts args; end
   end
-  
+
   # This class provides a simple interface to the functionality
   # provided by the Resourceful library.  Conceptually this object
   # acts a collection of all the resources available via HTTP.
   class HttpAccessor
     # A logger object to which messages about the activities of this
     # object will be written.  This should be an object that responds
-    # to +#info(message)+ and +#debug(message)+.  
+    # to +#info(message)+ and +#debug(message)+.
     #
     # Errors will not be logged.  Instead an exception will be raised
     # and the application code should log it if appropriate.
     attr_accessor :logger, :cache_manager
-    
+
     attr_reader :auth_manager
-    attr_reader :user_agent_tokens  
-    
+    attr_reader :user_agent_tokens
+
     ##
     # The adapter this accessor will use to make the actual HTTP requests.
     attr_reader :http_adapter
-    
+
     # Initializes a new HttpAccessor.  Valid options:
     #
     #  `:logger`
@@ -63,35 +63,37 @@ module Resourceful
     #  `http_adapter`
     #  :    The HttpAdapter to be used by this accessor
     #
-    # 
+    #
     def initialize(options = {})
       options = Options.for(options).validate(:logger, :user_agent, :cache_manager, :authenticator, :authenticators, :http_adapter)
 
       @user_agent_tokens = [RESOURCEFUL_USER_AGENT_TOKEN]
       @auth_manager = AuthenticationManager.new()
 
-      
+
       @user_agent_tokens.push(*Array(options.getopt(:user_agent)).flatten.reverse)
       self.logger    = options.getopt(:logger) || BitBucketLogger.new
       @cache_manager = options.getopt(:cache_manager) || NullCacheManager.new
       @http_adapter  = options.getopt(:http_adapter) || NetHttpAdapter.new
-      
+
       Array(options.getopt([:authenticator, :authenticators])).flatten.each do |an_authenticator|
         add_authenticator(an_authenticator)
       end
     end
-    
+
     # Returns the string that identifies this HTTP accessor.  If you
     # want to add a token to the user agent string simply add the new
     # token to the end of +#user_agent_tokens+.
     def user_agent_string
       user_agent_tokens.reverse.join(' ')
     end
-    
+
     # Returns a resource object representing the resource indicated
     # by the specified URI.  A resource object will be created if necessary.
     def resource(uri, opts = {})
-      resource = Resource.new(self, uri, opts)
+      #resource = Resource.new(self, uri, opts)
+      @resources ||= {}
+      @resources[uri] ||= Resource.new(self, uri, opts)
     end
     alias [] resource
 
