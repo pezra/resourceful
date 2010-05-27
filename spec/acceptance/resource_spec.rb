@@ -5,14 +5,14 @@ require 'resourceful'
 describe Resourceful do
 
   describe "working with a resource" do
-    before do 
+    before do
       @http = Resourceful::HttpAccessor.new
-      @resource = @http.resource('http://localhost:42682/')
+      @resource = @http.resource('http://localhost:4567/')
     end
 
-    it 'should make the original uri available' do 
-      @resource.effective_uri.should == 'http://localhost:42682/'
-      @resource.uri.should == 'http://localhost:42682/'
+    it 'should make the original uri available' do
+      @resource.effective_uri.should == 'http://localhost:4567/'
+      @resource.uri.should == 'http://localhost:4567/'
     end
 
     it 'should set the user agent string on the default header' do
@@ -79,6 +79,6 @@ describe Resourceful do
 
     end
 
-    
+
   end
 end

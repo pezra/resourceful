@@ -30,7 +30,7 @@ describe Resourceful do
     end
 
     def uri_for_code(code, params = {})
-      uri = Addressable::Template.new("http://localhost:42682/code/{code}").expand("code" => code.to_s)
+      uri = Addressable::Template.new("http://localhost:4567/code/{code}").expand("code" => code.to_s)
       uri_plus_params(uri, params)
     end
 
@@ -61,7 +61,7 @@ describe Resourceful do
       end
 
       # I would prefer to do all other codes, but some of them do some magic stuff (100),
-      # so I'll just spot check. 
+      # so I'll just spot check.
       [201, 206, 302, 307, 404, 500].each do |code|
         describe "response code #{code}" do
           it "should not normally be cached" do
@@ -70,7 +70,7 @@ describe Resourceful do
             resp = get_with_errors(resource)
             resp.should_not be_cacheable
           end
-          
+
           it "should be cached if Cache-Control: public" do
             resource = @http.resource(uri_for_code(code, "Cache-Control" => "public"))
 
@@ -119,7 +119,7 @@ describe Resourceful do
 
       it "should be authoritative if the response is directly from the server" do
         resource = @http.resource(
-          uri_plus_params('http://localhost:42682/', "Cache-Control" => 'max-age=10')
+          uri_plus_params('http://localhost:4567/', "Cache-Control" => 'max-age=10')
         )
 
         response  = resource.get
@@ -129,8 +129,8 @@ describe Resourceful do
       it "should be authoritative if a cached response was revalidated with the server" do
         now = Time.now.httpdate
         resource = @http.resource(
-          uri_plus_params('http://localhost:42682/cached', 
-                          "modified" => now, 
+          uri_plus_params('http://localhost:4567/cached',
+                          "modified" => now,
                           "Cache-Control" => 'max-age=0')
         )
 
@@ -142,8 +142,8 @@ describe Resourceful do
       it "should not be authoritative if the cached response was not revalidated" do
         now = Time.now.httpdate
         resource = @http.resource(
-          uri_plus_params('http://localhost:42682/cached', 
-                          "modified" => now, 
+          uri_plus_params('http://localhost:4567/cached',
+                          "modified" => now,
                           "Cache-Control" => 'max-age=10')
         )
 
@@ -154,14 +154,14 @@ describe Resourceful do
       end
 
     end
-    
+
     describe "Not Modified responses" do
       before do
         now = Time.now.httpdate
 
         resource = @http.resource(
-          uri_plus_params('http://localhost:42682/cached', 
-                          "modified" => now, 
+          uri_plus_params('http://localhost:4567/cached',
+                          "modified" => now,
                           "Cache-Control" => 'max-age=0')
         )
 

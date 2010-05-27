@@ -6,7 +6,7 @@ describe Resourceful do
   describe 'setting headers' do
     before do
       @http = Resourceful::HttpAccessor.new
-      @resource = @http.resource("http://localhost:42682/header")
+      @resource = @http.resource("http://localhost:4567/header")
     end
 
     it 'should handle "Content-Type"' do

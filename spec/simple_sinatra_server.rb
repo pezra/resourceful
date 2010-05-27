@@ -1,5 +1,7 @@
 
+require 'rubygems'
 require 'sinatra'
+require 'yaml'
 
 def any(path, opts={}, &blk)
   %w[head get post put delete].each do |verb|
@@ -51,8 +53,8 @@ any '/header' do
   set_request_params_as_response_header!
   set_request_header_in_body!
 end
-  
-# Takes a modified=httpdate as a query param, and a If-Modified-Since header, 
+
+# Takes a modified=httpdate as a query param, and a If-Modified-Since header,
 # and responds 304 if they're the same
 get '/cached' do
   set_request_params_as_response_header!
@@ -62,13 +64,9 @@ get '/cached' do
 
   modtime = params[:modified]
   imstime = request.env['HTTP_IF_MODIFIED_SINCE']
-  
+
   if modtime && imstime && modtime == imstime
     status 304
   end
 end
-
-Sinatra::Default.set(
-  :port => 42682
-)
 
