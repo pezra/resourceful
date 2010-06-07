@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 1.2") if s.respond_to? :required_rubygems_version=
   s.authors = ["Paul Sadauskas"]
-  s.date = %q{2010-01-26}
+  s.date = %q{2010-06-07}
   s.description = %q{An HTTP library for Ruby that takes advantage of everything HTTP has to offer.}
   s.email = %q{psadauskas@gmail.com}
   s.extra_rdoc_files = ["README.markdown", "lib/resourceful.rb", "lib/resourceful/abstract_form_data.rb", "lib/resourceful/authentication_manager.rb", "lib/resourceful/cache_manager.rb", "lib/resourceful/exceptions.rb", "lib/resourceful/header.rb", "lib/resourceful/http_accessor.rb", "lib/resourceful/memcache_cache_manager.rb", "lib/resourceful/multipart_form_data.rb", "lib/resourceful/net_http_adapter.rb", "lib/resourceful/request.rb", "lib/resourceful/resource.rb", "lib/resourceful/response.rb", "lib/resourceful/simple.rb", "lib/resourceful/stubbed_resource_proxy.rb", "lib/resourceful/urlencoded_form_data.rb", "lib/resourceful/util.rb"]
@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
   s.rdoc_options = ["--line-numbers", "--inline-source", "--title", "Resourceful", "--main", "README.markdown"]
   s.require_paths = ["lib"]
   s.rubyforge_project = %q{resourceful}
-  s.rubygems_version = %q{1.3.5}
+  s.rubygems_version = %q{1.3.6}
   s.summary = %q{An HTTP library for Ruby that takes advantage of everything HTTP has to offer.}
 
   if s.respond_to? :specification_version then
