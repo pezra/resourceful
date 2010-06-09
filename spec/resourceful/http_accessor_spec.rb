@@ -52,5 +52,42 @@ module Resourceful
         }.should raise_error(ArgumentError)
       end
     end
+
+    describe "representation handling" do 
+      before do
+        @accessor = HttpAccessor.new
+
+        @special_text_representation = rep = mock('special text representation')
+        @accessor.add_representation_factory('text/special', 
+                                             lambda{|response| rep})
+      end
+
+      it "should allow specifying a representation factory" do
+        @accessor.add_representation_factory('text/plain', 
+                                             lambda{|response| response.body}).should be_nil
+      end
+
+      it "should not accept non-callable representation factory" do
+        lambda{
+          @accessor.add_representation_factory('text/special', mock("bogus factory"))
+        }.should raise_error(ArgumentError)
+      end
+
+      it "should convert a response into a representation using factory" do 
+        response = mock("response", :header => mock('header', :content_type => 'text/special'))
+        @accessor.build_representation(response).should == @special_text_representation
+      end
+
+      it "should treat response as representation if no appropriate representation factory is available" do 
+        response = mock("response", :header => mock('header', :content_type => 'text/super-special'))
+        @accessor.build_representation(response).should == response
+      end
+
+      it "should handle weird casing of content type" do
+        response = mock("response", :header => mock('header', :content_type => 'TEXT/specIAL'))
+
+        @accessor.build_representation(response).should == @special_text_representation
+      end
+    end
   end
 end

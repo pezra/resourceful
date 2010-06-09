@@ -39,6 +39,7 @@ module Resourceful
 
     attr_reader :auth_manager
     attr_reader :user_agent_tokens
+    attr_reader :representation_factories
 
     ##
     # The adapter this accessor will use to make the actual HTTP requests.
@@ -76,6 +77,7 @@ module Resourceful
       self.logger    = options.getopt(:logger) || BitBucketLogger.new
       @cache_manager = options.getopt(:cache_manager) || NullCacheManager.new
       @http_adapter  = options.getopt(:http_adapter) || NetHttpAdapter.new
+      @representation_factories = {}
 
       Array(options.getopt([:authenticator, :authenticators])).flatten.each do |an_authenticator|
         add_authenticator(an_authenticator)
@@ -101,6 +103,44 @@ module Resourceful
     # Adds an Authenticator to the set used by the accessor.
     def add_authenticator(an_authenticator)
       auth_manager.add_auth_handler(an_authenticator)
+    end
+
+    # Add a representation (in the REST sense) factory.
+    #
+    # @param [String] media_type The MIME media type representations
+    # this factory can interpret.
+    #
+    # @param [#call] factory The factory that will take a response and
+    # return a representation.
+    #
+    # @return [nil]
+    def add_representation_factory(media_type, factory)
+      raise ArgumentError unless factory.respond_to?(:call)
+
+      representation_factories[media_type.downcase] = factory
+
+      nil
+    end
+
+    # Takes a response and returns a representation of the resource
+    # extracted from that response.
+    #
+    # @param [Resourceful::Response] a_response The response from
+    # which to build the representation.
+    #
+    # @return The representation of the resource embodied in
+    #  `a_response`.  If no factory is registered the response will
+    #  returned.
+    def build_representation(a_response)
+      media_type = a_response.header.content_type[/^.+(?=;|$)/]
+
+      factory = representation_factories[media_type.downcase]
+
+      if factory
+          factory.call(a_response)
+      else
+        a_response
+      end
     end
   end
 end
