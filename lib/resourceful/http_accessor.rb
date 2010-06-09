@@ -24,9 +24,10 @@ module Resourceful
     def debug(*args); puts args; end
   end
 
-  # This class provides a simple interface to the functionality
-  # provided by the Resourceful library.  Conceptually this object
-  # acts a collection of all the resources available via HTTP.
+  # An HttpAccessor is a HTTP user agent that provides a simple
+  # interface to the functionality provided by the Resourceful
+  # library.  This object acts a collection of all the
+  # resources available via HTTP.
   class HttpAccessor
     # A logger object to which messages about the activities of this
     # object will be written.  This should be an object that responds

@@ -258,17 +258,19 @@ module Resourceful
     # @param [Hash] options hash containing extra information about
     #   this header fields.  Valid keys are:
     #   
-    #     `:multivalued`
-    #     `:multivalue`
-    #     `:repeatable`
-    #     :   Values of this field are comma separated list of values.  
-    #         (n#VALUE per HTTP spec.) Default: false
+    # @option options [true,false] :multivalued Values of this field
+    #   are comma separated list of values.  (n#VALUE per HTTP spec.)
+    #   Default: false
     #
-    #     `:hop_by_hop`
-    #     :   True if the header is a hop-by-hop header. Default: false
+    # @option options [true,false] :multivalue synonym of :multivalued
     #
-    #     `:modifiable`
-    #     :   False if the header should not be modified by intermediates or caches. Default: true
+    # @option options [true,false] :repeatable synonym of :multivalued
+    #
+    # @option options [true,false] :hop_by_hop Is the field a
+    #   hop-by-hop header field. Default: false
+    #
+    # @option options [true,false] :modifiable Are intermediates or
+    #   caches allowed to modify the header field. Default: true
     #
     def self.header_field(name, options = {})
       hfd = FieldDesc.new(name, options)
