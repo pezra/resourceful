@@ -165,7 +165,7 @@ module Resourceful
       @request_time = Time.now
 
       http_resp = adapter.make_request(@method, @resource.uri, @body, @header)
-      @response = Resourceful::Response.new(uri, *http_resp)
+      @response = Resourceful::Response.new(accessor, uri, *http_resp)
       @response.request_time = @request_time
       @response.authoritative = true
 

@@ -8,13 +8,21 @@ module Resourceful
     REDIRECT_RESPONSE_CODES = [301,302,303,307]
     NORMALLY_CACHEABLE_RESPONSE_CODES = [200, 203, 300, 301, 410]
 
-    attr_reader :uri, :code, :header, :body, :response_time
+    attr_reader :uri, :code, :header, :body, :response_time, :accessor
     alias headers header
 
     attr_accessor :authoritative, :request_time
     alias authoritative? authoritative
 
-    def initialize(uri, code, header, body)
+    # @param [HttpAccessor] accessor The http accessor context in
+    #   which the response was received.
+    # @param [String] uri The URI to which the request for this
+    #   response was made.
+    # @param [Fixnum] code The response code of the request.
+    # @param [Header] header The HTTP header of this response.
+    # @param [String] body The body of the HTTP response.
+    def initialize(accessor, uri, code, header, body)
+      @accessor = accessor
       @uri, @code, @header, @body = uri, code, header, body
       @response_time = Time.now
     end
@@ -216,6 +224,10 @@ module Resourceful
       server_error? || client_error?
     end
 
+    # @return The representation of the resource that this response embodies.
+    def representation
+      accessor.build_representation(self)
+    end
   end
   
 end

@@ -81,6 +81,7 @@ module Resourceful
     def head(header = {})
       request(:head, nil, header)
     end
+
     # :call-seq:
     #   post(data = "", :content_type => mime_type)
     #
@@ -90,7 +91,8 @@ module Resourceful
     # @param [String] data
     #   The body of the data to be posted
     # @param [Hash] options
-    #   Options to pass into the request header. At the least, :content_type is required.
+    #   Options to pass into the request header. At the least, :content_type is 
+    #   required.
     #
     # @return [Response]  The Response to the final request that was made.
     #
