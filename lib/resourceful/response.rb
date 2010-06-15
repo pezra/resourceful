@@ -225,6 +225,9 @@ module Resourceful
     end
 
     # @return The representation of the resource that this response embodies.
+    #
+    # @raise [NoRepresentationFactoryError] When this response cannot
+    #   be converted in to a representation.
     def representation
       accessor.build_representation(self)
     end

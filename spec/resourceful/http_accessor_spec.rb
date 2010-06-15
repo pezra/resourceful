@@ -59,7 +59,8 @@ module Resourceful
 
         @special_text_representation = rep = mock('special text representation')
         @accessor.add_representation_factory('text/special', 
-                                             lambda{|response| rep})
+                                             lambda{|response| rep},
+                                             :response_codes => (200..299))
       end
 
       it "should allow specifying a representation factory" do
@@ -74,19 +75,31 @@ module Resourceful
       end
 
       it "should convert a response into a representation using factory" do 
-        response = mock("response", :header => mock('header', :content_type => 'text/special'))
+        response = mock("response", :header => mock('header', :content_type => 'text/special'), :code => 200)
         @accessor.build_representation(response).should == @special_text_representation
       end
 
-      it "should treat response as representation if no appropriate representation factory is available" do 
-        response = mock("response", :header => mock('header', :content_type => 'text/super-special'))
-        @accessor.build_representation(response).should == response
+      it "should raise exception if no appropriate representation factory is available" do 
+        response = mock("response", :header => mock('header', :content_type => 'text/super-special'), :code => 200)
+        
+        lambda {
+          @accessor.build_representation(response).should == response
+        }.should raise_error(NoRepresentationFactoryError)
       end
 
       it "should handle weird casing of content type" do
-        response = mock("response", :header => mock('header', :content_type => 'TEXT/specIAL'))
+        response = mock("response", :header => mock('header', :content_type => 'TEXT/specIAL'), :code => 200)
 
         @accessor.build_representation(response).should == @special_text_representation
+      end
+
+      it "should be able to dispatch based on code" do 
+        special_text_error_representation = mock("special_text_error_representation")
+        @accessor.add_representation_factory('text/special', 
+                                             lambda{|response| special_text_error_representation},
+                                             :response_codes => (400..599))
+        response = mock("response", :header => mock('header', :content_type => 'text/special'), :code => 404)
+        @accessor.build_representation(response).should == special_text_error_representation
       end
     end
   end

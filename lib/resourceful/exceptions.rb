@@ -30,5 +30,9 @@ module Resourceful
       super("A Content-Type must be specified when an entity-body is supplied.")
     end
   end
-
+  
+  # Raised while attempting to extract a representation from the
+  # response if no appropriate factory is found.
+  class NoRepresentationFactoryError < Exception
+  end
 end

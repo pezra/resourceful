@@ -3,6 +3,7 @@ require 'net/http'
 require 'resourceful/authentication_manager'
 require 'resourceful/cache_manager'
 require 'resourceful/resource'
+require 'resourceful/representation_factory_dispatcher'
 
 require 'options'
 
@@ -77,7 +78,7 @@ module Resourceful
       self.logger    = options.getopt(:logger) || BitBucketLogger.new
       @cache_manager = options.getopt(:cache_manager) || NullCacheManager.new
       @http_adapter  = options.getopt(:http_adapter) || NetHttpAdapter.new
-      @representation_factories = {}
+      @representation_factories = Hash.new {|hash, key| hash[key] = RepresentationFactoryDispatcher.new}
 
       Array(options.getopt([:authenticator, :authenticators])).flatten.each do |an_authenticator|
         add_authenticator(an_authenticator)
@@ -108,16 +109,17 @@ module Resourceful
     # Add a representation (in the REST sense) factory.
     #
     # @param [String] media_type The MIME media type representations
-    # this factory can interpret.
-    #
+    #   this factory can interpret.
     # @param [#call] factory The factory that will take a response and
-    # return a representation.
+    #   return a representation.
+    # @option opts  [#include?] :response_codes Specifies the self of
+    #   response codes which can be handled by the specified factory.
     #
     # @return [nil]
-    def add_representation_factory(media_type, factory)
+    def add_representation_factory(media_type, factory, opts={})
       raise ArgumentError unless factory.respond_to?(:call)
-
-      representation_factories[media_type.downcase] = factory
+       
+      representation_factories[media_type.downcase].add_factory(factory, opts)
 
       nil
     end
@@ -131,16 +133,13 @@ module Resourceful
     # @return The representation of the resource embodied in
     #  `a_response`.  If no factory is registered the response will
     #  returned.
+    #
+    # @raise [NoRepresentationFactoryError] When this response cannot
+    #   be converted in to a representation.
     def build_representation(a_response)
       media_type = a_response.header.content_type[/^.+(?=;|$)/]
 
-      factory = representation_factories[media_type.downcase]
-
-      if factory
-          factory.call(a_response)
-      else
-        a_response
-      end
+      representation_factories[media_type.downcase].call(a_response)
     end
   end
 end
