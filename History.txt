@@ -1,3 +1,11 @@
+
+Version NEXT
+============
+ * Added support for interpreting responses into application level representations (models).
+ 
+Version 1.0.1
+=============
+
 Version 1.0.0
 ============
  * Added .request() convenience method to Resourceful module.
