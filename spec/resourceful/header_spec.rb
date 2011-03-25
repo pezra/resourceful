@@ -1,17 +1,17 @@
-require File.dirname(__FILE__) + "/../spec_helper.rb"
+require "spec_helper.rb"
 
 module Resourceful
-  describe Header do 
+  describe Header do
     def self.should_support_header(name)
       const_name = name.upcase.gsub('-', '_')
       meth_name  = name.downcase.gsub('-', '_')
 
       eval <<-RUBY
-      it "should have constant `#{const_name}` for header `#{name}`" do 
+      it "should have constant `#{const_name}` for header `#{name}`" do
         Resourceful::Header::#{const_name}.should == '#{name}'
       end
 
-      it "should have accessor method `#{meth_name}` for header `#{name}`" do 
+      it "should have accessor method `#{meth_name}` for header `#{name}`" do
         Resourceful::Header.new.should respond_to(:#{meth_name})
       end
 
@@ -68,18 +68,18 @@ module Resourceful
     should_support_header('WWW-Authenticate')
 
 
-    it "should be instantiatable w/ single valued header fields" do 
+    it "should be instantiatable w/ single valued header fields" do
       Header.new('Host' => 'foo.example').
         host.should eql('foo.example')
     end
 
-    it "should gracefully handle repeated values for single valued header fields" do 
+    it "should gracefully handle repeated values for single valued header fields" do
       lambda {
         Header.new('Host' => ['foo.example', 'bar.example'])
       }.should raise_error(ArgumentError, 'Host field may only have one value')
     end
 
-    it "should provide #each_fields to iterate through all header fields and values as strings" do 
+    it "should provide #each_fields to iterate through all header fields and values as strings" do
       field_names = []
       Header.new('Accept' => "this", :content_type => "that", 'pragma' => 'test').each_field do |fname, _|
         field_names << fname
@@ -91,7 +91,7 @@ module Resourceful
       field_names.should have(3).items
     end
 
-    it "should provide #to_hash as a way to dump the header fields" do 
+    it "should provide #to_hash as a way to dump the header fields" do
       Header.new('Accept' => "this", :content_type => "that", 'date' => 'today').to_hash.tap do |h|
         h.should have_pair('Accept', ['this'])
         h.should have_pair('Content-Type', 'that')
@@ -125,12 +125,12 @@ module Resourceful
           accept.should eql(['application/foo', 'application/bar'])
       end
 
-      it "should be instantiatable w/ multi-valued header fields w/ one value" do 
+      it "should be instantiatable w/ multi-valued header fields w/ one value" do
         Header.new('Accept' => 'application/foo').
           accept.should eql(['application/foo'])
       end
 
-      it "should provide values to #each_field as a comma separated string" do 
+      it "should provide values to #each_field as a comma separated string" do
         Header.new('Accept' => ['this', 'that']).each_field do |fname, fval|
           fval.should == 'this, that'
         end
@@ -148,6 +148,6 @@ module Resourceful
         header_hash.has_key?(name)
         header_hash[name] == value
       end
-    end    
+    end
   end
 end
