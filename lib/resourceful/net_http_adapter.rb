@@ -31,7 +31,7 @@ module Resourceful
       uri = uri.is_a?(Addressable::URI) ? uri : Addressable::URI.parse(uri)
 
       # http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.8
-      # TRACE is the only method in shich a entity is forbidden
+      # TRACE is the only method in which an entity is forbidden
       unless :trace == method then
         body = body ? body.read : ""
         header[:content_length] = body.size 
