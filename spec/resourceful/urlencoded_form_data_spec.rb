@@ -1,19 +1,19 @@
-require File.dirname(__FILE__) + "/../spec_helper"
+require "spec_helper"
 require 'tempfile'
 require "resourceful/urlencoded_form_data.rb"
 
 describe Resourceful::UrlencodedFormData do
 
-  before do 
+  before do
     @form_data = Resourceful::UrlencodedFormData.new
   end
 
-  it "should know its content-type" do 
+  it "should know its content-type" do
     @form_data.content_type.should match(/^application\/x-www-form-urlencoded$/i)
   end
 
-  describe "instantiation" do 
-    it "should be creatable with hash" do 
+  describe "instantiation" do
+    it "should be creatable with hash" do
       Resourceful::UrlencodedFormData.new(:foo => 'testing').read.should eql("foo=testing")
     end
   end

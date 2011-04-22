@@ -1,18 +1,18 @@
-require File.dirname(__FILE__) + "/../spec_helper"
+require "spec_helper"
 require 'tempfile'
 require "resourceful/multipart_form_data.rb"
 
 describe Resourceful::MultipartFormData do
 
-  before do 
+  before do
     @form_data = Resourceful::MultipartFormData.new
   end
 
-  it "should know its content-type" do 
+  it "should know its content-type" do
     @form_data.content_type.should match(/^multipart\/form-data/i)
   end
 
-  it "should know its boundary string" do 
+  it "should know its boundary string" do
     @form_data.content_type.should match(/; boundary=[0-9A-Za-z]{10,}/i)
   end
 
